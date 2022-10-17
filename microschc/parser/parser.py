@@ -9,12 +9,12 @@ class HeaderParser:
 
 
     """
-    def __init__(self, name:str) -> None:
+    def __init__(self, name: str) -> None:
         self.name = name
 
-    def parse(self, buffer:bytes) -> HeaderDescriptor:
+    def parse(self, buffer: bytes) -> HeaderDescriptor:
         raise NotImplementedError
-    
+
 
 class PacketParser:
     """Abstract Base Class for packet parsers.
@@ -26,10 +26,10 @@ class PacketParser:
         NotImplementedError: This is an abstract base class. It is meant to be subclassed only.
 
     """
-    def __init__(self, name:str) -> None:
+    def __init__(self, name: str) -> None:
         self.name = name
 
-    def parse(self, buffer:bytes, directionIndicator:DirectionIndicator) -> PacketDescriptor:
+    def parse(self, buffer: bytes, directionIndicator: DirectionIndicator) -> PacketDescriptor:
         raise NotImplementedError
 
 
