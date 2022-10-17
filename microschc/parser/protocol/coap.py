@@ -93,7 +93,7 @@ class CoAPParser(HeaderParser):
 
         # version: 2 bits
         version: int = (header_bytes[0] & 0b1100_0000) >> 6
-        # type: 2 bits
+        # type: 2 bits # noqa: F723 
         type: int = (header_bytes[0] & 0x0011_0000) >> 4
         # token_length: 4 bits
         token_length: int = header_bytes[0] & 0x0f
