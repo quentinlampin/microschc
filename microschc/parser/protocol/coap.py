@@ -21,7 +21,6 @@ Note: The case of CoAP in the context of SCHC is a odd one.
 """
 
 
-from email import header
 from enum import Enum
 from typing import List
 from microschc.parser import HeaderParser
@@ -72,7 +71,7 @@ class CoAPDefinitions(int, Enum):
 
 class CoAPParser(HeaderParser):
 
-    def __init__(self, interpret_options) -> None:
+    def __init__(self, interpret_options=False) -> None:
         super().__init__(name=COAP_HEADER_ID)
 
     def parse(self, buffer: bytes) -> HeaderDescriptor:
@@ -102,7 +101,7 @@ class CoAPParser(HeaderParser):
         # message ID : 16 bits
         message_id: int = (header_bytes[2] << 8) & header_bytes[3]
         # token : token_length x 8 bits (token length is in bytes)
-        token: bytes = header[4: 4+token_length]
+        token: bytes = header_bytes[4: 4+token_length]
     
         header_descriptor:HeaderDescriptor = HeaderDescriptor(
             id=COAP_HEADER_ID,
