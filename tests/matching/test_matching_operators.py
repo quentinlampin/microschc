@@ -6,4 +6,4 @@ def test_equal():
     """test: equal matching operator
     The test instanciate an IPv6 parser and checks for import errors
     """
-    FieldDescriptor: FieldDescriptor = FieldDescriptor()
+    #FieldDescriptor: FieldDescriptor = FieldDescriptor()
