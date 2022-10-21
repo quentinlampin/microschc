@@ -14,6 +14,7 @@ class DirectionIndicator(str, Enum):
     DOWN = 'Dw'
     BIDIRECTIONAL = 'Bi'
 
+
 class MatchingOperatorID(str, Enum):
     EQUAL = 'equal'
     IGNORE = 'ignore'
@@ -26,11 +27,14 @@ class FieldDescriptor:
     length: int
     position: int
     value: Any
+
+
 @dataclass
 class HeaderDescriptor:
     id: str
     length: int
     fields: List[FieldDescriptor]
+
 
 @dataclass
 class PacketDescriptor:
