@@ -45,10 +45,25 @@ def test_most_significant_bits():
     """test: MSB(x) matching operator
     
     """
-    # test on pattern of length 29
     pattern: bytes = b'\x13\xff\x23\xd8'
     pattern_length = 29
 
-    first_value = b'\x13\xff\x23\xdb' # same length as pattern, should match
-    bytes_field: FieldDescriptor = FieldDescriptor(id=SOME_ID, length=len(first_value), position=0, value=first_value)
+    # test on value matching the pattern and of the same size
+    same_pattern_same_length_value: bytes = b'\x13\xff\x23\xdb'
+    bytes_field: FieldDescriptor = FieldDescriptor(id=SOME_ID, length=pattern_length, position=0, value=same_pattern_same_length_value)
     assert most_significant_bits(bytes_field, pattern_length=pattern_length, pattern=pattern) == True
+
+    # test on value matching the pattern but of a different size than the pattern
+    same_pattern_different_length_value: bytes = b'\x13\xff\x23\xdb\xff\x00'
+    bytes_field: FieldDescriptor = FieldDescriptor(id=SOME_ID, length=pattern_length, position=0, value=same_pattern_different_length_value)
+    assert most_significant_bits(bytes_field, pattern_length=pattern_length, pattern=pattern) == True
+
+    # test on value not matching the pattern and of the same size
+    different_pattern_same_length_value: bytes = b'\x14\xff\x23\xdb'
+    bytes_field: FieldDescriptor = FieldDescriptor(id=SOME_ID, length=pattern_length, position=0, value=different_pattern_same_length_value)
+    assert most_significant_bits(bytes_field, pattern_length=pattern_length, pattern=pattern) == False
+
+    # test on value not matching the pattern and of a different size
+    different_pattern_different_length_value: bytes = b'\x14\xff\x23\xdb\xff\x00'
+    bytes_field: FieldDescriptor = FieldDescriptor(id=SOME_ID, length=pattern_length, position=0, value=different_pattern_different_length_value)
+    assert most_significant_bits(bytes_field, pattern_length=pattern_length, pattern=pattern) == False
