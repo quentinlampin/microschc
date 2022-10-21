@@ -6,7 +6,7 @@ definitions from RFC 8724 [1] and corresponding data models.
 
 from enum import Enum
 from dataclasses import dataclass
-from typing import Any, List
+from typing import Any, List, Union
 
 
 class DirectionIndicator(str, Enum):
@@ -27,7 +27,7 @@ class FieldDescriptor:
     id: str
     length: int
     position: int
-    value: int|bytes
+    value: Union[int, bytes]
 
 
 @dataclass
