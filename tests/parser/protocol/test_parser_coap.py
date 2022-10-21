@@ -114,4 +114,4 @@ def test_coap_parser_parse():
     assert token_fd.value == b'\x74\xcd\xe8\xcb\x4e\x8c\x0d\xb7'
 
 
-    # assert the list of options field descriptors match the CoAP options
+    # TODO: assert the list of options field descriptors match the CoAP options
