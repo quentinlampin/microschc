@@ -1,4 +1,4 @@
-from dataclasses import Field
+from typing import Dict
 from microschc.matching.operators import equal, ignore, most_significant_bits, match_mapping
 from microschc.rfc8724 import FieldDescriptor
 
@@ -67,3 +67,37 @@ def test_most_significant_bits():
     different_pattern_different_length_value: bytes = b'\x14\xff\x23\xdb\xff\x00'
     bytes_field: FieldDescriptor = FieldDescriptor(id=SOME_ID, length=pattern_length, position=0, value=different_pattern_different_length_value)
     assert most_significant_bits(bytes_field, pattern_length=pattern_length, pattern=pattern) == False
+
+def test_match_mapping():
+    """test: match-mapping operator
+    test the match-mapping operator on different value types
+    
+    """
+
+    integer_mapping: Dict[int, int] = {0: 14, 1: 21, 2: 34}
+    bytes_mapping: Dict[int, bytes] = {0: b'\xff\x13', 1: b'\xff\xff\x00', 2: b'\x00', 3: b'\x0e'}
+    string_mapping: Dict[int, str] = {0: 'asd', 1: 'qwe', 2: 'ert'}
+
+    # testing on integer type fields
+    matching_integer_field: FieldDescriptor = FieldDescriptor(id=SOME_ID, length=16, position=0, value=14)
+    assert match_mapping(matching_integer_field, target_values=integer_mapping) == True
+    non_matching_integer_field: FieldDescriptor = FieldDescriptor(id=SOME_ID, length=16, position=0, value=15)
+    assert match_mapping(non_matching_integer_field, target_values=integer_mapping) == False
+
+    # testing on bytes fields
+    matching_bytes_field: FieldDescriptor = FieldDescriptor(id=SOME_ID, length=16, position=0, value=b'\xff\x13')
+    assert match_mapping(matching_bytes_field, target_values=bytes_mapping) == True
+    non_matching_bytes_field: FieldDescriptor = FieldDescriptor(id=SOME_ID, length=16, position=0, value=b'\xff\x15')
+    assert match_mapping(non_matching_bytes_field, target_values=bytes_mapping) == False
+
+    # testing on string fields
+    matching_string_field: FieldDescriptor = FieldDescriptor(id=SOME_ID, length=3, position=0, value='qwe')
+    assert match_mapping(matching_string_field, target_values=string_mapping) == True
+    non_matching_string_field: FieldDescriptor = FieldDescriptor(id=SOME_ID, length=3, position=0, value='tre')
+    assert match_mapping(non_matching_string_field, target_values=string_mapping) == False
+
+    # testing on fields of wrong type
+    integer_field: FieldDescriptor = FieldDescriptor(id=SOME_ID, length=16, position=0, value= 14)
+    assert match_mapping(integer_field, target_values=bytes_mapping) == False
+    
+
