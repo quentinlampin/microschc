@@ -42,7 +42,7 @@ Current developpement plan:
    - [ ] rule decompression actions
    - [ ] YANG model interpreter
 
-[1] "RFC 8724 SCHC: Generic Framework for Static Context Header Compression and Fragmentation" , A. Minaburo et al.
-[2] "RFC 8200 Internet Protocol, Version 6 (IPv6) Specification, S. Deering et al."
-[3] "RFC 768 User Datagram Protocol, J. Postel"
-[4] "RFC 7252 The Constrained Application Protocol (CoAP), Z. Shelby et al."
+- [1] "RFC 8724 SCHC: Generic Framework for Static Context Header Compression and Fragmentation" , A. Minaburo et al.
+- [2] "RFC 8200 Internet Protocol, Version 6 (IPv6) Specification, S. Deering et al."
+- [3] "RFC 768 User Datagram Protocol, J. Postel"
+- [4] "RFC 7252 The Constrained Application Protocol (CoAP), Z. Shelby et al."
