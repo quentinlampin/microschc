@@ -15,21 +15,21 @@ from typing import Any, Dict
 from microschc.rfc8724 import FieldDescriptor
 
 
-def equal(field_descriptor: FieldDescriptor, target_value: Any):
+def equal(field_descriptor: FieldDescriptor, target_value: Any) -> bool:
     """
     `equal` matching operator: 
     the match result is True if the field value in the packet matches the target value
     """
     return (field_descriptor.value == target_value)
 
-def ignore(field_descriptor: FieldDescriptor):
+def ignore(field_descriptor: FieldDescriptor) -> bool:
     """
     `ignore` matching operator: 
     the match result is always True
     """
     return True
 
-def most_significant_bits(field_descriptor: FieldDescriptor, pattern: bytes, pattern_length: int):
+def most_significant_bits(field_descriptor: FieldDescriptor, pattern: bytes, pattern_length: int) -> bool:
     """
     `MSB(x)` matching operator:
     the match result is True if the `pattern_length` most significant (leftmost) bits of the field value equal 
@@ -48,7 +48,7 @@ def most_significant_bits(field_descriptor: FieldDescriptor, pattern: bytes, pat
 
     return True
 
-def match_mapping(field_descriptor: FieldDescriptor, target_values: Dict[int, Any]):
+def match_mapping(field_descriptor: FieldDescriptor, target_values: Dict[int, Any]) -> bool:
     """
     `match_mapping` matching operator:
     the match result is True if the field value is in the values of the target values
