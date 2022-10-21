@@ -36,9 +36,12 @@ def most_significant_bits(field_descriptor: FieldDescriptor, pattern: bytes, pat
     the `pattern_length` most significant (leftmost) bits of the pattern.
     """
 
+    if isinstance(field_descriptor.value, int):
+        return False
+    
     pattern_bytes = pattern_length // 8 # number of "full" bytes in the pattern to match
     bits_residue = pattern_length % 8 # number of bits in the pattern to match excluding "full" bytes to match
-
+    
     if pattern_bytes > 0 and field_descriptor.value[0:pattern_bytes] != pattern[0:pattern_bytes]:
         return False
     

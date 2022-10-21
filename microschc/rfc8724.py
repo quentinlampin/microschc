@@ -21,12 +21,13 @@ class MatchingOperatorID(str, Enum):
     MSB = 'MSB'
     MATCH_MAPPING = 'match-mapping'
 
+
 @dataclass
 class FieldDescriptor:
     id: str
     length: int
     position: int
-    value: Any
+    value: int|bytes
 
 
 @dataclass
@@ -39,4 +40,10 @@ class HeaderDescriptor:
 @dataclass
 class PacketDescriptor:
     direction: DirectionIndicator
-    fields: List[FieldDescriptor]
+    headers: List[HeaderDescriptor]
+
+
+@dataclass
+class FieldResidue:
+    residue: bytes
+    length: int

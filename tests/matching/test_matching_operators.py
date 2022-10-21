@@ -27,18 +27,11 @@ def test_equal():
     assert equal(bytes_field, target_value=same_bytes_value_of_different_length) == False
     assert equal(bytes_field, target_value=different_bytes_value_of_different_length) == False
 
-    # test on string values
-    target_value: str = 'some string'
-    other_value: str = 'another string'
-    string_field: FieldDescriptor = FieldDescriptor(id=SOME_ID, length=len(target_value), position=0, value=target_value)
-    assert equal(string_field, target_value=target_value) == True
-    assert equal(string_field, target_value=other_value) == False
-
 def test_ignore():
     """test: ignore matching operator
     Test that matching operator always returns True
     """
-    any_field: FieldDescriptor = FieldDescriptor(id=SOME_ID, length=16, position=0, value=None)
+    any_field: FieldDescriptor = FieldDescriptor(id=SOME_ID, length=16, position=0, value=0)
     assert ignore(any_field) == True
 
 def test_most_significant_bits():
@@ -89,12 +82,6 @@ def test_match_mapping():
     assert match_mapping(matching_bytes_field, target_values=bytes_mapping) == True
     non_matching_bytes_field: FieldDescriptor = FieldDescriptor(id=SOME_ID, length=16, position=0, value=b'\xff\x15')
     assert match_mapping(non_matching_bytes_field, target_values=bytes_mapping) == False
-
-    # testing on string fields
-    matching_string_field: FieldDescriptor = FieldDescriptor(id=SOME_ID, length=3, position=0, value='qwe')
-    assert match_mapping(matching_string_field, target_values=string_mapping) == True
-    non_matching_string_field: FieldDescriptor = FieldDescriptor(id=SOME_ID, length=3, position=0, value='tre')
-    assert match_mapping(non_matching_string_field, target_values=string_mapping) == False
 
     # testing on fields of wrong type
     integer_field: FieldDescriptor = FieldDescriptor(id=SOME_ID, length=16, position=0, value= 14)
