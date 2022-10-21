@@ -12,7 +12,7 @@ Matching Operators (MOs) as defined in section 7.3 of RFC 8724 [1], i.e.:
 """
 
 from typing import Any, Dict
-from rfc8724 import FieldDescriptor
+from microschc.rfc8724 import FieldDescriptor
 
 
 def equal(field_descriptor: FieldDescriptor, target_value: Any):
@@ -29,22 +29,22 @@ def ignore(field_descriptor: FieldDescriptor):
     """
     return True
 
-def most_significant_bits(field_descriptor: FieldDescriptor, x: int, target_value: bytes):
+def most_significant_bits(field_descriptor: FieldDescriptor, pattern: bytes, pattern_length: int):
     """
     `MSB(x)` matching operator:
-    the match result is True if the `x` most significant (leftmost) bits of the field value equal 
-    the `x` most significant (leftmost) bits of the target value.
+    the match result is True if the `pattern_length` most significant (leftmost) bits of the field value equal 
+    the `pattern_length` most significant (leftmost) bits of the pattern.
     """
 
-    pattern_bytes = x // 8 # number of "full" bytes in the pattern to match
-    bits_residue = x % 8 # number of bits in the pattern to match excluding "full" bytes to match
+    pattern_bytes = pattern_length // 8 # number of "full" bytes in the pattern to match
+    bits_residue = pattern_length % 8 # number of bits in the pattern to match excluding "full" bytes to match
 
-    if pattern_bytes > 0 and field_descriptor.value[0:pattern_bytes] != target_value[0:pattern_bytes]:
+    if pattern_bytes > 0 and field_descriptor.value[0:pattern_bytes] != pattern[0:pattern_bytes]:
         return False
     
     if bits_residue > 0:
         bitmask = 0xff << (8-bits_residue) & 0xff
-        return (field_descriptor.value[pattern_bytes] == target_value[pattern_bytes])
+        return (field_descriptor.value[pattern_bytes] == pattern[pattern_bytes])
 
     return True
 
