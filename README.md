@@ -21,11 +21,11 @@ Current developpement plan:
    - [x] IPv6
    - [x] UDP
    - [x] CoAP (partial test coverage: options missing)
-   - [ ] lwM2M ( when not usign CoAP options, i.e. CoAP payloads)
+   - [ ] lwM2M ( when not using CoAP options, i.e. CoAP payloads)
 2. Matching Operators (MO)
-   - [ ] equal
-   - [ ] ignore
-   - [ ] MSB(x)
+   - [x] equal
+   - [x] ignore
+   - [x] MSB(x)
    - [ ] match-mapping
 3. Compression/Decompression Actions (CDA)
    - [ ] not-sent
@@ -46,4 +46,3 @@ Current developpement plan:
 [2] "RFC 8200 Internet Protocol, Version 6 (IPv6) Specification, S. Deering et al."
 [3] "RFC 768 User Datagram Protocol, J. Postel"
 [4] "RFC 7252 The Constrained Application Protocol (CoAP), Z. Shelby et al."
-[5] ""
