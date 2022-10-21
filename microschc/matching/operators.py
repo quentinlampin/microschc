@@ -44,7 +44,7 @@ def most_significant_bits(field_descriptor: FieldDescriptor, pattern: bytes, pat
     
     if bits_residue > 0:
         bitmask = 0xff << (8-bits_residue) & 0xff
-        return (field_descriptor.value[pattern_bytes] == pattern[pattern_bytes])
+        return (field_descriptor.value[pattern_bytes] & bitmask == pattern[pattern_bytes])
 
     return True
 
