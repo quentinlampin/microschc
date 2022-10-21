@@ -26,7 +26,7 @@ Current developpement plan:
    - [x] equal
    - [x] ignore
    - [x] MSB(x)
-   - [ ] match-mapping
+   - [x] match-mapping
 3. Compression/Decompression Actions (CDA)
    - [ ] not-sent
    - [ ] value-sent
