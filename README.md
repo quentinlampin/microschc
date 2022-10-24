@@ -28,13 +28,22 @@ Current features:
    - [x] MSB(x)
    - [x] match-mapping
 3. Compression/Decompression Actions (CDA)
-   - [x] not-sent
-   - [x] value-sent
-   - [x] mapping-sent
-   - [x] LSB
-   - [ ] devIID
-   - [ ] AppIID
-   - [ ] compute-* (e.g. UDP-checksum)
+   1. Compression
+      - [x] not-sent
+      - [x] value-sent
+      - [x] mapping-sent
+      - [x] LSB
+      - [ ] devIID
+      - [ ] AppIID
+      - [ ] compute-* (e.g. UDP-checksum)
+   2. Decompression counteparts
+      - [ ] not-sent
+      - [ ] value-sent
+      - [ ] mapping-sent
+      - [ ] LSB
+      - [ ] devIID
+      - [ ] AppIID
+      - [ ] compute-* (e.g. UDP-checksum)
 4. Rules
    - [ ] rule data model
    - [ ] rule matching algorithm
