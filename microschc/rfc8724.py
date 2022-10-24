@@ -6,8 +6,20 @@ definitions from RFC 8724 [1] and corresponding data models.
 
 from enum import Enum
 from dataclasses import dataclass
-from typing import Any, List
+from typing import  Dict, List, Union
 
+Value = Union[int, bytes]
+
+ReverseMapping = Dict[int, Value]
+Mapping = Dict[Value, int]
+
+
+class MatchMapping:
+    def __init__(self, index_length: int, forward_mapping: Mapping):
+        self.index_length: int = index_length
+        self.forward: Mapping = forward_mapping
+        self.reverse: ReverseMapping = {v: k for k, v in self.forward.items()}
+        
 
 class DirectionIndicator(str, Enum):
     UP = 'Up'
@@ -21,12 +33,13 @@ class MatchingOperatorID(str, Enum):
     MSB = 'MSB'
     MATCH_MAPPING = 'match-mapping'
 
+
 @dataclass
 class FieldDescriptor:
     id: str
     length: int
     position: int
-    value: Any
+    value: Value
 
 
 @dataclass
@@ -39,4 +52,10 @@ class HeaderDescriptor:
 @dataclass
 class PacketDescriptor:
     direction: DirectionIndicator
-    fields: List[FieldDescriptor]
+    headers: List[HeaderDescriptor]
+
+
+@dataclass
+class FieldResidue:
+    residue: bytes
+    length: int

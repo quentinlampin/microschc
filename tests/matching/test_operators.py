@@ -1,6 +1,5 @@
-from typing import Dict
 from microschc.matching.operators import equal, ignore, most_significant_bits, match_mapping
-from microschc.rfc8724 import FieldDescriptor
+from microschc.rfc8724 import FieldDescriptor, MatchMapping
 
 
 SOME_ID = 'ID'
@@ -27,45 +26,67 @@ def test_equal():
     assert equal(bytes_field, target_value=same_bytes_value_of_different_length) == False
     assert equal(bytes_field, target_value=different_bytes_value_of_different_length) == False
 
-    # test on string values
-    target_value: str = 'some string'
-    other_value: str = 'another string'
-    string_field: FieldDescriptor = FieldDescriptor(id=SOME_ID, length=len(target_value), position=0, value=target_value)
-    assert equal(string_field, target_value=target_value) == True
-    assert equal(string_field, target_value=other_value) == False
-
 def test_ignore():
     """test: ignore matching operator
     Test that matching operator always returns True
     """
-    any_field: FieldDescriptor = FieldDescriptor(id=SOME_ID, length=16, position=0, value=None)
+    any_field: FieldDescriptor = FieldDescriptor(id=SOME_ID, length=16, position=0, value=0)
     assert ignore(any_field) == True
 
 def test_most_significant_bits():
     """test: MSB(x) matching operator
     
     """
-    pattern: bytes = b'\x13\xff\x23\xd8'
-    pattern_length = 29
+    pattern: bytes = b'\x01\x9f\xf9'
+    pattern_length = 17
 
-    # test on value matching the pattern and of the same size
-    same_pattern_same_length_value: bytes = b'\x13\xff\x23\xdb'
-    bytes_field: FieldDescriptor = FieldDescriptor(id=SOME_ID, length=pattern_length, position=0, value=same_pattern_same_length_value)
+    # test on:
+    # - value matching the pattern
+    # - value is not byte-aligned
+    # - residue is not byte-aligned
+    # - pattern is not byte-aligned
+    pattern: bytes = b'\x01\x9f\xf9'
+    pattern_length = 17
+    field_value: bytes = b'\x33\xff\x23\xdb\xda'
+    field_length: int = 38
+
+    bytes_field: FieldDescriptor = FieldDescriptor(id=SOME_ID, length=field_length, position=0, value=field_value)
     assert most_significant_bits(bytes_field, pattern_length=pattern_length, pattern=pattern) == True
 
-    # test on value matching the pattern but of a different size than the pattern
-    same_pattern_different_length_value: bytes = b'\x13\xff\x23\xdb\xff\x00'
-    bytes_field: FieldDescriptor = FieldDescriptor(id=SOME_ID, length=pattern_length, position=0, value=same_pattern_different_length_value)
+    # test on:
+    # - value matching the pattern
+    # - value is byte-aligned
+    # - pattern is not byte-aligned
+    pattern: bytes = b'\x33\xff\x23'
+    pattern_length = 24
+    field_value: bytes = b'\x33\xff\x23\xdb\xda'
+    field_length: int = 40
+
+    bytes_field: FieldDescriptor = FieldDescriptor(id=SOME_ID, length=field_length, position=0, value=field_value)
     assert most_significant_bits(bytes_field, pattern_length=pattern_length, pattern=pattern) == True
 
-    # test on value not matching the pattern and of the same size
-    different_pattern_same_length_value: bytes = b'\x14\xff\x23\xdb'
-    bytes_field: FieldDescriptor = FieldDescriptor(id=SOME_ID, length=pattern_length, position=0, value=different_pattern_same_length_value)
+    # test on:
+    # - value not matching the pattern
+    # - value is not byte-aligned
+    # - pattern is not byte-aligned
+    pattern: bytes = b'\x01\x9f\xf9'
+    pattern_length = 17
+    field_value: bytes = b'\x34\xff\x23\xdb\xda'
+    field_length: int = 38
+
+    bytes_field: FieldDescriptor = FieldDescriptor(id=SOME_ID, length=field_length, position=0, value=field_value)
     assert most_significant_bits(bytes_field, pattern_length=pattern_length, pattern=pattern) == False
 
-    # test on value not matching the pattern and of a different size
-    different_pattern_different_length_value: bytes = b'\x14\xff\x23\xdb\xff\x00'
-    bytes_field: FieldDescriptor = FieldDescriptor(id=SOME_ID, length=pattern_length, position=0, value=different_pattern_different_length_value)
+    # test on:
+    # - value not matching the pattern
+    # - value is not byte-aligned
+    # - pattern is not byte-aligned
+    pattern: bytes = b'\x01\x9f\xf9'
+    pattern_length = 17
+    field_value: bytes = b'\xf4\xff\x23\xdb\xda'
+    field_length: int = 38
+
+    bytes_field: FieldDescriptor = FieldDescriptor(id=SOME_ID, length=field_length, position=0, value=field_value)
     assert most_significant_bits(bytes_field, pattern_length=pattern_length, pattern=pattern) == False
 
 def test_match_mapping():
@@ -74,9 +95,8 @@ def test_match_mapping():
     
     """
 
-    integer_mapping: Dict[int, int] = {0: 14, 1: 21, 2: 34}
-    bytes_mapping: Dict[int, bytes] = {0: b'\xff\x13', 1: b'\xff\xff\x00', 2: b'\x00', 3: b'\x0e'}
-    string_mapping: Dict[int, str] = {0: 'asd', 1: 'qwe', 2: 'ert'}
+    integer_mapping: MatchMapping = MatchMapping(index_length=2, forward_mapping={14: 1, 21: 2, 34: 3})
+    bytes_mapping: MatchMapping = MatchMapping(index_length=2, forward_mapping={b'\xff\x13':1 , b'\xff\xff\x00':2, b'\x00':3, b'\x0e':4})
 
     # testing on integer type fields
     matching_integer_field: FieldDescriptor = FieldDescriptor(id=SOME_ID, length=16, position=0, value=14)
@@ -89,12 +109,6 @@ def test_match_mapping():
     assert match_mapping(matching_bytes_field, target_values=bytes_mapping) == True
     non_matching_bytes_field: FieldDescriptor = FieldDescriptor(id=SOME_ID, length=16, position=0, value=b'\xff\x15')
     assert match_mapping(non_matching_bytes_field, target_values=bytes_mapping) == False
-
-    # testing on string fields
-    matching_string_field: FieldDescriptor = FieldDescriptor(id=SOME_ID, length=3, position=0, value='qwe')
-    assert match_mapping(matching_string_field, target_values=string_mapping) == True
-    non_matching_string_field: FieldDescriptor = FieldDescriptor(id=SOME_ID, length=3, position=0, value='tre')
-    assert match_mapping(non_matching_string_field, target_values=string_mapping) == False
 
     # testing on fields of wrong type
     integer_field: FieldDescriptor = FieldDescriptor(id=SOME_ID, length=16, position=0, value= 14)

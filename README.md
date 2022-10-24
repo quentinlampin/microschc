@@ -15,7 +15,7 @@ microSCHC aims at implementing the SCHC Compression/Decompression (C/D) and Frag
 The initial focus of this effort is on the Compression/Decompression (C/D) routines and parsers for typical IoT protocol stacks, i.e. based
 on IPv6 [2], UDP [3], CoAP [4], lwM2M.
 
-Current developpement plan:
+Current features:
 
 1. Parsers
    - [x] IPv6
@@ -28,10 +28,10 @@ Current developpement plan:
    - [x] MSB(x)
    - [x] match-mapping
 3. Compression/Decompression Actions (CDA)
-   - [ ] not-sent
-   - [ ] value-sent
-   - [ ] mapping-sent
-   - [ ] LSB
+   - [x] not-sent
+   - [x] value-sent
+   - [x] mapping-sent
+   - [x] LSB
    - [ ] devIID
    - [ ] AppIID
    - [ ] compute-* (e.g. UDP-checksum)
