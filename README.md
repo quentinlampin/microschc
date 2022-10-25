@@ -22,6 +22,7 @@ Current features:
    - [x] UDP
    - [x] CoAP (partial test coverage: options missing)
    - [ ] lwM2M ( when not using CoAP options, i.e. CoAP payloads)
+   - [ ] CoAP over UDP over IPv6 stack parser
 2. Matching Operators (MO)
    - [x] equal
    - [x] ignore
