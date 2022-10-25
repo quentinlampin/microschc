@@ -64,7 +64,7 @@ class IPv6Parser(HeaderParser):
         # traffic_class: 8 bits
         traffic_class:int = ( (header_bytes[0] & 0x0f) << 4 ) | ( (header_bytes[1] & 0xf0) >> 4 )
         # flow label: 20 bits
-        flow_label:int = ((header_bytes[1] & 0xf0) << 16) | (header_bytes[2] << 8) | (header_bytes[3])
+        flow_label:bytes = ((header_bytes[1] & 0xf0) >> 4).to_bytes(1, 'big') + header_bytes[2:4]
         # payload length: 16 bits
         payload_length:int = (header_bytes[4] << 8) | (header_bytes[5])
         # next header: 8 bits

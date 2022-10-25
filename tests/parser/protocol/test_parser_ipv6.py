@@ -15,7 +15,7 @@ def test_ipv6_parser_parse():
     The packet is made of an IPv6 header with following fields:
         - id='Version'              length=4    position=0  value=6
         - id='Traffic Class'        length=8    position=0  value=0
-        - id='Flow Label'           length=20   position=0  value=0
+        - id='Flow Label'           length=20   position=0  value=b'\x00\x00\x00'
         - id='Payload Length'       length=16   position=0  value=16
         - id='Next Header'          length=8    position=0  value=17
         - id='Hop Limit'            length=8    position=0  value=64
@@ -60,7 +60,7 @@ def test_ipv6_parser_parse():
     assert flow_label_fd.id == IPv6Fields.FLOW_LABEL
     assert flow_label_fd.length == 20
     assert flow_label_fd.position == 0
-    assert flow_label_fd.value == 0
+    assert flow_label_fd.value == b'\x00\x00\x00'
 
     payload_length_fd:FieldDescriptor = ipv6_header_descriptor.fields[3]
     assert payload_length_fd.id == IPv6Fields.PAYLOAD_LENGTH
