@@ -202,7 +202,7 @@ def _parse_options(buffer: bytes) -> List[FieldDescriptor]:
         cursor += option_offset
 
     # append payload marker field
-    fields.append(FieldDescriptor(id=CoAPHeaderFields.PAYLOAD_MARKER, length=8, position=0, value=0xff))
+    fields.append(FieldDescriptor(id=CoAPHeaderFields.PAYLOAD_MARKER, length=8, position=0, value=b'\xff'))
 
     # return CoAP fields descriptors list
     return fields
