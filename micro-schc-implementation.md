@@ -12,7 +12,7 @@ fields of headers.
 
 ### 1.1. Types Support
 
-Discussed extensively in issue [#1](https://github.com/quentinlampin/microschc/issues/1), microSCHC only support basic types, i.e. bytes and integers.
+Discussed extensively in issue [#1](https://github.com/quentinlampin/microschc/issues/2), microSCHC only support basic types, i.e. bytes and integers.
 
 ### 1.2 On interpretation vs decoding vs parsing
 
