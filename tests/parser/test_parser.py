@@ -1,10 +1,10 @@
-from ipaddress import IPv6Address
 from microschc.parser.factory import factory
 from microschc.parser.parser import PacketParser
+from microschc.parser.protocol.coap import CoAPHeaderFields
 from microschc.parser.protocol.ipv6 import IPv6Fields
 from microschc.parser.protocol.udp import UDPFields
-from microschc.rfc8724 import DirectionIndicator, FieldDescriptor, HeaderDescriptor, PacketDescriptor
-from microschc.rfc8724extras import StacksImplementation
+from microschc.rfc8724 import DirectionIndicator, HeaderDescriptor, PacketDescriptor
+from microschc.rfc8724extras import ParserDefinitions, StacksImplementation
 
 def test_parser_ipv6_udp_coap():
     """
@@ -32,14 +32,19 @@ def test_parser_ipv6_udp_coap():
         - id='Token Length'           length=4    position=0  value=8
         - id='Code'                   length=8    position=0  value=69
         - id='message ID'             length=16   position=0  value=8950
-        - id='Token'                  length=32   position=0  value="\xb8\x30\x0e\xfe\xe6\x62\x91\x22"
+        - id='Token'                  length=32   position=0  value=b"\xb8\x30\x0e\xfe\xe6\x62\x91\x22"
 
         - id='Option Delta'           length=4    position=0  value=12
         - id='Option Length'          length=4    position=0  value=1
-        - id='Option Value'           length=16   position=0  value=b''
+        - id='Option Value'           length=16   position=0  value=b'\x6e'
         - id='Payload Marker'         length=8    position=0  value=b'\xff'
     - a Payload:
-        - id='Payload'                length=
+        - id='Payload'                length=648  position=0  value=b"\x5b\x7b\x22\x62\x6e\x22\x3a\x22\x2f\x36\x2f\x22\x2c\x22\x6e\x22" \
+                                                                    b"\x3a\x22\x30\x2f\x30\x22\x2c\x22\x76\x22\x3a\x35\x34\x2e\x30\x7d" \
+                                                                    b"\x2c\x7b\x22\x6e\x22\x3a\x22\x30\x2f\x31\x22\x2c\x22\x76\x22\x3a" \
+                                                                    b"\x34\x38\x2e\x30\x7d\x2c\x7b\x22\x6e\x22\x3a\x22\x30\x2f\x35\x22" \
+                                                                    b"\x2c\x22\x76\x22\x3a\x31\x36\x36\x36\x32\x36\x33\x33\x33\x39\x7d\x5d"
+
 
     """
     # leshan-0 frame 24
@@ -61,6 +66,8 @@ def test_parser_ipv6_udp_coap():
     ipv6_header: HeaderDescriptor = packet_descriptor.headers[0]
     udp_header: HeaderDescriptor = packet_descriptor.headers[1]
     coap_header: HeaderDescriptor = packet_descriptor.headers[2]
+    
+    payload: HeaderDescriptor = packet_descriptor.headers[3]
 
     assert ipv6_header.fields[0].id == IPv6Fields.VERSION
     assert ipv6_header.fields[0].value == 6
@@ -88,5 +95,32 @@ def test_parser_ipv6_udp_coap():
     assert udp_header.fields[3].id == UDPFields.CHECKSUM
     assert udp_header.fields[3].value == b'\x5c\x21'
 
-    
+    assert coap_header.fields[0].id == CoAPHeaderFields.VERSION
+    assert coap_header.fields[0].value == 1
+    assert coap_header.fields[1].id == CoAPHeaderFields.TYPE
+    assert coap_header.fields[1].value == 2
+    assert coap_header.fields[2].id == CoAPHeaderFields.TOKEN_LENGTH
+    assert coap_header.fields[2].value == 8
+    assert coap_header.fields[3].id == CoAPHeaderFields.CODE 
+    assert coap_header.fields[3].value == 69
+    assert coap_header.fields[4].id == CoAPHeaderFields.MESSAGE_ID 
+    assert coap_header.fields[4].value == 8950
+    assert coap_header.fields[5].id == CoAPHeaderFields.TOKEN 
+    assert coap_header.fields[5].value == b"\xb8\x30\x0e\xfe\xe6\x62\x91\x22"
+    assert coap_header.fields[6].id == CoAPHeaderFields.OPTION_DELTA 
+    assert coap_header.fields[6].value == 12
+    assert coap_header.fields[7].id == CoAPHeaderFields.OPTION_LENGTH 
+    assert coap_header.fields[7].value == 1
+    assert coap_header.fields[8].id == CoAPHeaderFields.OPTION_VALUE 
+    assert coap_header.fields[8].value == b'\x6e'
+    assert coap_header.fields[9].id == CoAPHeaderFields.PAYLOAD_MARKER 
+    assert coap_header.fields[9].value == b'\xff'
 
+    assert payload.fields[0].id == ParserDefinitions.PAYLOAD
+    assert payload.fields[0].length == 648
+    assert payload.fields[0].position == 0
+    assert payload.fields[0].value == b"\x5b\x7b\x22\x62\x6e\x22\x3a\x22\x2f\x36\x2f\x22\x2c\x22\x6e\x22" \
+                                      b"\x3a\x22\x30\x2f\x30\x22\x2c\x22\x76\x22\x3a\x35\x34\x2e\x30\x7d" \
+                                      b"\x2c\x7b\x22\x6e\x22\x3a\x22\x30\x2f\x31\x22\x2c\x22\x76\x22\x3a" \
+                                      b"\x34\x38\x2e\x30\x7d\x2c\x7b\x22\x6e\x22\x3a\x22\x30\x2f\x35\x22" \
+                                      b"\x2c\x22\x76\x22\x3a\x31\x36\x36\x36\x32\x36\x33\x33\x33\x39\x7d\x5d"
