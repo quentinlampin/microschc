@@ -22,7 +22,7 @@ Note: The case of CoAP in the context of SCHC is a odd one.
 
 
 from enum import Enum
-from typing import List
+from typing import List, Tuple
 from microschc.parser import HeaderParser
 from microschc.rfc8724 import FieldDescriptor, HeaderDescriptor
 
@@ -114,16 +114,16 @@ class CoAPParser(HeaderParser):
         ]
 
         options_bytes: bytes = buffer[4+token_length:]
-        options_fields: List[FieldDescriptor] = _parse_options(options_bytes)
+        options_fields, option_bits_consumed = _parse_options(options_bytes)
     
         header_descriptor:HeaderDescriptor = HeaderDescriptor(
             id= COAP_HEADER_ID,
-            length= 4*8,
+            length= 4*8 + token_length*8 +  option_bits_consumed,
             fields= header_fields + options_fields
         )
         return header_descriptor
 
-def _parse_options(buffer: bytes) -> List[FieldDescriptor]:
+def _parse_options(buffer: bytes) -> Tuple[List[FieldDescriptor], int]:
     """
         0   1   2   3   4   5   6   7
     +---------------+---------------+
@@ -202,7 +202,8 @@ def _parse_options(buffer: bytes) -> List[FieldDescriptor]:
         cursor += option_offset
 
     # append payload marker field
+    cursor += 1
     fields.append(FieldDescriptor(id=CoAPHeaderFields.PAYLOAD_MARKER, length=8, position=0, value=b'\xff'))
 
     # return CoAP fields descriptors list
-    return fields
+    return (fields, 8*cursor)
