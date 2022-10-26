@@ -5,8 +5,11 @@ definitions of literals described in RFC 8724 [1] whose values are not specified
 """
 
 
-from typing import Literal
+from enum import Enum
 
 
-PacketDirection = Literal["UP", "DOWN"]
+class StacksImplementation(str, Enum):
+    IPV6_UDP_COAP = 'IPv6-UDP-CoAP'
 
+class ParserDefinitions(str, Enum): 
+    PAYLOAD = 'Payload'

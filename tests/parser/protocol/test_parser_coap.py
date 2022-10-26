@@ -17,7 +17,7 @@ def test_coap_parser_parse():
         - id='Token Length'           length=4    position=0  value=8
         - id='Code'                   length=8    position=0  value=2
         - id='message ID'             length=16   position=0  value=33945
-        - id='Token'                  length=32   position=0  value=64
+        - id='Token'                  length=32   position=0  value=b'\x74\xcd\xe8\xcb\x4e\x8c\x0d\xb7'
 
         - id='Option Delta'           length=4    position=0  value=11
         - id='Option Length'          length=4    position=0  value=2
@@ -53,7 +53,7 @@ def test_coap_parser_parse():
         - id='Option Delta Extended'  length=8    position=0  value=20
         - id='Option Value'           length=8    position=7  value=b'\x07\x2b'
 
-        -id='Payload Marker'          length=8    position=0  value=b'\xff'
+        - id='Payload Marker'          length=8    position=0  value=b'\xff'
 
     """
 

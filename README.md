@@ -21,7 +21,8 @@ Current features:
    - [x] IPv6
    - [x] UDP
    - [x] CoAP (partial test coverage: options missing)
-   - [ ] lwM2M ( when not using CoAP options, i.e. CoAP payloads)
+   - [x] CoAP over UDP over IPv6 stack parser
+   - [ ] lwM2M ( when not using CoAP options, i.e. CoAP payloads) --> postponed to after full SCHC C/D implementation
 2. Matching Operators (MO)
    - [x] equal
    - [x] ignore
