@@ -45,8 +45,8 @@ class PacketParser:
                 pass
             buffer = buffer[bytes_consumed:]
         if buffer != b'':
-            payload_field:FieldDescriptor = FieldDescriptor(id=ParserDefinitions.PAYLOAD, length=len(buffer), position=0, value=buffer)
-            payload_descriptor: HeaderDescriptor = HeaderDescriptor(id=ParserDefinitions.PAYLOAD, length=len(buffer), fields=[payload_field])
+            payload_field:FieldDescriptor = FieldDescriptor(id=ParserDefinitions.PAYLOAD, length=8*len(buffer), position=0, value=buffer)
+            payload_descriptor: HeaderDescriptor = HeaderDescriptor(id=ParserDefinitions.PAYLOAD, length=8*len(buffer), fields=[payload_field])
             header_descriptors.append(payload_descriptor)
         
         packet_descriptor: PacketDescriptor = PacketDescriptor(direction=direction, headers=header_descriptors)
