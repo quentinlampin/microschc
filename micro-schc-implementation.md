@@ -51,6 +51,28 @@ structure of header fields represented here-after.
 
 The actual option requires parsing, and interpreting the `Option Delta`, `Option Length`, etc. Similarly to the types support discussion, this requires keeping track of the encoding and decoding of those interpretations into their bytes counterparts. Furthermore, how the compression residue should be computed based on the interpretation is a mystery to me (Quentin), unless simple compression actions are performed, e.g. `not-sent`. For this reason, microSCHC parser only exposes fields and their raw content (except for the integers odd case).
 
+## 2. The Ruler
+
+The Ruler is in charge of the rules and their application to packets, i.e.:
+    - rule storing: manages a collection of rules.
+    - rule matching: determine if a rule applies to a packet descriptor.
+    - packet compression: compress packets according to matching rules.
+    - packet decompression: decompress packets according to rules IDs.
+
+## 2.1 Rules order matters
+
+The Ruler makes the assumption that rules' field descriptors are provided in the same order as in the target packet structure.
+For example, if the packet fields are, in order : [`field-1`, `field-2`, `field-3`, ...], it is supposed that rules field descriptors
+are listed such that those that apply to `field-1` appear first, then those applying to `field-2`, `field-3`, etc.
+
+In case multiple field descriptors apply to the same packet fields, i.e. field descriptors with different `DirectionIndicator`s (`Up`, `Dw`, `Bi`) applying to the same packet field,
+it is mandated that field descriptors applying to a given packet, i.e. once the direction is resolved, are in the same order as the fields of the packet.
+
+**This implementation choice differs from the SCHC specification where rules' field descriptors are described as ensembles, i.e. order does not matter, for matching packets.**
+
+The rationale is that unordered field descriptors eventually yield fields residues in a different order than that of the source packet. This means that the order is potentially
+lost at the reconstruction, leading to advert effects, including reconstructed packets different from the source packets.
+
 - [1] "Scapy, packet crafting for Python2 and Python3"
 - [2] "OpenSCHC: Open implementation, hackathon support, ... of the IETF SCHC protocol (compression for LPWANs), https://github.com/openschc"
 - [3] "RFC 7252 The Constrained Application Protocol (CoAP), Z. Shelby et al."
