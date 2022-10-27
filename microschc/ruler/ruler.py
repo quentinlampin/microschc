@@ -24,11 +24,11 @@ from microschc.rfc8724 import DirectionIndicator, FieldDescriptor, MatchMapping,
 class Ruler:
 
     def __init__(self, rules_descriptors: List[RuleDescriptor]) -> None:
-        default_rule: RuleDescriptor = RuleDescriptor(id=len(rules_descriptors), field_descriptors=[])
-        self.rules: List[RuleDescriptor] = rules_descriptors + [default_rule]
+        self.default_rule: RuleDescriptor = RuleDescriptor(id=len(rules_descriptors), field_descriptors=[])
+        self.rules: List[RuleDescriptor] = rules_descriptors
 
 
-    def match(self, packet_descriptor: PacketDescriptor) -> RuleDescriptor:
+    def _match(self, packet_descriptor: PacketDescriptor) -> RuleDescriptor:
         """
         Find a rule matching the packet descriptor
         """
@@ -56,7 +56,13 @@ class Ruler:
 
             # rule matches, return it
             return rule
-        
+        # if no rule matches, use the default
+        return self.default_rule
+
+    def _compress(self, packet_descriptor: PacketDescriptor, rule: RuleDescriptor) -> bytes:
+        schc_packet: bytes = b''
+
+        return schc_packet
 
         
         
@@ -64,15 +70,15 @@ class Ruler:
 def _field_match(packet_field: FieldDescriptor, rule_field: RuleFieldDescriptor):
     # basic test: field IDs and length match
     # note: with the assumption of the ordering of field descriptors in rules, the position test is unnecessary
-    if packet_field.id == rule_field.id and packet_field.length == rule_field.length:
+    if packet_field.id != rule_field.id :
         return False
     # check with the Matching Operator (MO) of the rule field
     if rule_field.matching_operator == MatchingOperator.IGNORE:
-        return ignore(packet_field)
+        return ignore(packet_field) and packet_field.length == rule_field.length
 
     elif rule_field.matching_operator == MatchingOperator.EQUAL:
         assert isinstance(rule_field.target_value, Value)
-        return equal(packet_field, rule_field.target_value)
+        return packet_field.length == rule_field.length and equal(packet_field, rule_field.target_value)
 
     elif rule_field.matching_operator == MatchingOperator.MSB:
         pattern: TargetValue = rule_field.target_value
