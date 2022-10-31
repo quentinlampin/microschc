@@ -10,13 +10,15 @@ of the targeted run environment, i.e. microPython. This is further motivated by 
 in [section 1.2](#parsing-and-not-interpretation), in particular the decision to **not** interpret
 fields of headers.
 
-### 1.1. Types Support: `bytes` and `int`
+### 1.1. Types Support: `bytes`
 
-Discussed extensively in issue [#2](https://github.com/quentinlampin/microschc/issues/2), microSCHC only support basic types, i.e. `bytes` and `int`.
+Discussed extensively in issue [#2](https://github.com/quentinlampin/microschc/issues/2), microSCHC only support `bytes`.
 
 The rationale is that supporting types other than bytes requires keeping track of the encoding/decoding of the type, i.e. how to translate from/to bytes, during the compression of the headers. This obviously yields an increased complexity of the parser code, with no obvious benefit (none identified yet) to the compression process.
 
-The case for supporting the `int` type is not definitive. While it seems practical to support it, e.g. for describing Matching rules such `IPv6.VERSION == 6`, it limits the Matching Operators (MOs) and Compression-Decompression Actions that can be applied to those fields. Indeed, the `MSB(x)/LSB` MO and CDA cannot be applied to such a representation unless, of course, the field is reverted to `bytes`.
+The case for supporting the `int` type is not definitively closed. While it seems practical to support it, e.g. for describing Matching rules such `IPv6.VERSION == 6`, it limits the Matching Operators (MOs) and Compression-Decompression Actions that can be applied to those fields. Indeed, the `MSB(x)/LSB` MO and CDA cannot be applied to such a representation unless, of course, the field is reverted to `bytes`.
+
+At first, prior to commit #47803bd96db8f5ac8d9b92cd6144aeb0223b1cc4, "integer" fields, such as lengths, versions, where decoded and exposed as integers. I later decided to resort to `bytes` only to test and see if any benefit of integer is revealed in the process of avoid them.
 
 ### 1.2 Parsing and not interpretation
 
