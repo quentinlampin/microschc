@@ -18,7 +18,7 @@ from copy import copy
 from typing import Dict, List
 from microschc.matching.operators import equal, ignore, match_mapping, most_significant_bits
 
-from microschc.rfc8724 import DirectionIndicator, FieldDescriptor, MatchMapping, Pattern, MatchingOperator, PacketDescriptor, RuleDescriptor, RuleFieldDescriptor, TargetValue, Value
+from microschc.rfc8724 import DirectionIndicator, FieldDescriptor, MatchMapping, Pattern, MatchingOperator, PacketDescriptor, RuleDescriptor, RuleFieldDescriptor, TargetValue
 
 
 class Ruler:
@@ -77,7 +77,6 @@ def _field_match(packet_field: FieldDescriptor, rule_field: RuleFieldDescriptor)
         return ignore(packet_field) and packet_field.length == rule_field.length
 
     elif rule_field.matching_operator == MatchingOperator.EQUAL:
-        assert isinstance(rule_field.target_value, Value)
         return packet_field.length == rule_field.length and equal(packet_field, rule_field.target_value)
 
     elif rule_field.matching_operator == MatchingOperator.MSB:
