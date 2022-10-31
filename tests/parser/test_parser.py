@@ -11,31 +11,31 @@ def test_parser_ipv6_udp_coap():
     The packet is made of:
 
     - an IPv6 header with following fields:
-        - id='Version'              length=4    position=0  value=6
-        - id='Traffic Class'        length=8    position=0  value=0
+        - id='Version'              length=4    position=0  value=b'\x06'
+        - id='Traffic Class'        length=8    position=0  value=b'\x00'
         - id='Flow Label'           length=20   position=0  value=b'\x00\xef\x2d'
-        - id='Payload Length'       length=16   position=0  value=104
-        - id='Next Header'          length=8    position=0  value=17
-        - id='Hop Limit'            length=8    position=0  value=64
+        - id='Payload Length'       length=16   position=0  value=b'\x00\x68'
+        - id='Next Header'          length=8    position=0  value=b'\x11'
+        - id='Hop Limit'            length=8    position=0  value=b'\x40'
         - id='Source Address'       length=128  position=0  value=b"\x20\x01\x0d\xb8\x00\x0a\x00\x00\x00\x00\x00\x00\x00\x00\x00\x02"
         - id='Destination Address'  length=128  position=0  value=b"\x20\x01\x0d\xb8\x00\x0a\x00\x00\x00\x00\x00\x00\x00\x00\x00\x20"
 
     - a UDP header with following fields:
-        - id='Source Port'          length=16    position=0  value=53504
-        - id='Destination Port'     length=16    position=0  value=5683
-        - id='Length'               length=16    position=0  value=104
+        - id='Source Port'          length=16    position=0  value=b'\xd1\x00'
+        - id='Destination Port'     length=16    position=0  value=b'\x16\x33'
+        - id='Length'               length=16    position=0  value=b'\x68'
         - id='Checksum'             length=16    position=0  value=b'\x5c\x21'
 
     - a CoAP header with following fields:
-        - id='Version'                length=2    position=0  value=1
-        - id='Type'                   length=2    position=0  value=2
-        - id='Token Length'           length=4    position=0  value=8
-        - id='Code'                   length=8    position=0  value=69
-        - id='message ID'             length=16   position=0  value=8950
+        - id='Version'                length=2    position=0  value=b'\x01'
+        - id='Type'                   length=2    position=0  value=b'\x02'
+        - id='Token Length'           length=4    position=0  value=b'\x08'
+        - id='Code'                   length=8    position=0  value=b'\x45'
+        - id='message ID'             length=16   position=0  value=b\x22\xf6'
         - id='Token'                  length=32   position=0  value=b"\xb8\x30\x0e\xfe\xe6\x62\x91\x22"
 
-        - id='Option Delta'           length=4    position=0  value=12
-        - id='Option Length'          length=4    position=0  value=1
+        - id='Option Delta'           length=4    position=0  value=b'\x0c'
+        - id='Option Length'          length=4    position=0  value=b'\x01'
         - id='Option Value'           length=16   position=0  value=b'\x6e'
         - id='Payload Marker'         length=8    position=0  value=b'\xff'
     - a Payload:
@@ -70,47 +70,47 @@ def test_parser_ipv6_udp_coap():
     payload: HeaderDescriptor = packet_descriptor.headers[3]
 
     assert ipv6_header.fields[0].id == IPv6Fields.VERSION
-    assert ipv6_header.fields[0].value == 6
+    assert ipv6_header.fields[0].value == b'\x06'
     assert ipv6_header.fields[1].id == IPv6Fields.TRAFFIC_CLASS
-    assert ipv6_header.fields[1].value == 0
+    assert ipv6_header.fields[1].value == b'\x00'
     assert ipv6_header.fields[2].id == IPv6Fields.FLOW_LABEL
     assert ipv6_header.fields[2].value == b'\x00\xef\x2d'
     assert ipv6_header.fields[3].id == IPv6Fields.PAYLOAD_LENGTH
-    assert ipv6_header.fields[3].value == 104
+    assert ipv6_header.fields[3].value == b'\x00\x68'
     assert ipv6_header.fields[4].id == IPv6Fields.NEXT_HEADER
-    assert ipv6_header.fields[4].value == 17
+    assert ipv6_header.fields[4].value == b'\x11'
     assert ipv6_header.fields[5].id == IPv6Fields.HOP_LIMIT
-    assert ipv6_header.fields[5].value == 64
+    assert ipv6_header.fields[5].value == b'\x40'
     assert ipv6_header.fields[6].id == IPv6Fields.SRC_ADDRESS
     assert ipv6_header.fields[6].value == b"\x20\x01\x0d\xb8\x00\x0a\x00\x00\x00\x00\x00\x00\x00\x00\x00\x02"
     assert ipv6_header.fields[7].id == IPv6Fields.DST_ADDRESS
     assert ipv6_header.fields[7].value == b"\x20\x01\x0d\xb8\x00\x0a\x00\x00\x00\x00\x00\x00\x00\x00\x00\x20"
 
     assert udp_header.fields[0].id == UDPFields.SOURCE_PORT
-    assert udp_header.fields[0].value == 53504
+    assert udp_header.fields[0].value == b'\xd1\x00'
     assert udp_header.fields[1].id == UDPFields.DESTINATION_PORT
-    assert udp_header.fields[1].value == 5683
+    assert udp_header.fields[1].value == b'\x16\x33'
     assert udp_header.fields[2].id == UDPFields.LENGTH
-    assert udp_header.fields[2].value == 104
+    assert udp_header.fields[2].value == b'\x00\x68'
     assert udp_header.fields[3].id == UDPFields.CHECKSUM
     assert udp_header.fields[3].value == b'\x5c\x21'
 
     assert coap_header.fields[0].id == CoAPHeaderFields.VERSION
-    assert coap_header.fields[0].value == 1
+    assert coap_header.fields[0].value == b'\x01'
     assert coap_header.fields[1].id == CoAPHeaderFields.TYPE
-    assert coap_header.fields[1].value == 2
+    assert coap_header.fields[1].value == b'\x02'
     assert coap_header.fields[2].id == CoAPHeaderFields.TOKEN_LENGTH
-    assert coap_header.fields[2].value == 8
+    assert coap_header.fields[2].value == b'\x08'
     assert coap_header.fields[3].id == CoAPHeaderFields.CODE 
-    assert coap_header.fields[3].value == 69
+    assert coap_header.fields[3].value == b'\x45'
     assert coap_header.fields[4].id == CoAPHeaderFields.MESSAGE_ID 
-    assert coap_header.fields[4].value == 8950
+    assert coap_header.fields[4].value == b'\x22\xf6'
     assert coap_header.fields[5].id == CoAPHeaderFields.TOKEN 
     assert coap_header.fields[5].value == b"\xb8\x30\x0e\xfe\xe6\x62\x91\x22"
     assert coap_header.fields[6].id == CoAPHeaderFields.OPTION_DELTA 
-    assert coap_header.fields[6].value == 12
+    assert coap_header.fields[6].value == b'\x0c'
     assert coap_header.fields[7].id == CoAPHeaderFields.OPTION_LENGTH 
-    assert coap_header.fields[7].value == 1
+    assert coap_header.fields[7].value == b'\x01'
     assert coap_header.fields[8].id == CoAPHeaderFields.OPTION_VALUE 
     assert coap_header.fields[8].value == b'\x6e'
     assert coap_header.fields[9].id == CoAPHeaderFields.PAYLOAD_MARKER 

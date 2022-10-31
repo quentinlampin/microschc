@@ -48,13 +48,13 @@ def test_ipv6_parser_parse():
     assert version_fd.id == IPv6Fields.VERSION
     assert version_fd.length == 4
     assert version_fd.position == 0
-    assert version_fd.value == 6
+    assert version_fd.value == b'\x06'
 
     traffic_class_fd:FieldDescriptor = ipv6_header_descriptor.fields[1]
     assert traffic_class_fd.id == IPv6Fields.TRAFFIC_CLASS
     assert traffic_class_fd.length == 8
     assert traffic_class_fd.position == 0
-    assert traffic_class_fd.value == 0
+    assert traffic_class_fd.value == b'\x00'
 
     flow_label_fd:FieldDescriptor = ipv6_header_descriptor.fields[2]
     assert flow_label_fd.id == IPv6Fields.FLOW_LABEL
@@ -66,19 +66,19 @@ def test_ipv6_parser_parse():
     assert payload_length_fd.id == IPv6Fields.PAYLOAD_LENGTH
     assert payload_length_fd.length == 16
     assert payload_length_fd.position == 0
-    assert payload_length_fd.value == 16
+    assert payload_length_fd.value == b'\x00\x10'
 
     next_header_fd:FieldDescriptor = ipv6_header_descriptor.fields[4]
     assert next_header_fd.id == IPv6Fields.NEXT_HEADER
     assert next_header_fd.length == 8
     assert next_header_fd.position == 0
-    assert next_header_fd.value == 17
+    assert next_header_fd.value == b'\x11'
 
     hop_limit_fd:FieldDescriptor = ipv6_header_descriptor.fields[5]
     assert hop_limit_fd.id == IPv6Fields.HOP_LIMIT
     assert hop_limit_fd.length == 8
     assert hop_limit_fd.position == 0
-    assert hop_limit_fd.value == 64
+    assert hop_limit_fd.value == b'\x40'
 
     source_address_fd:FieldDescriptor = ipv6_header_descriptor.fields[6]
     assert source_address_fd.id == IPv6Fields.SRC_ADDRESS
