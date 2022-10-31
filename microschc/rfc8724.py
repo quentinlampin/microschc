@@ -8,15 +8,14 @@ from enum import Enum
 from dataclasses import dataclass
 from typing import  Dict, List, Tuple, Union
 
-Value = Union[int, bytes]
 
 @dataclass
 class Pattern:
     pattern: bytes
     length: int
 
-ReverseMapping = Dict[int, Value]
-Mapping = Dict[Value, int]
+ReverseMapping = Dict[int, bytes]
+Mapping = Dict[bytes, int]
 
 
 class MatchMapping:
@@ -25,7 +24,7 @@ class MatchMapping:
         self.forward: Mapping = forward_mapping
         self.reverse: ReverseMapping = {v: k for k, v in self.forward.items()}
 
-TargetValue = Union[Value, Pattern, MatchMapping]
+TargetValue = Union[bytes, Pattern, MatchMapping]
 
 class DirectionIndicator(str, Enum):
     UP = 'Up'
@@ -51,7 +50,7 @@ class FieldDescriptor:
     id: str
     length: int
     position: int
-    value: Value
+    value: bytes
 
 
 @dataclass
