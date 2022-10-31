@@ -24,7 +24,7 @@ Compression Actions (CAs) as defined in section 7.4 of RFC 8724 [1], i.e.:
 """
 
 from math import ceil
-from microschc.rfc8724 import FieldDescriptor, FieldResidue, MatchMapping, Value
+from microschc.rfc8724 import FieldDescriptor, FieldResidue, MatchMapping
 
 
 def not_sent(_: FieldDescriptor) -> FieldResidue:
@@ -46,16 +46,13 @@ def value_sent(field_descriptor: FieldDescriptor) -> FieldResidue:
         at the SCHC compression residue step (see Section 7.2 of [1]), when all fields residues are computed.
 
     """
-    field_value: Value = field_descriptor.value
+    field_value: bytes = field_descriptor.value
     field_length: int = field_descriptor.length
 
-    if isinstance(field_value, int):
-        # convert to bytes
-        integer_bytes = ceil(field_length/8)
-        residue: bytes = field_value.to_bytes(integer_bytes, 'big')
+
         
-    else: # field value is of type bytes
-        residue: bytes = field_value
+    
+    residue: bytes = field_value
     
     field_residue: FieldResidue = FieldResidue(residue=residue, length=field_length)
     return field_residue
@@ -64,7 +61,7 @@ def mapping_sent(field_descriptor: FieldDescriptor, mapping: MatchMapping) -> Fi
     """
     `mapping-sent`: send the index in the mapping, at decompression the target value stored in the reverse mapping at the index is used.
     """
-    field_value: Value = field_descriptor.value
+    field_value: bytes = field_descriptor.value
     index: int = mapping.forward[field_value]
     residue_length: int = mapping.index_length
     residue_bytes: int = ceil(residue_length/8)
@@ -111,10 +108,8 @@ def least_significant_bits(field_descriptor: FieldDescriptor, match_pattern_leng
     and the byte-padded residue is :  0 0 0 0 1 1 1 0
 
     """
-    field_value: Value = field_descriptor.value
+    field_value: bytes = field_descriptor.value
     field_length: int = field_descriptor.length
-
-    assert isinstance(field_value, bytes)
 
     # assume pattern is matched, we rerieve the residue_length last bits.
     residue: bytes = b''
