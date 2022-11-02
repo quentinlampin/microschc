@@ -18,14 +18,14 @@ from microschc.rfc8724 import FieldDescriptor, HeaderDescriptor
 IPv6_HEADER_ID = 'IPv6'
 
 class IPv6Fields(str, Enum):
-    VERSION         = 'Version'
-    TRAFFIC_CLASS   = 'Traffic Class'
-    FLOW_LABEL      = 'Flow Label'
-    PAYLOAD_LENGTH  = 'Payload Length'
-    NEXT_HEADER     = 'Next Header'
-    HOP_LIMIT       = 'Hop Limit'
-    SRC_ADDRESS     = 'Source Address'
-    DST_ADDRESS     = 'Destination Address'
+    VERSION         = f'{IPv6_HEADER_ID}:Version'
+    TRAFFIC_CLASS   = f'{IPv6_HEADER_ID}:Traffic Class'
+    FLOW_LABEL      = f'{IPv6_HEADER_ID}:Flow Label'
+    PAYLOAD_LENGTH  = f'{IPv6_HEADER_ID}:Payload Length'
+    NEXT_HEADER     = f'{IPv6_HEADER_ID}:Next Header'
+    HOP_LIMIT       = f'{IPv6_HEADER_ID}:Hop Limit'
+    SRC_ADDRESS     = f'{IPv6_HEADER_ID}:Source Address'
+    DST_ADDRESS     = f'{IPv6_HEADER_ID}:Destination Address'
 
 
 class IPv6Parser(HeaderParser):
