@@ -35,7 +35,7 @@ class Ruler:
         packet_fields: List[FieldDescriptor] = []
         
         for header_descriptor in packet_descriptor.headers:
-            header_fields: List[FieldDescriptor] = [FieldDescriptor(id=f'{header_descriptor.id}:{f.id}', length=f.length, position=f.position, value=f.value )  for f in header_descriptor.fields]
+            header_fields: List[FieldDescriptor] = [FieldDescriptor(id=f.id, length=f.length, position=f.position, value=f.value )  for f in header_descriptor.fields]
             packet_fields += header_fields
 
         packet_direction: DirectionIndicator = packet_descriptor.direction
@@ -74,7 +74,7 @@ def _field_match(packet_field: FieldDescriptor, rule_field: RuleFieldDescriptor)
         return False
     # check with the Matching Operator (MO) of the rule field
     if rule_field.matching_operator == MatchingOperator.IGNORE:
-        return ignore(packet_field) and packet_field.length == rule_field.length
+        return ignore(packet_field)
 
     elif rule_field.matching_operator == MatchingOperator.EQUAL:
         return packet_field.length == rule_field.length and equal(packet_field, rule_field.target_value)
