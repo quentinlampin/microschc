@@ -1,4 +1,4 @@
-from microschc.parser.protocol.coap import CoAPHeaderFields, CoAPParser
+from microschc.parser.protocol.coap import CoAPFields, CoAPParser
 from microschc.rfc8724 import FieldDescriptor, HeaderDescriptor
 
 def test_coap_parser_import():
@@ -78,37 +78,37 @@ def test_coap_parser_parse():
 
     # assert field descriptors match CoAP header content
     version_fd:FieldDescriptor = coap_header_descriptor.fields[0]
-    assert version_fd.id == CoAPHeaderFields.VERSION
+    assert version_fd.id == CoAPFields.VERSION
     assert version_fd.length == 2
     assert version_fd.position == 0
     assert version_fd.value == b'\x01'
 
     type_fd:FieldDescriptor = coap_header_descriptor.fields[1]
-    assert type_fd.id == CoAPHeaderFields.TYPE
+    assert type_fd.id == CoAPFields.TYPE
     assert type_fd.length == 2
     assert type_fd.position == 0
     assert type_fd.value == b'\x00'
 
     token_length_fd:FieldDescriptor = coap_header_descriptor.fields[2]
-    assert token_length_fd.id == CoAPHeaderFields.TOKEN_LENGTH
+    assert token_length_fd.id == CoAPFields.TOKEN_LENGTH
     assert token_length_fd.length == 4
     assert token_length_fd.position == 0
     assert token_length_fd.value == b'\x08'
 
     code_fd:FieldDescriptor = coap_header_descriptor.fields[3]
-    assert code_fd.id == CoAPHeaderFields.CODE
+    assert code_fd.id == CoAPFields.CODE
     assert code_fd.length == 8
     assert code_fd.position == 0
     assert code_fd.value == b'\x02'
 
     message_id_fd:FieldDescriptor = coap_header_descriptor.fields[4]
-    assert message_id_fd.id == CoAPHeaderFields.MESSAGE_ID
+    assert message_id_fd.id == CoAPFields.MESSAGE_ID
     assert message_id_fd.length == 16
     assert message_id_fd.position == 0
     assert message_id_fd.value == b'\x84\x99'
 
     token_fd:FieldDescriptor = coap_header_descriptor.fields[5]
-    assert token_fd.id == CoAPHeaderFields.TOKEN
+    assert token_fd.id == CoAPFields.TOKEN
     assert token_fd.length == 64
     assert token_fd.position == 0
     assert token_fd.value == b'\x74\xcd\xe8\xcb\x4e\x8c\x0d\xb7'

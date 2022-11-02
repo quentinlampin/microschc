@@ -1,6 +1,6 @@
 from microschc.parser.factory import factory
 from microschc.parser.parser import PacketParser
-from microschc.parser.protocol.coap import CoAPHeaderFields
+from microschc.parser.protocol.coap import CoAPFields
 from microschc.parser.protocol.ipv6 import IPv6Fields
 from microschc.parser.protocol.udp import UDPFields
 from microschc.rfc8724 import DirectionIndicator, HeaderDescriptor, PacketDescriptor
@@ -95,25 +95,25 @@ def test_parser_ipv6_udp_coap():
     assert udp_header.fields[3].id == UDPFields.CHECKSUM
     assert udp_header.fields[3].value == b'\x5c\x21'
 
-    assert coap_header.fields[0].id == CoAPHeaderFields.VERSION
+    assert coap_header.fields[0].id == CoAPFields.VERSION
     assert coap_header.fields[0].value == b'\x01'
-    assert coap_header.fields[1].id == CoAPHeaderFields.TYPE
+    assert coap_header.fields[1].id == CoAPFields.TYPE
     assert coap_header.fields[1].value == b'\x02'
-    assert coap_header.fields[2].id == CoAPHeaderFields.TOKEN_LENGTH
+    assert coap_header.fields[2].id == CoAPFields.TOKEN_LENGTH
     assert coap_header.fields[2].value == b'\x08'
-    assert coap_header.fields[3].id == CoAPHeaderFields.CODE 
+    assert coap_header.fields[3].id == CoAPFields.CODE 
     assert coap_header.fields[3].value == b'\x45'
-    assert coap_header.fields[4].id == CoAPHeaderFields.MESSAGE_ID 
+    assert coap_header.fields[4].id == CoAPFields.MESSAGE_ID 
     assert coap_header.fields[4].value == b'\x22\xf6'
-    assert coap_header.fields[5].id == CoAPHeaderFields.TOKEN 
+    assert coap_header.fields[5].id == CoAPFields.TOKEN 
     assert coap_header.fields[5].value == b"\xb8\x30\x0e\xfe\xe6\x62\x91\x22"
-    assert coap_header.fields[6].id == CoAPHeaderFields.OPTION_DELTA 
+    assert coap_header.fields[6].id == CoAPFields.OPTION_DELTA 
     assert coap_header.fields[6].value == b'\x0c'
-    assert coap_header.fields[7].id == CoAPHeaderFields.OPTION_LENGTH 
+    assert coap_header.fields[7].id == CoAPFields.OPTION_LENGTH 
     assert coap_header.fields[7].value == b'\x01'
-    assert coap_header.fields[8].id == CoAPHeaderFields.OPTION_VALUE 
+    assert coap_header.fields[8].id == CoAPFields.OPTION_VALUE 
     assert coap_header.fields[8].value == b'\x6e'
-    assert coap_header.fields[9].id == CoAPHeaderFields.PAYLOAD_MARKER 
+    assert coap_header.fields[9].id == CoAPFields.PAYLOAD_MARKER 
     assert coap_header.fields[9].value == b'\xff'
 
     assert payload.fields[0].id == ParserDefinitions.PAYLOAD
