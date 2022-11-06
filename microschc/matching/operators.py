@@ -101,5 +101,5 @@ def match_mapping(field_descriptor: FieldDescriptor, target_values: MatchMapping
     `match_mapping` matching operator:
     the match result is True if the field value is in the values of the target values
     """
-
+    # TODO zero-padding, alignment issue?
     return (field_descriptor.value in target_values.forward.keys())
