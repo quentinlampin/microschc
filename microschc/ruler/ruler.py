@@ -14,8 +14,7 @@ the order of decompressed fields at the recompression is unambiguous.
 [1] "RFC 8724 SCHC: Generic Framework for Static Context Header Compression and Fragmentation" , A. Minaburo et al.
 """
 
-from copy import copy
-from typing import Dict, List
+from typing import List
 from microschc.matching.operators import equal, ignore, match_mapping, most_significant_bits
 
 from microschc.rfc8724 import DirectionIndicator, FieldDescriptor, MatchMapping, Pattern, MatchingOperator, PacketDescriptor, RuleDescriptor, RuleFieldDescriptor, TargetValue
@@ -24,11 +23,10 @@ from microschc.rfc8724 import DirectionIndicator, FieldDescriptor, MatchMapping,
 class Ruler:
 
     def __init__(self, rules_descriptors: List[RuleDescriptor]) -> None:
-        self.default_rule: RuleDescriptor = RuleDescriptor(id=len(rules_descriptors), field_descriptors=[])
         self.rules: List[RuleDescriptor] = rules_descriptors
 
 
-    def _match(self, packet_descriptor: PacketDescriptor) -> RuleDescriptor:
+    def match(self, packet_descriptor: PacketDescriptor) -> RuleDescriptor:
         """
         Find a rule matching the packet descriptor
         """
@@ -40,7 +38,7 @@ class Ruler:
 
         packet_direction: DirectionIndicator = packet_descriptor.direction
 
-        for rule in self.rules:
+        for rule in self.rules[0:-1]:
             
             # rules field descriptors and IDs that apply to packet direction
             rule_fields: List[RuleFieldDescriptor] = [f for f in filter(lambda f: f.direction in {packet_direction, DirectionIndicator.BIDIRECTIONAL}, rule.field_descriptors)]
@@ -51,13 +49,13 @@ class Ruler:
                 break
 
             # assert that the list of packet fields matches that of rule fields
-            if any(  _field_match(packet_field=pf, rule_field=rf) == False for (pf, rf) in zip(packet_fields, rule_fields)):
+            if any(_field_match(packet_field=pf, rule_field=rf) == False for (pf, rf) in zip(packet_fields, rule_fields)):
                 break
 
             # rule matches, return it
             return rule
         # if no rule matches, use the default
-        return self.default_rule
+        return self.rules[-1]
 
     def _compress(self, packet_descriptor: PacketDescriptor, rule: RuleDescriptor) -> bytes:
         schc_packet: bytes = b''
@@ -77,6 +75,7 @@ def _field_match(packet_field: FieldDescriptor, rule_field: RuleFieldDescriptor)
         return ignore(packet_field)
 
     elif rule_field.matching_operator == MatchingOperator.EQUAL:
+        assert isinstance(rule_field.target_value, bytes)
         return packet_field.length == rule_field.length and equal(packet_field, rule_field.target_value)
 
     elif rule_field.matching_operator == MatchingOperator.MSB:

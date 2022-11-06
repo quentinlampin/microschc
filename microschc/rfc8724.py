@@ -6,7 +6,7 @@ definitions from RFC 8724 [1] and corresponding data models.
 
 from enum import Enum
 from dataclasses import dataclass
-from typing import  Dict, List, Tuple, Union
+from typing import  Dict, List, Union
 
 
 @dataclass
@@ -64,6 +64,7 @@ class HeaderDescriptor:
 class PacketDescriptor:
     direction: DirectionIndicator
     headers: List[HeaderDescriptor]
+    payload: bytes
 
 
 @dataclass
@@ -83,5 +84,6 @@ class RuleFieldDescriptor:
 
 @dataclass
 class RuleDescriptor:
-    id: int
+    id: bytes
+    id_length: int
     field_descriptors: List[RuleFieldDescriptor]

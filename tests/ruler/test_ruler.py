@@ -1,11 +1,10 @@
-from turtle import position
 from typing import List
 from microschc.parser.factory import factory
 from microschc.parser.parser import PacketParser
 from microschc.parser.protocol.coap import CoAPFields
 from microschc.parser.protocol.ipv6 import IPv6Fields
 from microschc.parser.protocol.udp import UDPFields
-from microschc.rfc8724 import CompressionDecompressionAction, DirectionIndicator, FieldDescriptor, HeaderDescriptor, MatchMapping, MatchingOperator, PacketDescriptor, Pattern, RuleDescriptor, RuleFieldDescriptor
+from microschc.rfc8724 import CompressionDecompressionAction, DirectionIndicator, FieldDescriptor, MatchMapping, MatchingOperator, PacketDescriptor, Pattern, RuleDescriptor, RuleFieldDescriptor
 from microschc.rfc8724 import CompressionDecompressionAction as CDA
 from microschc.rfc8724 import MatchingOperator as MO
 from microschc.rfc8724extras import ParserDefinitions, StacksImplementation
@@ -23,7 +22,7 @@ def test_ruler_field_match():
         direction=DirectionIndicator.UP,
         target_value=b'',
         matching_operator=MatchingOperator.IGNORE,
-        compression_decompression_action=CompressionDecompressionAction.NOT_SENT
+        compression_decompression_action=CDA.NOT_SENT
     )
     assert _field_match(packet_field=packet_field, rule_field=rule_field_ignore) == True
 
@@ -35,7 +34,7 @@ def test_ruler_field_match():
         direction=DirectionIndicator.UP,
         target_value=b'\xff\xff',
         matching_operator=MatchingOperator.EQUAL,
-        compression_decompression_action=CompressionDecompressionAction.NOT_SENT
+        compression_decompression_action=CDA.NOT_SENT
     )
     assert _field_match(packet_field=packet_field, rule_field=rule_field_equal) == True
 
@@ -49,7 +48,7 @@ def test_ruler_field_match():
         direction=DirectionIndicator.UP,
         target_value=b'\7f\xff',
         matching_operator=MatchingOperator.EQUAL,
-        compression_decompression_action=CompressionDecompressionAction.NOT_SENT
+        compression_decompression_action=CDA.NOT_SENT
     )
     assert _field_match(packet_field=packet_field, rule_field=rule_field_equal) == False
 
@@ -125,11 +124,10 @@ def test_rule_match():
         RuleFieldDescriptor(id=CoAPFields.OPTION_VALUE, length=0, position=0, direction=DirectionIndicator.UP,
             target_value=b'', matching_operator=MO.IGNORE, compression_decompression_action=CDA.VALUE_SENT),
         RuleFieldDescriptor(id=CoAPFields.PAYLOAD_MARKER, length=8, position=0, direction=DirectionIndicator.UP,
-            target_value=b'\xff', matching_operator=MO.EQUAL, compression_decompression_action=CDA.NOT_SENT),
-        RuleFieldDescriptor(id=ParserDefinitions.PAYLOAD, length=0, position=0, direction=DirectionIndicator.UP,
-            target_value=b'', matching_operator=MO.IGNORE, compression_decompression_action=CDA.VALUE_SENT)
+            target_value=b'\xff', matching_operator=MO.EQUAL, compression_decompression_action=CDA.NOT_SENT)
     ]
-    rule_descriptor_1: RuleDescriptor = RuleDescriptor(id=0, field_descriptors=field_descriptors_1)
-    ruler: Ruler = Ruler(rules_descriptors=[rule_descriptor_1])
+    rule_descriptor_1: RuleDescriptor = RuleDescriptor(id=b'\x00', id_length=2, field_descriptors=field_descriptors_1)
+    default_rule_descriptor: RuleDescriptor = RuleDescriptor(id=b'\x01', id_length=2, field_descriptors=[])
+    ruler: Ruler = Ruler(rules_descriptors=[rule_descriptor_1, default_rule_descriptor])
 
-    assert ruler._match(packet_descriptor=packet_descriptor).id == rule_descriptor_1.id
+    assert ruler.match(packet_descriptor=packet_descriptor).id == rule_descriptor_1.id
