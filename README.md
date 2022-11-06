@@ -46,11 +46,14 @@ Current features:
       - [ ] AppIID
       - [ ] compute-* (e.g. UDP-checksum)
 4. Rules
-   - [ ] rule data model
-   - [ ] rule matching algorithm
-   - [ ] rule compression actions
-   - [ ] rule decompression actions
+   - [x] rule data model
+   - [x] rule matching algorithm
    - [ ] YANG model interpreter
+5. Compression
+   - [x] field (left-)packet
+   - [x] field residues concatenation
+   - [x] length of variable length field encoding
+   - [x] packet compression
 
 - [1] "RFC 8724 SCHC: Generic Framework for Static Context Header Compression and Fragmentation" , A. Minaburo et al.
 - [2] "RFC 8200 Internet Protocol, Version 6 (IPv6) Specification, S. Deering et al."

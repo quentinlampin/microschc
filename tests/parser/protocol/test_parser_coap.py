@@ -1,4 +1,4 @@
-from microschc.parser.protocol.coap import CoAPHeaderFields, CoAPParser
+from microschc.parser.protocol.coap import CoAPFields, CoAPParser
 from microschc.rfc8724 import FieldDescriptor, HeaderDescriptor
 
 def test_coap_parser_import():
@@ -12,45 +12,45 @@ def test_coap_parser_parse():
     """test: CoAP header parser parses CoAP packet
 
     The packet is made of a CoAP header with following fields:
-        - id='Version'                length=2    position=0  value=1
-        - id='Type'                   length=2    position=0  value=0
-        - id='Token Length'           length=4    position=0  value=8
-        - id='Code'                   length=8    position=0  value=2
-        - id='message ID'             length=16   position=0  value=33945
+        - id='Version'                length=2    position=0  value=b'\x01'
+        - id='Type'                   length=2    position=0  value=b'\x00'
+        - id='Token Length'           length=4    position=0  value=b'\x08'
+        - id='Code'                   length=8    position=0  value=b'\x02'
+        - id='message ID'             length=16   position=0  value=b'\x84\x99'
         - id='Token'                  length=32   position=0  value=b'\x74\xcd\xe8\xcb\x4e\x8c\x0d\xb7'
 
-        - id='Option Delta'           length=4    position=0  value=11
-        - id='Option Length'          length=4    position=0  value=2
+        - id='Option Delta'           length=4    position=0  value=b'\x0B'
+        - id='Option Length'          length=4    position=0  value=b'\x02'
         - id='Option Value'           length=16   position=0  value=b'\x72\x64'
 
-        - id='Option Delta'           length=4    position=1  value=1
-        - id='Option Length'          length=4    position=1  value=1
+        - id='Option Delta'           length=4    position=1  value=b'\x01'
+        - id='Option Length'          length=4    position=1  value=b'\x01'
         - id='Option Value'           length=8    position=1  value=b'\x28'
 
-        - id='Option Delta'           length=4    position=2  value=3
-        - id='Option Length'          length=4    position=2  value=3
+        - id='Option Delta'           length=4    position=2  value=b'\x03'
+        - id='Option Length'          length=4    position=2  value=b'\x03'
         - id='Option Value'           length=24   position=2  value=b'\x62\x3d\x55'
 
-        - id='Option Delta'           length=4    position=3  value=0
-        - id='Option Length'          length=4    position=3  value=9
+        - id='Option Delta'           length=4    position=3  value=b'\x00'
+        - id='Option Length'          length=4    position=3  value=b'\x09'
         - id='Option Value'           length=72   position=3  value=b'\x6c\x77\x6d\x32\x6d\x3d\x31\x2e\x31'
 
-        - id='Option Delta'           length=4    position=4  value=0
-        - id='Option Length'          length=4    position=4  value=6
+        - id='Option Delta'           length=4    position=4  value=b'\x00'
+        - id='Option Length'          length=4    position=4  value=b'\x06'
         - id='Option Value'           length=48   position=4  value=b'\x6c\x74\x3d\x33\x30\x30'
 
-        - id='Option Delta'           length=4    position=5  value=0
-        - id='Option Length'          length=4    position=5  value=13
-        - id='Option Length Extended' length=8    position=0  value=2
+        - id='Option Delta'           length=4    position=5  value=b'\x00'
+        - id='Option Length'          length=4    position=5  value=b'\x0d'
+        - id='Option Length Extended' length=8    position=0  value=b'\x02'
         - id='Option Value'           length=120  position=5  value=b'\x65\x70\x3d\x38\x35\x62\x61\x39\x62\x64\x61\x63\x30\x62\x65'
         
-        - id='Option Delta'           length=4    position=6  value=12
-        - id='Option Length'          length=4    position=6  value=1
+        - id='Option Delta'           length=4    position=6  value=b'\x0c'
+        - id='Option Length'          length=4    position=6  value=b'\x01'
         - id='Option Value'           length=8    position=6  value=b'\x0d'
 
-        - id='Option Delta'           length=4    position=7  value=13
-        - id='Option Length'          length=4    position=7  value=2
-        - id='Option Delta Extended'  length=8    position=0  value=20
+        - id='Option Delta'           length=4    position=7  value=b'\x0d'
+        - id='Option Length'          length=4    position=7  value=b'\x02'
+        - id='Option Delta Extended'  length=8    position=0  value=b'\x14'
         - id='Option Value'           length=8    position=7  value=b'\x07\x2b'
 
         - id='Payload Marker'          length=8    position=0  value=b'\xff'
@@ -78,37 +78,37 @@ def test_coap_parser_parse():
 
     # assert field descriptors match CoAP header content
     version_fd:FieldDescriptor = coap_header_descriptor.fields[0]
-    assert version_fd.id == CoAPHeaderFields.VERSION
+    assert version_fd.id == CoAPFields.VERSION
     assert version_fd.length == 2
     assert version_fd.position == 0
-    assert version_fd.value == 1
+    assert version_fd.value == b'\x01'
 
     type_fd:FieldDescriptor = coap_header_descriptor.fields[1]
-    assert type_fd.id == CoAPHeaderFields.TYPE
+    assert type_fd.id == CoAPFields.TYPE
     assert type_fd.length == 2
     assert type_fd.position == 0
-    assert type_fd.value == 0
+    assert type_fd.value == b'\x00'
 
     token_length_fd:FieldDescriptor = coap_header_descriptor.fields[2]
-    assert token_length_fd.id == CoAPHeaderFields.TOKEN_LENGTH
+    assert token_length_fd.id == CoAPFields.TOKEN_LENGTH
     assert token_length_fd.length == 4
     assert token_length_fd.position == 0
-    assert token_length_fd.value == 8
+    assert token_length_fd.value == b'\x08'
 
     code_fd:FieldDescriptor = coap_header_descriptor.fields[3]
-    assert code_fd.id == CoAPHeaderFields.CODE
+    assert code_fd.id == CoAPFields.CODE
     assert code_fd.length == 8
     assert code_fd.position == 0
-    assert code_fd.value == 2
+    assert code_fd.value == b'\x02'
 
     message_id_fd:FieldDescriptor = coap_header_descriptor.fields[4]
-    assert message_id_fd.id == CoAPHeaderFields.MESSAGE_ID
+    assert message_id_fd.id == CoAPFields.MESSAGE_ID
     assert message_id_fd.length == 16
     assert message_id_fd.position == 0
-    assert message_id_fd.value == 33945
+    assert message_id_fd.value == b'\x84\x99'
 
     token_fd:FieldDescriptor = coap_header_descriptor.fields[5]
-    assert token_fd.id == CoAPHeaderFields.TOKEN
+    assert token_fd.id == CoAPFields.TOKEN
     assert token_fd.length == 64
     assert token_fd.position == 0
     assert token_fd.value == b'\x74\xcd\xe8\xcb\x4e\x8c\x0d\xb7'

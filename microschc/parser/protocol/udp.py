@@ -14,10 +14,10 @@ from microschc.rfc8724 import FieldDescriptor, HeaderDescriptor
 UDP_HEADER_ID = 'UDP'
 
 class UDPFields(str, Enum):
-    SOURCE_PORT         = 'Source Port'
-    DESTINATION_PORT    = 'Destination Port'
-    LENGTH              = 'Length'
-    CHECKSUM            = 'Checksum'
+    SOURCE_PORT         = f'{UDP_HEADER_ID}:Source Port'
+    DESTINATION_PORT    = f'{UDP_HEADER_ID}:Destination Port'
+    LENGTH              = f'{UDP_HEADER_ID}:Length'
+    CHECKSUM            = f'{UDP_HEADER_ID}:Checksum'
 
 
 class UDPParser(HeaderParser):
@@ -42,13 +42,13 @@ class UDPParser(HeaderParser):
         header_bytes:bytes = buffer[0:8]
 
         # source port: 16 bits
-        source_port:int = ( header_bytes[0] << 8 ) | ( header_bytes[1] )
+        source_port:bytes = header_bytes[0:2]
 
         # destination port: 16 bits
-        destination_port:int = ( header_bytes[2] << 8 ) | ( header_bytes[3] )
+        destination_port:bytes = header_bytes[2:4]
 
         # length
-        length:int = ( header_bytes[4] << 8 ) | ( header_bytes[5] )
+        length:bytes = header_bytes[4:6]
 
         # checksum
         checksum:bytes = header_bytes[6:8]

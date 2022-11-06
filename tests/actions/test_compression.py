@@ -23,13 +23,6 @@ def test_value_sent():
     """test: `value-sent` compression action
     Test that residue is identical the the field descriptor value
     """
-    
-    # test on integer values
-    integer_value = 13
-    integer_field: FieldDescriptor = FieldDescriptor(id=SOME_ID, length=16, position=0, value=integer_value)
-    field_residue: FieldResidue = value_sent(field_descriptor=integer_field)
-    assert int.from_bytes(field_residue.residue, 'big') == integer_value
-    assert field_residue.length == integer_field.length
 
     # test on bytes value
     bytes_value = b'\x13\xff'
@@ -43,17 +36,6 @@ def test_mapping_sent():
     Test that residue is equal to the value stored in the forward mapping at the key of the field value
     """
     
-    # test on integer values
-    integer_value = 13
-    integer_forward_mapping: Mapping = {13: 1, 14:2}
-    index_length: int = 2
-
-    integer_match_mapping : MatchMapping = MatchMapping(index_length=index_length, forward_mapping=integer_forward_mapping)
-    integer_field: FieldDescriptor = FieldDescriptor(id=SOME_ID, length=16, position=0, value=integer_value)
-    field_residue: FieldResidue = mapping_sent(field_descriptor=integer_field, mapping=integer_match_mapping)
-    assert int.from_bytes(field_residue.residue, 'big') == integer_forward_mapping[integer_value]
-    assert field_residue.length == index_length
-
     # test on bytes value
     bytes_value = b'\x13\xff'
     bytes_forward_mapping: Mapping = {b'\xff': 1, b'\x13\xff':2}

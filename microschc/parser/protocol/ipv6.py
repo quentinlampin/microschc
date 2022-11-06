@@ -18,14 +18,14 @@ from microschc.rfc8724 import FieldDescriptor, HeaderDescriptor
 IPv6_HEADER_ID = 'IPv6'
 
 class IPv6Fields(str, Enum):
-    VERSION         = 'Version'
-    TRAFFIC_CLASS   = 'Traffic Class'
-    FLOW_LABEL      = 'Flow Label'
-    PAYLOAD_LENGTH  = 'Payload Length'
-    NEXT_HEADER     = 'Next Header'
-    HOP_LIMIT       = 'Hop Limit'
-    SRC_ADDRESS     = 'Source Address'
-    DST_ADDRESS     = 'Destination Address'
+    VERSION         = f'{IPv6_HEADER_ID}:Version'
+    TRAFFIC_CLASS   = f'{IPv6_HEADER_ID}:Traffic Class'
+    FLOW_LABEL      = f'{IPv6_HEADER_ID}:Flow Label'
+    PAYLOAD_LENGTH  = f'{IPv6_HEADER_ID}:Payload Length'
+    NEXT_HEADER     = f'{IPv6_HEADER_ID}:Next Header'
+    HOP_LIMIT       = f'{IPv6_HEADER_ID}:Hop Limit'
+    SRC_ADDRESS     = f'{IPv6_HEADER_ID}:Source Address'
+    DST_ADDRESS     = f'{IPv6_HEADER_ID}:Destination Address'
 
 
 class IPv6Parser(HeaderParser):
@@ -60,17 +60,17 @@ class IPv6Parser(HeaderParser):
         header_bytes:bytes = buffer[0:40]
 
         # version: 4 bits
-        version:int = (header_bytes[0] & 0xf0) >> 4
+        version:bytes = ((header_bytes[0] & 0xf0) >> 4).to_bytes(1, 'big')
         # traffic_class: 8 bits
-        traffic_class:int = ( (header_bytes[0] & 0x0f) << 4 ) | ( (header_bytes[1] & 0xf0) >> 4 )
+        traffic_class:bytes = (( (header_bytes[0] & 0x0f) << 4 ) | ( (header_bytes[1] & 0xf0) >> 4 )).to_bytes(1, 'big')
         # flow label: 20 bits
         flow_label:bytes = ((header_bytes[1] & 0xf0) >> 4).to_bytes(1, 'big') + header_bytes[2:4]
         # payload length: 16 bits
-        payload_length:int = (header_bytes[4] << 8) | (header_bytes[5])
+        payload_length:bytes = ((header_bytes[4] << 8) | (header_bytes[5])).to_bytes(2, 'big')
         # next header: 8 bits
-        next_header:int = (header_bytes[6])
+        next_header:bytes = (header_bytes[6]).to_bytes(1, 'big')
         # hop limit: 8 bits
-        hop_limit:int = ((header_bytes[7]))
+        hop_limit:bytes = ((header_bytes[7])).to_bytes(1, 'big')
         # source address: 128 bits (16 bytes)
         source_address:bytes = header_bytes[8:24]
         # destination address: 128 bits (16 bytes)

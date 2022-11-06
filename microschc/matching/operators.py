@@ -11,10 +11,10 @@ Matching Operators (MOs) as defined in section 7.3 of RFC 8724 [1], i.e.:
 [1] "RFC 8724 SCHC: Generic Framework for Static Context Header Compression and Fragmentation" , A. Minaburo et al.
 """
 
-from microschc.rfc8724 import FieldDescriptor, Mapping, MatchMapping, Value
+from microschc.rfc8724 import FieldDescriptor, Mapping, MatchMapping
 
 
-def equal(field_descriptor: FieldDescriptor, target_value: Value) -> bool:
+def equal(field_descriptor: FieldDescriptor, target_value: bytes) -> bool:
     """
     `equal` matching operator: 
     the match result is True if the field value in the packet matches the target value
@@ -59,7 +59,6 @@ def most_significant_bits(field_descriptor: FieldDescriptor, pattern: bytes, pat
                         |  0s |                                         | 
     """
 
-    assert isinstance(field_descriptor.value, bytes)
     field_value: bytes = field_descriptor.value
     field_length: int = field_descriptor.length
 
@@ -102,5 +101,5 @@ def match_mapping(field_descriptor: FieldDescriptor, target_values: MatchMapping
     `match_mapping` matching operator:
     the match result is True if the field value is in the values of the target values
     """
-
+    # TODO zero-padding, alignment issue?
     return (field_descriptor.value in target_values.forward.keys())

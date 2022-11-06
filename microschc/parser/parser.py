@@ -1,4 +1,3 @@
-from copy import copy
 from typing import List
 from microschc.rfc8724 import DirectionIndicator, FieldDescriptor, HeaderDescriptor, PacketDescriptor
 from microschc.rfc8724extras import ParserDefinitions
@@ -44,12 +43,8 @@ class PacketParser:
                 # TODO: circular shift on the buffer
                 pass
             buffer = buffer[bytes_consumed:]
-        if buffer != b'':
-            payload_field:FieldDescriptor = FieldDescriptor(id=ParserDefinitions.PAYLOAD, length=8*len(buffer), position=0, value=buffer)
-            payload_descriptor: HeaderDescriptor = HeaderDescriptor(id=ParserDefinitions.PAYLOAD, length=8*len(buffer), fields=[payload_field])
-            header_descriptors.append(payload_descriptor)
         
-        packet_descriptor: PacketDescriptor = PacketDescriptor(direction=direction, headers=header_descriptors)
+        packet_descriptor: PacketDescriptor = PacketDescriptor(direction=direction, headers=header_descriptors, payload=buffer)
         return packet_descriptor
 
 
