@@ -61,7 +61,7 @@ The Ruler is in charge of the rules and their application to packets, i.e.:
     - packet compression: compress packets according to matching rules.
     - packet decompression: decompress packets according to rules IDs.
 
-## 2.1 Rules order matters
+## 2.1 Rules field descriptors order matters
 
 The Ruler makes the assumption that rules' field descriptors are provided in the same order as in the target packet structure.
 For example, if the packet fields are, in order : [`field-1`, `field-2`, `field-3`, ...], it is supposed that rules field descriptors
@@ -74,6 +74,14 @@ it is mandated that field descriptors applying to a given packet, i.e. once the 
 
 The rationale is that unordered field descriptors eventually yield fields residues in a different order than that of the source packet. This means that the order is potentially
 lost at the reconstruction, leading to advert effects, including reconstructed packets different from the source packets.
+
+## 2.2 Default Compression/Decompression rule, implementation details
+
+microSCHC expects the default Compression/Decompression rule is provided last in the list of rules. The default rule list of fields descriptors is assumed empty and matches any packet not matched by any prior rule.
+
+## 2.3 Variable field length
+
+In microSCHC, a field of variable length is denoted with a 0 value of the FL attribute of the corresponding Field Descriptor.
 
 - [1] "Scapy, packet crafting for Python2 and Python3"
 - [2] "OpenSCHC: Open implementation, hackathon support, ... of the IETF SCHC protocol (compression for LPWANs), https://github.com/openschc"
