@@ -67,8 +67,6 @@ def test_parser_ipv6_udp_coap():
     udp_header: HeaderDescriptor = packet_descriptor.headers[1]
     coap_header: HeaderDescriptor = packet_descriptor.headers[2]
     
-    payload: HeaderDescriptor = packet_descriptor.headers[3]
-
     assert ipv6_header.fields[0].id == IPv6Fields.VERSION
     assert ipv6_header.fields[0].value == b'\x06'
     assert ipv6_header.fields[1].id == IPv6Fields.TRAFFIC_CLASS
@@ -116,11 +114,8 @@ def test_parser_ipv6_udp_coap():
     assert coap_header.fields[9].id == CoAPFields.PAYLOAD_MARKER 
     assert coap_header.fields[9].value == b'\xff'
 
-    assert payload.fields[0].id == ParserDefinitions.PAYLOAD
-    assert payload.fields[0].length == 648
-    assert payload.fields[0].position == 0
-    assert payload.fields[0].value == b"\x5b\x7b\x22\x62\x6e\x22\x3a\x22\x2f\x36\x2f\x22\x2c\x22\x6e\x22" \
-                                      b"\x3a\x22\x30\x2f\x30\x22\x2c\x22\x76\x22\x3a\x35\x34\x2e\x30\x7d" \
-                                      b"\x2c\x7b\x22\x6e\x22\x3a\x22\x30\x2f\x31\x22\x2c\x22\x76\x22\x3a" \
-                                      b"\x34\x38\x2e\x30\x7d\x2c\x7b\x22\x6e\x22\x3a\x22\x30\x2f\x35\x22" \
-                                      b"\x2c\x22\x76\x22\x3a\x31\x36\x36\x36\x32\x36\x33\x33\x33\x39\x7d\x5d"
+    assert packet_descriptor.payload == b"\x5b\x7b\x22\x62\x6e\x22\x3a\x22\x2f\x36\x2f\x22\x2c\x22\x6e\x22" \
+                                        b"\x3a\x22\x30\x2f\x30\x22\x2c\x22\x76\x22\x3a\x35\x34\x2e\x30\x7d" \
+                                        b"\x2c\x7b\x22\x6e\x22\x3a\x22\x30\x2f\x31\x22\x2c\x22\x76\x22\x3a" \
+                                        b"\x34\x38\x2e\x30\x7d\x2c\x7b\x22\x6e\x22\x3a\x22\x30\x2f\x35\x22" \
+                                        b"\x2c\x22\x76\x22\x3a\x31\x36\x36\x36\x32\x36\x33\x33\x33\x39\x7d\x5d"
