@@ -9,12 +9,6 @@ def test_equal():
     Test against different target values of different lengths
     """
     
-    # test on integer values
-    integer_target_value = 13
-    integer_field: FieldDescriptor = FieldDescriptor(id=SOME_ID, length=16, position=0, value=integer_target_value)
-    assert equal(integer_field, target_value=integer_target_value) == True
-    assert equal(integer_field, target_value=integer_target_value+1) == False
-
     # test on bytes values
     bytes_target_value = b'\x13\xff'
     other_bytes_value_of_same_length = b'\x14\xff'
