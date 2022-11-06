@@ -25,7 +25,6 @@ class Ruler:
     def __init__(self, rules_descriptors: List[RuleDescriptor]) -> None:
         self.rules: List[RuleDescriptor] = rules_descriptors
 
-
     def match(self, packet_descriptor: PacketDescriptor) -> RuleDescriptor:
         """
         Find a rule matching the packet descriptor
@@ -56,14 +55,6 @@ class Ruler:
             return rule
         # if no rule matches, use the default
         return self.rules[-1]
-
-    def _compress(self, packet_descriptor: PacketDescriptor, rule: RuleDescriptor) -> bytes:
-        schc_packet: bytes = b''
-
-        return schc_packet
-
-        
-        
 
 def _field_match(packet_field: FieldDescriptor, rule_field: RuleFieldDescriptor):
     # basic test: field IDs and length match
