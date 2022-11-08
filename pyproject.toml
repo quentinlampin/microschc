@@ -1,0 +1,46 @@
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[project]
+name = "microschc"
+authors = [
+  { name="Quentin Lampin", email="quentin.lampin@orange.com" },
+]
+description = "Implementation in microPython of SCHC as specified in RFC 8724"
+readme = "README.md"
+requires-python = ">=3.7"
+classifiers = [
+    "Programming Language :: Python :: 3",
+    "License :: OSI Approved :: MIT License",
+    "Operating System :: OS Independent",
+]
+dynamic = ["version"]
+
+[project.urls]
+"Homepage" = "https://github.com/quentinlampin/microschc/"
+"Bug Tracker" = "https://github.com/quentinlampin/microschc/issues"
+
+
+[tool.hatch.version]
+path = "microschc/__init__.py"
+
+[tool.hatch.build.targets.sdist]
+exclude = [
+  "/.github",
+  "/.pytest_cache",
+  "/.vscode",
+  "/tests/",
+  "/.gitignore",
+  "/CODE_OF_CONDUCT.md",
+  "/microschc-implementation.md"
+]
+
+[tool.hatch.build.targets.wheel]
+packages = ["microschc"]
+
+[tool.hatch.envs.test]
+dependencies = [
+  "pytest"
+]
+
