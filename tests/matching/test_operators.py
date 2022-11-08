@@ -24,7 +24,7 @@ def test_ignore():
     """test: ignore matching operator
     Test that matching operator always returns True
     """
-    any_field: FieldDescriptor = FieldDescriptor(id=SOME_ID, length=16, position=0, value=0)
+    any_field: FieldDescriptor = FieldDescriptor(id=SOME_ID, length=16, position=0, value=b'')
     assert ignore(any_field) == True
 
 def test_most_significant_bits():
@@ -85,18 +85,11 @@ def test_most_significant_bits():
 
 def test_match_mapping():
     """test: match-mapping operator
-    test the match-mapping operator on different value types
+    test the match-mapping operator on different values (matching and non-matching)
     
     """
 
-    integer_mapping: MatchMapping = MatchMapping(index_length=2, forward_mapping={14: 1, 21: 2, 34: 3})
     bytes_mapping: MatchMapping = MatchMapping(index_length=2, forward_mapping={b'\xff\x13':1 , b'\xff\xff\x00':2, b'\x00':3, b'\x0e':4})
-
-    # testing on integer type fields
-    matching_integer_field: FieldDescriptor = FieldDescriptor(id=SOME_ID, length=16, position=0, value=14)
-    assert match_mapping(matching_integer_field, target_values=integer_mapping) == True
-    non_matching_integer_field: FieldDescriptor = FieldDescriptor(id=SOME_ID, length=16, position=0, value=15)
-    assert match_mapping(non_matching_integer_field, target_values=integer_mapping) == False
 
     # testing on bytes fields
     matching_bytes_field: FieldDescriptor = FieldDescriptor(id=SOME_ID, length=16, position=0, value=b'\xff\x13')
@@ -104,8 +97,4 @@ def test_match_mapping():
     non_matching_bytes_field: FieldDescriptor = FieldDescriptor(id=SOME_ID, length=16, position=0, value=b'\xff\x15')
     assert match_mapping(non_matching_bytes_field, target_values=bytes_mapping) == False
 
-    # testing on fields of wrong type
-    integer_field: FieldDescriptor = FieldDescriptor(id=SOME_ID, length=16, position=0, value= 14)
-    assert match_mapping(integer_field, target_values=bytes_mapping) == False
-    
 

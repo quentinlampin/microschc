@@ -1,4 +1,4 @@
-# microschc
+# microSCHC
 
 ## In a nutshell
 
@@ -7,6 +7,24 @@ Implementation in microPython of SCHC as specified in RFC 8724 [1].
 ## License
 
 MIT License, Copyright (c) 2022 Orange, by Quentin Lampin
+
+## Installing microSCHC
+
+For now, microSCHC is to be built locally using `hatch` and installed using the wheel (.whl) file generated in the `dist/` folder.
+
+**build**:
+
+```bash
+hatch build -t wheel
+```
+
+**installation**:
+
+```bash
+pip install dist/microschc-<version>-py3-none-any.whl
+```
+
+
 
 ## microSCHC, developpement plan
 

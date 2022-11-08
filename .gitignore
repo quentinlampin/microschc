@@ -133,3 +133,6 @@ dmypy.json
 
 # visual studio code files
 .vscode
+
+# dist files
+dist/
