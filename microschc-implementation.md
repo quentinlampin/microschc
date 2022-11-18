@@ -53,15 +53,24 @@ structure of header fields represented here-after.
 
 The actual option requires parsing, and interpreting the `Option Delta`, `Option Length`, etc. Similarly to the types support discussion, this requires keeping track of the encoding and decoding of those interpretations into their bytes counterparts. Furthermore, how the compression residue should be computed based on the interpretation is a mystery to me (Quentin), unless simple compression actions are performed, e.g. `not-sent`. For this reason, microSCHC parser only exposes fields and their raw content (except for the integers odd case).
 
-## 2. The Ruler
+## 2. Ruler
 
 The Ruler is in charge of the rules and their application to packets, i.e.:
     - rule storing: manages a collection of rules.
-    - rule matching: determine if a rule applies to a packet descriptor.
+    - rule matching for packet descriptors: determine if a rule applies to a packet descriptor.
+    - rule matching for SCHC packet: determine the rule descriptor corresponding to a SCHC packet.
     - packet compression: compress packets according to matching rules.
     - packet decompression: decompress packets according to rules IDs.
 
-## 2.1 Rules field descriptors order matters
+## 2.1 Rule ID
+
+microSCHC expects rule IDs to be provided as right-aligned (left zero-padding) bytes. microSCHC further expects rule ID length to be strictly greater than 0, as opposed to what's defined in [4], section 5:
+
+```text
+A length of 0 is allowed to represent an implicit rule.
+```
+
+## 2.2 Rules field descriptors order matters
 
 The Ruler makes the assumption that rules' field descriptors are provided in the same order as in the target packet structure.
 For example, if the packet fields are, in order : [`field-1`, `field-2`, `field-3`, ...], it is supposed that rules field descriptors
@@ -75,14 +84,23 @@ it is mandated that field descriptors applying to a given packet, i.e. once the 
 The rationale is that unordered field descriptors eventually yield fields residues in a different order than that of the source packet. This means that the order is potentially
 lost at the reconstruction, leading to advert effects, including reconstructed packets different from the source packets.
 
-## 2.2 Default Compression/Decompression rule, implementation details
+## 2.3 Default Compression/Decompression rule, implementation details
 
 microSCHC expects the default Compression/Decompression rule is provided last in the list of rules. The default rule list of fields descriptors is assumed empty and matches any packet not matched by any prior rule.
 
-## 2.3 Variable field length
+## 2.4 Variable field length
 
 In microSCHC, a field of variable length is denoted with a 0 value of the FL attribute of the corresponding Field Descriptor.
 
 - [1] "Scapy, packet crafting for Python2 and Python3"
 - [2] "OpenSCHC: Open implementation, hackathon support, ... of the IETF SCHC protocol (compression for LPWANs), https://github.com/openschc"
 - [3] "RFC 7252 The Constrained Application Protocol (CoAP), Z. Shelby et al."
+- [4] "Draft: Data Model for Static Context Header Compression (SCHC)", A. Minaburo et al.
+
+## 3. Compressor
+
+The compressor is in charge of the compression of a packet, provided as a packet descriptor by the parser, using the rule identified by the **Ruler**.
+The compression procedure is:
+    - compress packet fields using compression actions defined in the corresponding field descriptors of the rule.
+    - concatenate fields residues prepended with the rule ID, removing (left)-padding in the process.
+
