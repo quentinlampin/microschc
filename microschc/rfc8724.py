@@ -8,23 +8,20 @@ from enum import Enum
 from dataclasses import dataclass
 from typing import  Dict, List, Union
 
+from microschc.binary.buffer import Buffer
 
-@dataclass
-class Pattern:
-    pattern: bytes
-    length: int
 
-ReverseMapping = Dict[int, bytes]
-Mapping = Dict[bytes, int]
+
+ReverseMapping = Dict[Buffer, Buffer]
+Mapping = Dict[Buffer, Buffer]
 
 
 class MatchMapping:
-    def __init__(self, index_length: int, forward_mapping: Mapping):
-        self.index_length: int = index_length
+    def __init__(self, forward_mapping: Mapping):
         self.forward: Mapping = forward_mapping
         self.reverse: ReverseMapping = {v: k for k, v in self.forward.items()}
 
-TargetValue = Union[bytes, Pattern, MatchMapping]
+TargetValue = Union[Buffer, MatchMapping]
 
 class DirectionIndicator(str, Enum):
     UP = 'Up'
@@ -48,9 +45,9 @@ class CompressionDecompressionAction(str, Enum):
 @dataclass
 class FieldDescriptor:
     id: str
-    length: int
+    value: Buffer
     position: int
-    value: bytes
+    
 
 
 @dataclass
@@ -64,13 +61,8 @@ class HeaderDescriptor:
 class PacketDescriptor:
     direction: DirectionIndicator
     headers: List[HeaderDescriptor]
-    payload: bytes
+    payload: Buffer
 
-
-@dataclass
-class FieldResidue:
-    residue: bytes
-    length: int
 
 @dataclass
 class RuleFieldDescriptor:
@@ -84,6 +76,5 @@ class RuleFieldDescriptor:
 
 @dataclass
 class RuleDescriptor:
-    id: bytes
-    id_length: int
+    id: Buffer
     field_descriptors: List[RuleFieldDescriptor]

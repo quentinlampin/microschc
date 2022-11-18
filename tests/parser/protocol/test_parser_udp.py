@@ -1,6 +1,7 @@
 from microschc.parser.protocol.udp import UDPParser, UDPFields
 from microschc.parser.parser import HeaderDescriptor
 from microschc.rfc8724 import FieldDescriptor
+from microschc.binary.buffer import Buffer
 
 def test_ipv6_parser_import():
     """test: IPv6 header parser import and instanciation
@@ -40,24 +41,20 @@ def test_udp_parser_parse():
     # assert field descriptors match UDP header content
     source_port_fd:FieldDescriptor = udp_header_descriptor.fields[0]
     assert source_port_fd.id == UDPFields.SOURCE_PORT
-    assert source_port_fd.length == 16
     assert source_port_fd.position == 0
-    assert source_port_fd.value == b'\x23\x29'
+    assert source_port_fd.value == Buffer(content=b'\x23\x29', bit_length=16)
 
     destination_port_fd:FieldDescriptor = udp_header_descriptor.fields[1]
     assert destination_port_fd.id == UDPFields.DESTINATION_PORT
-    assert destination_port_fd.length == 16
     assert destination_port_fd.position == 0
-    assert destination_port_fd.value == b'\x23\x2a'
+    assert destination_port_fd.value == Buffer(content=b'\x23\x2a', bit_length=16)
 
     length_fd:FieldDescriptor = udp_header_descriptor.fields[2]
     assert length_fd.id == UDPFields.LENGTH
-    assert length_fd.length == 16
     assert length_fd.position == 0
-    assert length_fd.value == b'\x00\x10'
+    assert length_fd.value == Buffer(content=b'\x00\x10', bit_length=16)
 
     checksum_fd:FieldDescriptor = udp_header_descriptor.fields[3]
     assert checksum_fd.id == UDPFields.CHECKSUM
-    assert checksum_fd.length == 16
     assert checksum_fd.position == 0
-    assert checksum_fd.value == b'\x2d\xa1'
+    assert checksum_fd.value == Buffer(content=b'\x2d\xa1', bit_length=16)

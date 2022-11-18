@@ -15,9 +15,10 @@ the order of decompressed fields at the recompression is unambiguous.
 """
 
 from typing import List
+from microschc.binary.buffer import Buffer
 from microschc.matching.operators import equal, ignore, match_mapping, most_significant_bits
 
-from microschc.rfc8724 import DirectionIndicator, FieldDescriptor, MatchMapping, Pattern, MatchingOperator, PacketDescriptor, RuleDescriptor, RuleFieldDescriptor, TargetValue
+from microschc.rfc8724 import DirectionIndicator, FieldDescriptor, MatchMapping, MatchingOperator, PacketDescriptor, RuleDescriptor, RuleFieldDescriptor, TargetValue
 
 
 class Ruler:
@@ -25,14 +26,14 @@ class Ruler:
     def __init__(self, rules_descriptors: List[RuleDescriptor]) -> None:
         self.rules: List[RuleDescriptor] = rules_descriptors
 
-    def match(self, packet_descriptor: PacketDescriptor) -> RuleDescriptor:
+    def match_packet_descriptor(self, packet_descriptor: PacketDescriptor) -> RuleDescriptor:
         """
         Find a rule matching the packet descriptor
         """
         packet_fields: List[FieldDescriptor] = []
         
         for header_descriptor in packet_descriptor.headers:
-            header_fields: List[FieldDescriptor] = [FieldDescriptor(id=f.id, length=f.length, position=f.position, value=f.value )  for f in header_descriptor.fields]
+            header_fields: List[FieldDescriptor] = [FieldDescriptor(id=f.id, value=f.value, position=f.position)  for f in header_descriptor.fields]
             packet_fields += header_fields
 
         packet_direction: DirectionIndicator = packet_descriptor.direction
@@ -55,6 +56,17 @@ class Ruler:
             return rule
         # if no rule matches, use the default
         return self.rules[-1]
+    
+    def match_schc_packet(self, schc_packet: bytes) -> RuleDescriptor:
+        '''
+        find a rule matching the rule ID of a SCHC packet
+        '''
+        # iterate though rules and try matching the rule ID with SCHC packet beginning
+        for rule in self.rules:
+            rule_id: Buffer = rule.id
+            rule_id_aligned: Buffer = rule_id.shift(shift=rule_id.bit_length-len(rule_id.content))
+
+
 
 def _field_match(packet_field: FieldDescriptor, rule_field: RuleFieldDescriptor):
     # basic test: field IDs and length match
@@ -66,13 +78,15 @@ def _field_match(packet_field: FieldDescriptor, rule_field: RuleFieldDescriptor)
         return ignore(packet_field)
 
     elif rule_field.matching_operator == MatchingOperator.EQUAL:
-        assert isinstance(rule_field.target_value, bytes)
-        return packet_field.length == rule_field.length and equal(packet_field, rule_field.target_value)
+        assert isinstance(rule_field.target_value, Buffer)
+        return packet_field.value == rule_field.target_value
 
     elif rule_field.matching_operator == MatchingOperator.MSB:
         pattern: TargetValue = rule_field.target_value
-        assert isinstance(pattern, Pattern)
-        return most_significant_bits(packet_field, pattern=pattern.pattern, pattern_length=pattern.length)
+        if (rule_field.length != packet_field.value.bit_length):
+            return False
+        assert isinstance(pattern, Buffer)
+        return most_significant_bits(packet_field, pattern=pattern)
 
     elif rule_field.matching_operator == MatchingOperator.MATCH_MAPPING:
         mapping: TargetValue = rule_field.target_value

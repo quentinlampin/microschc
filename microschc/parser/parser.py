@@ -1,7 +1,6 @@
 from typing import List
 from microschc.rfc8724 import DirectionIndicator, FieldDescriptor, HeaderDescriptor, PacketDescriptor
-from microschc.rfc8724extras import ParserDefinitions
-
+from microschc.binary.buffer import Buffer
 
 class HeaderParser:
     """Abstract Base Class for header parsers.
@@ -44,7 +43,7 @@ class PacketParser:
                 pass
             buffer = buffer[bytes_consumed:]
         
-        packet_descriptor: PacketDescriptor = PacketDescriptor(direction=direction, headers=header_descriptors, payload=buffer)
+        packet_descriptor: PacketDescriptor = PacketDescriptor(direction=direction, headers=header_descriptors, payload=Buffer(content=buffer, bit_length=8*len(buffer)))
         return packet_descriptor
 
 

@@ -22,21 +22,20 @@ Compression Actions (CAs) as defined in section 7.4 of RFC 8724 [1], i.e.:
 
 
 """
+from microschc.binary.buffer import Buffer
+from microschc.rfc8724 import FieldDescriptor, MatchMapping
 
-from math import ceil
-from microschc.rfc8724 import FieldDescriptor, FieldResidue, MatchMapping
 
-
-def not_sent(_: FieldDescriptor) -> FieldResidue:
+def not_sent(_: FieldDescriptor) -> Buffer:
     """
     `not-sent` compression action (CA): do not send the field value as it's supposed known by the receiver
 
     """
-    field_residue: FieldResidue = FieldResidue(residue=b'', length=0)
+    field_residue: Buffer = Buffer(content=b'', bit_length=0)
     return field_residue
 
 
-def value_sent(field_descriptor: FieldDescriptor) -> FieldResidue:
+def value_sent(field_descriptor: FieldDescriptor) -> Buffer:
     """
     `value-sent` compression action (CA): send the original value
         ! important note in file header about integer residues: !
@@ -46,30 +45,22 @@ def value_sent(field_descriptor: FieldDescriptor) -> FieldResidue:
         at the SCHC compression residue step (see Section 7.2 of [1]), when all fields residues are computed.
 
     """
-    field_value: bytes = field_descriptor.value
-    field_length: int = field_descriptor.length
 
-
-        
-    
-    residue: bytes = field_value
-    
-    field_residue: FieldResidue = FieldResidue(residue=residue, length=field_length)
+    field_residue: Buffer = field_descriptor.value
     return field_residue
 
-def mapping_sent(field_descriptor: FieldDescriptor, mapping: MatchMapping) -> FieldResidue:
+def mapping_sent(field_descriptor: FieldDescriptor, mapping: MatchMapping) -> Buffer:
     """
-    `mapping-sent`: send the index in the mapping, at decompression the target value stored in the reverse mapping at the index is used.
+    `mapping-sent`: send the index in the mapping, at decompression the target value stored 
+    in the reverse mapping at the index is used.
     """
-    field_value: bytes = field_descriptor.value
-    index: int = mapping.forward[field_value]
-    residue_length: int = mapping.index_length
-    residue_bytes: int = ceil(residue_length/8)
-    residue: bytes = index.to_bytes(residue_bytes, 'big')
-    field_residue: FieldResidue = FieldResidue(residue=residue, length=residue_length)
+    field_value: Buffer = field_descriptor.value
+    index: Buffer = mapping.forward[field_value]
+
+    field_residue: Buffer = index
     return field_residue
 
-def least_significant_bits(field_descriptor: FieldDescriptor, match_pattern_length: int) -> FieldResidue:
+def least_significant_bits(field_descriptor: FieldDescriptor, bit_length: int) -> Buffer:
     """
     `LSB`: send bits not included in the pattern matched by the `MSB(x)` Matching Operator.
 
@@ -108,24 +99,23 @@ def least_significant_bits(field_descriptor: FieldDescriptor, match_pattern_leng
     and the byte-padded residue is :  0 0 0 0 1 1 1 0
 
     """
-    field_value: bytes = field_descriptor.value
-    field_length: int = field_descriptor.length
+    field_value: Buffer = field_descriptor.value
 
-    # assume pattern is matched, we rerieve the residue_length last bits.
+    # assume pattern is matched, we retrieve the residue_length last bits.
     residue: bytes = b''
-    residue_length: int = field_length - match_pattern_length
+    residue_length: int = bit_length
     residue_full_bytes: int = residue_length // 8
     if residue_full_bytes > 0:
-        residue = field_value[-(residue_length // 8):]
+        residue = field_value.content[-(residue_length // 8):]
 
     residue_leading_bits: int = residue_length % 8
     if residue_leading_bits > 0:
-        residue_partial_byte: int = field_value[-(residue_length // 8 + 1)]
+        residue_partial_byte: int = field_value.content[-(residue_length // 8 + 1)]
         bitmask = (0xff >> (8-residue_leading_bits))
         leading_bits_residue: int = residue_partial_byte & bitmask
         residue = leading_bits_residue.to_bytes(1, 'big') + residue
     
-    field_residue: FieldResidue = FieldResidue(residue=residue, length=residue_length)
+    field_residue: Buffer = Buffer(content=residue, bit_length=residue_length)
     return field_residue
 
 
