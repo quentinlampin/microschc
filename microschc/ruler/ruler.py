@@ -57,15 +57,21 @@ class Ruler:
         # if no rule matches, use the default
         return self.rules[-1]
     
-    def match_schc_packet(self, schc_packet: bytes) -> RuleDescriptor:
+    def match_schc_packet(self, schc_packet: Buffer) -> RuleDescriptor:
         '''
         find a rule matching the rule ID of a SCHC packet
         '''
+        matching_rule: RuleFieldDescriptor
         # iterate though rules and try matching the rule ID with SCHC packet beginning
         for rule in self.rules:
             rule_id: Buffer = rule.id
-            rule_id_aligned: Buffer = rule_id.shift(shift=rule_id.bit_length-len(rule_id.content))
-
+            if rule_id.bit_length > schc_packet.bit_length:
+                continue
+            if rule_id == schc_packet[0:rule_id.bit_length]:
+                return rule
+        
+        # if no rule matched, return default
+        return self.rules[-1]
 
 
 def _field_match(packet_field: FieldDescriptor, rule_field: RuleFieldDescriptor):

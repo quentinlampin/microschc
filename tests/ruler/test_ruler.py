@@ -1,5 +1,5 @@
 from typing import List
-from microschc.binary.buffer import Buffer
+from microschc.binary.buffer import Buffer, Padding
 from microschc.parser.factory import factory
 from microschc.parser.parser import PacketParser
 from microschc.parser.protocol.coap import CoAPFields
@@ -53,7 +53,7 @@ def test_ruler_field_match():
     )
     assert _field_match(packet_field=packet_field, rule_field=rule_field_equal) == False
 
-def test_rule_match():
+def test_match_packet_descriptor():
     valid_stack_packet:bytes = bytes(
         b"\x60\x00\xef\x2d\x00\x68\x11\x40\x20\x01\x0d\xb8\x00\x0a\x00\x00" \
         b"\x00\x00\x00\x00\x00\x00\x00\x02\x20\x01\x0d\xb8\x00\x0a\x00\x00" \
@@ -135,3 +135,27 @@ def test_rule_match():
     ruler: Ruler = Ruler(rules_descriptors=[rule_descriptor_1, default_rule_descriptor])
 
     assert ruler.match_packet_descriptor(packet_descriptor=packet_descriptor).id == rule_descriptor_1.id
+
+def test_match_schc_packet():
+    schc_packet:Buffer = Buffer(content= b'\xc0\x1a\x00\x80\x06\x85\xc2\x18\x45\x22\xf6\xf4' \
+                                          b'\x0b\x83\x00\xef\xee\x66\x29\x12\x21\x86\xe5\xb7' \
+                                          b'\xb2\x26\x26\xe2\x23\xa2\x22\xf3\x62\xf2\x22\xc2' \
+                                          b'\x26\xe2\x23\xa2\x23\x02\xf3\x02\x22\xc2\x27\x62' \
+                                          b'\x23\xa3\x53\x42\xe3\x07\xd2\xc7\xb2\x26\xe2\x23' \
+                                          b'\xa2\x23\x02\xf3\x12\x22\xc2\x27\x62\x23\xa3\x43' \
+                                          b'\x82\xe3\x07\xd2\xc7\xb2\x26\xe2\x23\xa2\x23\x02' \
+                                          b'\xf3\x52\x22\xc2\x27\x62\x23\xa3\x13\x63\x63\x63' \
+                                          b'\x23\x63\x33\x33\x33\x97\xd5\xd0',
+                                 bit_length=828, padding=Padding.RIGHT)
+
+    rule_descriptor_0: RuleDescriptor = RuleDescriptor(id=Buffer(content=b'\x02', bit_length=2), field_descriptors=[])
+    rule_descriptor_1: RuleDescriptor = RuleDescriptor(id=Buffer(content=b'\x03', bit_length=2), field_descriptors=[])
+    rule_descriptor_2: RuleDescriptor = RuleDescriptor(id=Buffer(content=b'\x01', bit_length=2), field_descriptors=[])
+
+    default_rule_descriptor: RuleDescriptor = RuleDescriptor(id=Buffer(content=b'\x00', bit_length=2), field_descriptors=[])
+    
+    ruler: Ruler = Ruler(rules_descriptors=[rule_descriptor_0, rule_descriptor_1, rule_descriptor_2, default_rule_descriptor])
+
+    matching_rule_descriptor = ruler.match_schc_packet(schc_packet=schc_packet)
+
+    assert matching_rule_descriptor.id == rule_descriptor_1.id
