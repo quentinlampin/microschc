@@ -16,11 +16,11 @@ def compress(packet_descriptor: PacketDescriptor, rule_descriptor: RuleDescripto
         Compress the packet fields following the rule's compression actions.
         See section 7.2 of [1].
     """
-    schc_packet: Buffer = Buffer(content=b'', bit_length=0, padding_side=Padding.RIGHT)
+    schc_packet: Buffer = Buffer(content=b'', bit_length=0, padding=Padding.RIGHT)
 
     rule_id: Buffer = rule_descriptor.id
 
-    schc_packet = _compact_left(buffer=schc_packet, bytefield=rule_id)
+    schc_packet += rule_id
 
     packet_fields: List[FieldDescriptor] = []
     
@@ -43,9 +43,9 @@ def compress(packet_descriptor: PacketDescriptor, rule_descriptor: RuleDescripto
 
         if rf.compression_decompression_action in {CDA.LSB, CDA.VALUE_SENT} and rf.length == 0:
             encoded_length: Buffer = _encode_length(field_residue.bit_length)
-            schc_packet = _compact_left(buffer=schc_packet, bytefield=encoded_length)
+            schc_packet += encoded_length
 
-        schc_packet = _compact_left(buffer=schc_packet, bytefield=field_residue)
+        schc_packet += field_residue
     
     return schc_packet
 
@@ -66,25 +66,3 @@ def _encode_length(length:int) -> Buffer:
         encoded_length_value = b'\x0f\xff' + length.to_bytes(2, 'big')
         encoded_length_length = 28
     return Buffer(content=encoded_length_value, bit_length=encoded_length_length)
-
-def _compact_left(buffer: Buffer, bytefield: Buffer) -> Buffer:
-    '''
-    concatenate buffer and bytefield after removing leading zero-padding
-    '''
-    return buffer + bytefield
-
-
-    # # need realignment of bytefield
-    # if bytefield_offset != buffer_offset:
-    #     if buffer_offset > bytefield_offset:
-    #         extra_bytes_right = ((buffer_offset - bytefield_offset)//8)+1
-    #         temp_bytefield.content += bytes(extra_bytes_right)
-    #     # need realignment of bytefield
-    #     temp_bytefield.shift(buffer_offset - bytefield_offset, inplace=True)
-   
-    # if buffer_offset == 0:
-    #     buffer += temp_bytefield
-    # else:
-    #     buffer = buffer[0:-1] + (last_byte + bytefield_aligned[0]).to_bytes(1, 'big') + bytefield_aligned[1:]
-
-    # return buffer

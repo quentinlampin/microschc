@@ -1,6 +1,6 @@
 from typing import List
 from microschc.binary.buffer import Buffer, Padding
-from microschc.compressor.compressor import _compact_left, _encode_length, compress
+from microschc.compressor.compressor import _encode_length, compress
 from microschc.parser.factory import factory
 from microschc.parser.parser import PacketParser
 from microschc.parser.protocol.coap import CoAPFields
@@ -93,7 +93,7 @@ def test_compress():
     rule_descriptor_1: RuleDescriptor = RuleDescriptor(id=Buffer(content=b'\x03', bit_length=2), field_descriptors=field_descriptors_1)
 
     schc_packet = compress(packet_descriptor=packet_descriptor, rule_descriptor=rule_descriptor_1)
-    schc_packet = _compact_left(buffer=schc_packet, bytefield=packet_descriptor.payload)
+    schc_packet += packet_descriptor.payload
     assert schc_packet == Buffer(content= b'\xc0\x1a\x00\x80\x06\x85\xc2\x18\x45\x22\xf6\xf4' \
                                           b'\x0b\x83\x00\xef\xee\x66\x29\x12\x21\x86\xe5\xb7' \
                                           b'\xb2\x26\x26\xe2\x23\xa2\x22\xf3\x62\xf2\x22\xc2' \
@@ -103,7 +103,7 @@ def test_compress():
                                           b'\x82\xe3\x07\xd2\xc7\xb2\x26\xe2\x23\xa2\x23\x02' \
                                           b'\xf3\x52\x22\xc2\x27\x62\x23\xa3\x13\x63\x63\x63' \
                                           b'\x23\x63\x33\x33\x33\x97\xd5\xd0',
-                                 bit_length=828, padding_side=Padding.RIGHT)
+                                 bit_length=828, padding=Padding.RIGHT)
 
 
 def test_encode_length():
@@ -162,116 +162,3 @@ def test_encode_length():
 
     assert encoded_length.content == expected_encoded_length
     assert encoded_length.bit_length == expected_encoded_length_length
-
-
-
-def test_compact_left():
-
-    # test #1: bytefield needs 1 bit left shifting before concatenation
-    # 
-    #                             buffer                                                  bytefield
-    #       |-----------------------------------------------|         |-----------------------------------------------|
-    #                                     offset   trailing
-    #                                         = 3  zeros = 5          offset = 4
-    #       |-------------------------------|-----|---------|   +     |-------|
-    #        0 0 1 1 0 0 1 1 1 1 1 1 1 1 1 1 0 1 1 0 0 0 0 0           0 0 0 0 1 1 0 0 0 0 1 1 0 0 1 1 1 1 1 1 1 1 1 1
-    #       |     byte0     |   byte1       |     byte2     |         |    byte 0     |    byte 1     |    byte 2     |
-    #              0x33           0xff            0x60                      0x0c            0x33            0xff
-    #                                                          =
-    #       |              old buffer                            bytefield               offset
-    #       |-------------------------------------|---------------------------------------|-|
-    #        0 0 1 1 0 0 1 1 1 1 1 1 1 1 1 1 0 1 1 1 1 0 0 0 0 1 1 0 0 1 1 1 1 1 1 1 1 1 1 0
-    #       |     byte0     |   byte1       |     byte2     |     byte3     |     byte4     |
-    #             0x33            0xff            0x78            0x67             0xfe
-    buffer: Buffer = Buffer(content=b'\x33\xff\x60', bit_length=19, padding_side=Padding.RIGHT)
-    bytefield: Buffer = Buffer(content=b'\x0c\x33\xff', bit_length=20, padding_side=Padding.LEFT)
-    expected_buffer: Buffer = Buffer(content=b'\x33\xff\x78\x67\xfe', bit_length=39, padding_side=Padding.RIGHT)
-    compacted = _compact_left(buffer=buffer, bytefield=bytefield)
-    assert compacted == expected_buffer
-
-    
-    # test #2: bytefield needs 2 bits right shifting before concatenation
-    # 
-    #                             buffer                                                  bytefield
-    #       |-----------------------------------------------|         |-----------------------------------------------|
-    #                                     offset   trailing
-    #                                         = 6  zeros = 2          offset = 4
-    #       |-------------------------------|-----------|---|   +     |-------|
-    #        0 0 1 1 0 0 1 1 1 1 1 1 1 1 1 1 0 1 1 0 0 0 0 0           0 0 0 0 1 1 0 0 0 0 1 1 0 0 1 1 1 1 1 1 1 1 1 1
-    #       |     byte0     |   byte1       |     byte2     |         |    byte 0     |    byte 1     |    byte 2     |
-    #              0x33           0xff            0x60                      0x0c            0x33            0xff
-    #                                                          =
-    #       |              old buffer                            bytefield                         offset
-    #       |-------------------------------------------|---------------------------------------|-----------|
-    #        0 0 1 1 0 0 1 1 1 1 1 1 1 1 1 1 0 1 1 0 0 0 1 1 0 0 0 0 1 1 0 0 1 1 1 1 1 1 1 1 1 1 0 0 0 0 0 0
-    #       |     byte0     |   byte1       |     byte2     |     byte3     |     byte4     |     byte5     |
-    #             0x33            0xff            0x63            0x0c             0xff             0xc0
-    buffer = Buffer(content=b'\x33\xff\x60', bit_length=22, padding_side=Padding.RIGHT)
-    bytefield = Buffer(content=b'\x0c\x33\xff', bit_length=20, padding_side=Padding.LEFT)
-    expected_buffer = Buffer(content=b'\x33\xff\x63\x0c\xff\xc0', bit_length=42, padding_side=Padding.RIGHT)
-    compacted = _compact_left(buffer=buffer, bytefield=bytefield)
-    assert compacted == expected_buffer
-
-    # test #3: bytefield and buffer have the same non-zero offset
-    # 
-    #                             buffer                                                  bytefield
-    #       |-----------------------------------------------|         |-----------------------------------------------|
-    #                                     offset   trailing
-    #                                         = 4  zeros = 4          offset = 4
-    #       |-------------------------------|-------|-------|   +     |-------|
-    #        0 0 1 1 0 0 1 1 1 1 1 1 1 1 1 1 0 1 1 0 0 0 0 0           0 0 0 0 1 1 0 0 0 0 1 1 0 0 1 1 1 1 1 1 1 1 1 1
-    #       |     byte0     |   byte1       |     byte2     |         |    byte 0     |    byte 1     |    byte 2     |
-    #              0x33           0xff            0x60                      0x0c            0x33            0xff
-    #                                                          =
-    #       |              old buffer                            bytefield                   
-    #       |---------------------------------------|---------------------------------------|
-    #        0 0 1 1 0 0 1 1 1 1 1 1 1 1 1 1 0 1 1 0 1 1 0 0 0 0 1 1 0 0 1 1 1 1 1 1 1 1 1 1
-    #       |     byte0     |   byte1       |     byte2     |     byte3     |     byte4     |
-    #             0x33            0xff            0x6c            0x33             0xff      
-    buffer: Buffer = Buffer(content=b'\x33\xff\x60', bit_length=20, padding_side=Padding.RIGHT)
-    bytefield = Buffer(content=b'\x0c\x33\xff', bit_length=20, padding_side=Padding.LEFT)
-    expected_buffer: Buffer = Buffer(content=b'\x33\xff\x6c\x33\xff', bit_length=40, padding_side=Padding.RIGHT)
-    compacted = _compact_left(buffer=buffer, bytefield=bytefield)
-    assert compacted == expected_buffer
-
-    # test #4: bytefield and buffer have the same zero offset
-    # 
-    #                             buffer                                                  bytefield
-    #       |-----------------------------------------------|         |-----------------------------------------------|
-    #        0 0 1 1 0 0 1 1 1 1 1 1 1 1 1 1 0 1 1 0 0 0 0 0           0 0 0 0 1 1 0 0 0 0 1 1 0 0 1 1 1 1 1 1 1 1 1 1
-    #       |     byte0     |   byte1       |     byte2     |         |    byte 0     |    byte 1     |    byte 2     |
-    #              0x33           0xff            0x60                      0x0c            0x33            0xff
-    #                                                          =
-    #                             buffer                                         bytefield
-    #       |-----------------------------------------------|-----------------------------------------------|
-    #        0 0 1 1 0 0 1 1 1 1 1 1 1 1 1 1 0 1 1 0 0 0 0 0 0 0 0 0 1 1 0 0 0 0 1 1 0 0 1 1 1 1 1 1 1 1 1 1
-    #       |     byte0     |   byte1       |     byte2     |    byte 3     |    byte 4     |    byte 5     |
-    #              0x33           0xff            0x60            0x0c            0x33            0xff
-    
-    buffer: Buffer = Buffer(content=b'\x33\xff\x60', bit_length=24, padding_side=Padding.RIGHT)
-    bytefield: Buffer = Buffer(content=b'\x0c\x33\xff', bit_length=24, padding_side=Padding.LEFT)
-    expected_buffer: Buffer = Buffer(content=b'\x33\xff\x60\x0c\x33\xff', bit_length=48, padding_side=Padding.RIGHT)
-    compacted = _compact_left(buffer=buffer, bytefield=bytefield)
-    assert compacted == expected_buffer
-
-    # test #5: bytefield needs 2 bits left shifting and buffer has zero offset
-    # 
-    #                             buffer                                                  bytefield
-    #       |-----------------------------------------------|         |-----------------------------------------------|
-    #                                                               offset = 2
-    #                                                                 |---|
-    #        0 0 1 1 0 0 1 1 1 1 1 1 1 1 1 1 0 1 1 0 0 0 0 0           0 0 0 0 1 1 0 0 0 0 1 1 0 0 1 1 1 1 1 1 1 1 1 1
-    #       |     byte0     |   byte1       |     byte2     |         |    byte 0     |    byte 1     |    byte 2     |
-    #              0x33           0xff            0x60                      0x0c            0x33            0xff
-    #                                                          =
-    #                             buffer                                         bytefield
-    #       |-----------------------------------------------|-----------------------------------------------|
-    #        0 0 1 1 0 0 1 1 1 1 1 1 1 1 1 1 0 1 1 0 0 0 0 0 0 0 1 1 0 0 0 0 1 1 0 0 1 1 1 1 1 1 1 1 1 1 0 0
-    #       |     byte0     |   byte1       |     byte2     |    byte 3     |    byte 4     |    byte 5     |
-    #              0x33           0xff            0x60            0x30            0xcf            0xfc
-    
-    buffer: Buffer = Buffer(content=b'\x33\xff\x60', bit_length=24, padding_side=Padding.RIGHT)
-    bytefield: Buffer = Buffer(content=b'\x0c\x33\xff', bit_length=22, padding_side=Padding.LEFT)
-    expected_buffer: Buffer = Buffer(content=b'\x33\xff\x60\x30\xcf\xfc', bit_length=46, padding_side=Padding.RIGHT)
-    compacted = _compact_left(buffer=buffer, bytefield=bytefield)
-    assert compacted == expected_buffer
