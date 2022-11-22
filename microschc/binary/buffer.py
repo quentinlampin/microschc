@@ -94,8 +94,11 @@ class Buffer:
                             shifted_buffer.content += (((temp_buffer_content[i-1]<<shift_complement) & 0xff) | (temp_buffer_content[i]>>shift)).to_bytes(1, 'big')
                     else:
                         shifted_buffer.content = temp_buffer_content
-                else:
-                    shifted_buffer.content = temp_buffer_content
+                elif self.padding == Padding.RIGHT:
+                    shift_complement = (-shift)% 8
+                    temp_buffer_content = bytes(b'\x00') + temp_buffer_content
+                    for i in range(1, len(temp_buffer_content)):
+                        shifted_buffer.content += (((temp_buffer_content[i-1]<<shift_complement) & 0xff) | (temp_buffer_content[i]>>shift)).to_bytes(1, 'big')
         else:
             shifted_buffer.content = temp_buffer_content
         if inplace == True:
@@ -204,11 +207,21 @@ class Buffer:
         if another_copy_offset != self_copy_offset:
             # need realignment of another_copy
             shift:int = self_copy_offset - another_copy_offset
-            if shift > 0 and another_copy.padding == Padding.LEFT:
-                another_copy.content += b'\x00'
-                another_copy.bit_length += 8
-            elif shift < 0 and another_copy.padding == Padding.RIGHT:
-                another_copy.content = b'\x00' + another_copy.content
+            if shift > 0:
+                if another_copy.padding == Padding.LEFT:
+                    another_copy.content += b'\x00'
+                    another_copy.bit_length += 8
+                elif another_copy.padding == Padding.RIGHT:
+                    if shift <= another_copy.padding_length:
+                        another_copy.bit_length += shift
+                    else:
+                        another_copy.bit_length += shift
+                        another_copy.content += b'\x00'
+
+            elif shift < 0:
+                if another_copy.padding == Padding.RIGHT or shift < - another_copy.padding_length:
+                    another_copy.content = b'\x00' + another_copy.content
+                    another_copy.bit_length += 8
             another_copy.shift(shift=shift, inplace=True)
         
         if self_copy_offset == 0:
@@ -336,6 +349,7 @@ class Buffer:
                 subset_content = content_of_interest
             # and rightmost unneeded bits by padding
             subset: Buffer = Buffer(content=subset_content, bit_length=subset_bit_length, padding=self.padding)
+            subset.trim(inplace=True)
             return subset
 
 
@@ -354,10 +368,15 @@ class Buffer:
             format = f"0{8-padding_length}b"
             content_repr += f"{padding_str}{self.content[index]:{format}} "
             index += 1
+        if self.bit_length < 65:
+            content_repr += " ".join([f"{b:08b}" for b in self.content[index:index + (self.bit_length//8)]])
+            
+        else:
+            content_repr += " ".join([f"{b:08b}" for b in self.content[index:index + 4]])
+            content_repr += " ... "
+            content_repr += " ".join([f"{b:08b}" for b in self.content[(self.bit_length//8) -4:self.bit_length//8]])
         
-        content_repr += " ".join([f"{b:08b}" for b in self.content[index:index + (self.bit_length//8)]])
         index += (self.bit_length//8)
-
         if self.padding == Padding.RIGHT and padding_length > 0:
             padding_str: str = " "
             if padding_length // 8 > 0:

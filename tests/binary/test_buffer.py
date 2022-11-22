@@ -226,3 +226,24 @@ def test_get():
     buffer_subset: Buffer = buffer[-4:]
     assert buffer_subset == expected
     assert buffer_subset.padding == Padding.RIGHT
+
+def test_add():
+    left: Buffer = Buffer(content=b'\x40', bit_length=2, padding=Padding.RIGHT)
+    right: Buffer = Buffer(content=b'\x80', bit_length=2, padding=Padding.RIGHT)
+    left_right = left + right
+    expected: Buffer = Buffer(content=b'\x60', bit_length=4, padding=Padding.RIGHT)
+    assert left_right == expected
+
+    left: Buffer = Buffer(content=b'\x40', bit_length=2, padding=Padding.RIGHT)
+    right: Buffer = Buffer(content=b'\x80', bit_length=8, padding=Padding.RIGHT)
+    left_right = left + right
+    expected: Buffer = Buffer(content=b'\x60\x00', bit_length=10, padding=Padding.RIGHT)
+    assert left_right == expected
+
+    left: Buffer = Buffer(content=b'\x60', bit_length=4, padding=Padding.RIGHT)
+    right: Buffer = Buffer(content=b'\x80', bit_length=4, padding=Padding.RIGHT)
+    left_right = left + right
+    expected: Buffer = Buffer(content=b'\x68', bit_length=8, padding=Padding.RIGHT)
+    assert left_right == expected
+
+
