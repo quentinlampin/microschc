@@ -10,6 +10,7 @@ Parser for the UDP protocol header as defined in RFC768 [1].
 from enum import Enum
 from microschc.parser import HeaderParser
 from microschc.rfc8724 import FieldDescriptor, HeaderDescriptor
+from microschc.binary.buffer import Buffer
 
 UDP_HEADER_ID = 'UDP'
 
@@ -57,10 +58,10 @@ class UDPParser(HeaderParser):
             id=UDP_HEADER_ID,
             length=8*8,
             fields=[
-                FieldDescriptor(id=UDPFields.SOURCE_PORT,       length=16,  position=0, value=source_port),
-                FieldDescriptor(id=UDPFields.DESTINATION_PORT,  length=16,  position=0, value=destination_port),
-                FieldDescriptor(id=UDPFields.LENGTH,            length=16,  position=0, value=length),
-                FieldDescriptor(id=UDPFields.CHECKSUM,          length=16,  position=0, value=checksum),
+                FieldDescriptor(id=UDPFields.SOURCE_PORT,       position=0, value=Buffer(content=source_port, bit_length=16)),
+                FieldDescriptor(id=UDPFields.DESTINATION_PORT,  position=0, value=Buffer(content=destination_port, bit_length=16)),
+                FieldDescriptor(id=UDPFields.LENGTH,            position=0, value=Buffer(content=length, bit_length=16)),
+                FieldDescriptor(id=UDPFields.CHECKSUM,          position=0, value=Buffer(content=checksum, bit_length=16)),
             ]
         )
         return header_descriptor

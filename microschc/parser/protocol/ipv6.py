@@ -12,6 +12,7 @@ Note 3: Authentication and Encapsulating Security payload parsing is not impleme
 """
 
 from enum import Enum
+from microschc.binary.buffer import Buffer
 from microschc.parser import HeaderParser
 from microschc.rfc8724 import FieldDescriptor, HeaderDescriptor
 
@@ -66,11 +67,11 @@ class IPv6Parser(HeaderParser):
         # flow label: 20 bits
         flow_label:bytes = ((header_bytes[1] & 0xf0) >> 4).to_bytes(1, 'big') + header_bytes[2:4]
         # payload length: 16 bits
-        payload_length:bytes = ((header_bytes[4] << 8) | (header_bytes[5])).to_bytes(2, 'big')
+        payload_length:bytes = header_bytes[4:6]
         # next header: 8 bits
-        next_header:bytes = (header_bytes[6]).to_bytes(1, 'big')
+        next_header:bytes = header_bytes[6:7]
         # hop limit: 8 bits
-        hop_limit:bytes = ((header_bytes[7])).to_bytes(1, 'big')
+        hop_limit:bytes = header_bytes[7:8]
         # source address: 128 bits (16 bytes)
         source_address:bytes = header_bytes[8:24]
         # destination address: 128 bits (16 bytes)
@@ -80,14 +81,14 @@ class IPv6Parser(HeaderParser):
             id=IPv6_HEADER_ID,
             length=40*8,
             fields=[
-                FieldDescriptor(id=IPv6Fields.VERSION,          length=4,   position=0, value=version),
-                FieldDescriptor(id=IPv6Fields.TRAFFIC_CLASS,    length=8,   position=0, value=traffic_class),
-                FieldDescriptor(id=IPv6Fields.FLOW_LABEL,       length=20,  position=0, value=flow_label),
-                FieldDescriptor(id=IPv6Fields.PAYLOAD_LENGTH,   length=16,  position=0, value=payload_length),
-                FieldDescriptor(id=IPv6Fields.NEXT_HEADER,      length=8,   position=0, value=next_header),
-                FieldDescriptor(id=IPv6Fields.HOP_LIMIT,        length=8,   position=0, value=hop_limit),
-                FieldDescriptor(id=IPv6Fields.SRC_ADDRESS,      length=128, position=0, value=source_address),
-                FieldDescriptor(id=IPv6Fields.DST_ADDRESS,      length=128, position=0, value=destination_address)
+                FieldDescriptor(id=IPv6Fields.VERSION,         position=0, value=Buffer(content=version, bit_length=4)),
+                FieldDescriptor(id=IPv6Fields.TRAFFIC_CLASS,   position=0, value=Buffer(content=traffic_class, bit_length=8)),
+                FieldDescriptor(id=IPv6Fields.FLOW_LABEL,      position=0, value=Buffer(content=flow_label, bit_length=20)),
+                FieldDescriptor(id=IPv6Fields.PAYLOAD_LENGTH,  position=0, value=Buffer(content=payload_length, bit_length=16)),
+                FieldDescriptor(id=IPv6Fields.NEXT_HEADER,     position=0, value=Buffer(content=next_header, bit_length=8)),
+                FieldDescriptor(id=IPv6Fields.HOP_LIMIT,       position=0, value=Buffer(content=hop_limit, bit_length=8)),
+                FieldDescriptor(id=IPv6Fields.SRC_ADDRESS,     position=0, value=Buffer(content=source_address, bit_length=128)),
+                FieldDescriptor(id=IPv6Fields.DST_ADDRESS,     position=0, value=Buffer(content=destination_address, bit_length=128))
             ]
         )
         return header_descriptor

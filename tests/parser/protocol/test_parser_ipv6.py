@@ -1,6 +1,7 @@
 from microschc.parser.protocol.ipv6 import IPv6Parser, IPv6Fields
 from microschc.parser.parser import HeaderDescriptor
 from microschc.rfc8724 import FieldDescriptor
+from microschc.binary.buffer import Buffer
 
 def test_ipv6_parser_import():
     """test: IPv6 header parser import and instanciation
@@ -46,51 +47,43 @@ def test_ipv6_parser_parse():
     # assert field descriptors match IPv6 header content
     version_fd:FieldDescriptor = ipv6_header_descriptor.fields[0]
     assert version_fd.id == IPv6Fields.VERSION
-    assert version_fd.length == 4
     assert version_fd.position == 0
-    assert version_fd.value == b'\x06'
+    assert version_fd.value == Buffer(content=b'\x06', bit_length=4)
 
     traffic_class_fd:FieldDescriptor = ipv6_header_descriptor.fields[1]
     assert traffic_class_fd.id == IPv6Fields.TRAFFIC_CLASS
-    assert traffic_class_fd.length == 8
     assert traffic_class_fd.position == 0
-    assert traffic_class_fd.value == b'\x00'
+    assert traffic_class_fd.value == Buffer(content=b'\x00', bit_length=8)
 
     flow_label_fd:FieldDescriptor = ipv6_header_descriptor.fields[2]
     assert flow_label_fd.id == IPv6Fields.FLOW_LABEL
-    assert flow_label_fd.length == 20
     assert flow_label_fd.position == 0
-    assert flow_label_fd.value == b'\x00\x00\x00'
+    assert flow_label_fd.value == Buffer(content=b'\x00\x00\x00', bit_length=20)
 
     payload_length_fd:FieldDescriptor = ipv6_header_descriptor.fields[3]
     assert payload_length_fd.id == IPv6Fields.PAYLOAD_LENGTH
-    assert payload_length_fd.length == 16
     assert payload_length_fd.position == 0
-    assert payload_length_fd.value == b'\x00\x10'
+    assert payload_length_fd.value == Buffer(content=b'\x00\x10', bit_length=16)
 
     next_header_fd:FieldDescriptor = ipv6_header_descriptor.fields[4]
     assert next_header_fd.id == IPv6Fields.NEXT_HEADER
-    assert next_header_fd.length == 8
     assert next_header_fd.position == 0
-    assert next_header_fd.value == b'\x11'
+    assert next_header_fd.value == Buffer(content=b'\x11', bit_length=8)
 
     hop_limit_fd:FieldDescriptor = ipv6_header_descriptor.fields[5]
     assert hop_limit_fd.id == IPv6Fields.HOP_LIMIT
-    assert hop_limit_fd.length == 8
     assert hop_limit_fd.position == 0
-    assert hop_limit_fd.value == b'\x40'
+    assert hop_limit_fd.value == Buffer(content=b'\x40', bit_length=8)
 
     source_address_fd:FieldDescriptor = ipv6_header_descriptor.fields[6]
     assert source_address_fd.id == IPv6Fields.SRC_ADDRESS
-    assert source_address_fd.length == 128
     assert source_address_fd.position == 0
-    assert source_address_fd.value == b'\xfe\x80\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\xa1'
+    assert source_address_fd.value == Buffer(content=b'\xfe\x80\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\xa1', bit_length=128)
 
     destination_address_fd:FieldDescriptor = ipv6_header_descriptor.fields[7]
     assert destination_address_fd.id == IPv6Fields.DST_ADDRESS
-    assert destination_address_fd.length == 128
     assert destination_address_fd.position == 0
-    assert destination_address_fd.value == b'\xfe\x80\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\xa2'
+    assert destination_address_fd.value == Buffer(content=b'\xfe\x80\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\xa2', bit_length=128)
 
     
 

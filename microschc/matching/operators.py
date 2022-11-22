@@ -11,10 +11,11 @@ Matching Operators (MOs) as defined in section 7.3 of RFC 8724 [1], i.e.:
 [1] "RFC 8724 SCHC: Generic Framework for Static Context Header Compression and Fragmentation" , A. Minaburo et al.
 """
 
+from microschc.binary.buffer import Buffer
 from microschc.rfc8724 import FieldDescriptor, Mapping, MatchMapping
 
 
-def equal(field_descriptor: FieldDescriptor, target_value: bytes) -> bool:
+def equal(field_descriptor: FieldDescriptor, target_value: Buffer) -> bool:
     """
     `equal` matching operator: 
     the match result is True if the field value in the packet matches the target value
@@ -28,7 +29,7 @@ def ignore(field_descriptor: FieldDescriptor) -> bool:
     """
     return True
 
-def most_significant_bits(field_descriptor: FieldDescriptor, pattern: bytes, pattern_length: int) -> bool:
+def most_significant_bits(field_descriptor: FieldDescriptor, pattern: Buffer) -> bool:
     """
     `MSB(x)` matching operator:
     the match result is True if the `pattern_length` most significant (leftmost) bits of the field value equal 
@@ -40,60 +41,10 @@ def most_significant_bits(field_descriptor: FieldDescriptor, pattern: bytes, pat
     are on the first byte of the representation. Colloquially speaking, the raw field is packed on 
     the right when parsed.
 
-    we also assume that the pattern is provided as bytes and that it is left-padded, if necessary.
-
-        Suppose the following field value: b'\x33\xff\x23\xdb\xda' of length 38 bits, pattern: b'\x01\x9f\xf9' of length 17 bits
-                                    field value
-            |---------------------------------------------------------------------------|
-            0x33             0xff            0x23           0xdb           0xda
-        0 0 1 1 0 0 1 1 1 1 1 1 1 1 1 1 0 0 1 0 0 0 1 1 1 1 0 1 1 0 1 1 1 1 0 1 1 0 1 0
-       |     byte0     |   byte1       |     byte2     |     byte3     |    byte4      |
-           |--------------pattern------------|-----------------residue-----------------|
-    | [...] 1|     byte1     |     byte2     |
-        0x01        0x9f            0xf9
-
-        The expected residue is:  
-                                0x3              0xdb           0xda
-                        0 0 0 0 0 0 1 1 1 1 0 1 1 0 1 1 1 1 0 1 1 0 1 0
-                        |     byte2     |     byte3     |    byte4      |
-                        |  0s |                                         | 
+    we also assume that the pattern is provided as bytes and that it is left-padded, if necessary. 
     """
-
-    field_value: bytes = field_descriptor.value
-    field_length: int = field_descriptor.length
-
-    residue_length: int = field_length - pattern_length
-    residue_fullbytes: int = residue_length // 8
-
-    most_significant_bits: bytes = field_value[:-residue_fullbytes] # bytes 0-2
-    residue_alignment: int = residue_length % 8
-    if residue_alignment > 0:
-        left_shift: int = 8 - residue_alignment
-        region_of_interest: bytes = most_significant_bits
-        region_of_interest_length = len(region_of_interest)
-        #                  region of interest
-        #  |-------------------------------------|
-        #   0 0 1 1 0 0 1 1 1 1 1 1 1 1 1 1 0 0 1 0 0 0 1 1 
-        #  |     byte0     |   byte1       |     byte2     |
-
-        #                       pattern
-        #   0 0 0 0 0 0 0 1 1 0 0 1 1 1 1 1 1 1 1 1 1 0 0 1
-        #|      byte0      |     byte1     |     byte2     |
-        #       0x01             0x9f            0xf9
-
-
-        most_significant_bits: bytes = b''
-        bitmask: int = 0xff >> left_shift
-        for i in range(region_of_interest_length-1, 0,-1):
-            right_part: int = region_of_interest[i] >> residue_alignment
-            left_part: int =  (region_of_interest[i-1] & bitmask) << left_shift
-            byte_realigned = left_part + right_part
-            most_significant_bits = byte_realigned.to_bytes(1, 'big') + most_significant_bits
-        
-        # leading bits of region of interest
-        leading_bits = region_of_interest[0] >> residue_alignment
-        most_significant_bits = leading_bits.to_bytes(1, 'big') + most_significant_bits
-
+    field_value: Buffer = field_descriptor.value
+    most_significant_bits = field_value.shift(shift=(field_value.bit_length-pattern.bit_length), inplace=False)
     return most_significant_bits == pattern
 
 def match_mapping(field_descriptor: FieldDescriptor, target_values: MatchMapping) -> bool:

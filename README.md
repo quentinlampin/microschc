@@ -24,8 +24,6 @@ hatch build -t wheel
 pip install dist/microschc-<version>-py3-none-any.whl
 ```
 
-
-
 ## microSCHC, developpement plan
 
 microSCHC aims at implementing the SCHC Compression/Decompression (C/D) and Fragmentation/Reassembly (F/R) routines described in RFC 8724 [1].
@@ -56,10 +54,10 @@ Current features:
       - [ ] AppIID
       - [ ] compute-* (e.g. UDP-checksum)
    2. Decompression counteparts
-      - [ ] not-sent
-      - [ ] value-sent
-      - [ ] mapping-sent
-      - [ ] LSB
+      - [x] not-sent
+      - [x] value-sent
+      - [x] mapping-sent
+      - [x] LSB
       - [ ] devIID
       - [ ] AppIID
       - [ ] compute-* (e.g. UDP-checksum)
