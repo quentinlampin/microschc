@@ -64,56 +64,52 @@ def test_parser_ipv6_udp_coap():
     packet_parser: PacketParser = factory(stack_implementation=StacksImplementation.IPV6_UDP_COAP)
     packet_descriptor: PacketDescriptor = packet_parser.parse(buffer=valid_stack_packet, direction=DirectionIndicator.DOWN)
 
-    ipv6_header: HeaderDescriptor = packet_descriptor.headers[0]
-    udp_header: HeaderDescriptor = packet_descriptor.headers[1]
-    coap_header: HeaderDescriptor = packet_descriptor.headers[2]
-    
-    assert ipv6_header.fields[0].id == IPv6Fields.VERSION
-    assert ipv6_header.fields[0].value == Buffer(content=b'\x06', bit_length=4)
-    assert ipv6_header.fields[1].id == IPv6Fields.TRAFFIC_CLASS
-    assert ipv6_header.fields[1].value == Buffer(content=b'\x00', bit_length=8)
-    assert ipv6_header.fields[2].id == IPv6Fields.FLOW_LABEL
-    assert ipv6_header.fields[2].value == Buffer(content=b'\x00\xef\x2d', bit_length=20)
-    assert ipv6_header.fields[3].id == IPv6Fields.PAYLOAD_LENGTH
-    assert ipv6_header.fields[3].value == Buffer(content=b'\x00\x68', bit_length=16)
-    assert ipv6_header.fields[4].id == IPv6Fields.NEXT_HEADER
-    assert ipv6_header.fields[4].value == Buffer(content=b'\x11', bit_length=8)
-    assert ipv6_header.fields[5].id == IPv6Fields.HOP_LIMIT
-    assert ipv6_header.fields[5].value == Buffer(content=b'\x40', bit_length=8)
-    assert ipv6_header.fields[6].id == IPv6Fields.SRC_ADDRESS
-    assert ipv6_header.fields[6].value == Buffer(content=b"\x20\x01\x0d\xb8\x00\x0a\x00\x00\x00\x00\x00\x00\x00\x00\x00\x02", bit_length=128)
-    assert ipv6_header.fields[7].id == IPv6Fields.DST_ADDRESS
-    assert ipv6_header.fields[7].value == Buffer(content=b"\x20\x01\x0d\xb8\x00\x0a\x00\x00\x00\x00\x00\x00\x00\x00\x00\x20", bit_length=128)
+    assert packet_descriptor.fields[0].id == IPv6Fields.VERSION
+    assert packet_descriptor.fields[0].value == Buffer(content=b'\x06', bit_length=4)
+    assert packet_descriptor.fields[1].id == IPv6Fields.TRAFFIC_CLASS
+    assert packet_descriptor.fields[1].value == Buffer(content=b'\x00', bit_length=8)
+    assert packet_descriptor.fields[2].id == IPv6Fields.FLOW_LABEL
+    assert packet_descriptor.fields[2].value == Buffer(content=b'\x00\xef\x2d', bit_length=20)
+    assert packet_descriptor.fields[3].id == IPv6Fields.PAYLOAD_LENGTH
+    assert packet_descriptor.fields[3].value == Buffer(content=b'\x00\x68', bit_length=16)
+    assert packet_descriptor.fields[4].id == IPv6Fields.NEXT_HEADER
+    assert packet_descriptor.fields[4].value == Buffer(content=b'\x11', bit_length=8)
+    assert packet_descriptor.fields[5].id == IPv6Fields.HOP_LIMIT
+    assert packet_descriptor.fields[5].value == Buffer(content=b'\x40', bit_length=8)
+    assert packet_descriptor.fields[6].id == IPv6Fields.SRC_ADDRESS
+    assert packet_descriptor.fields[6].value == Buffer(content=b"\x20\x01\x0d\xb8\x00\x0a\x00\x00\x00\x00\x00\x00\x00\x00\x00\x02", bit_length=128)
+    assert packet_descriptor.fields[7].id == IPv6Fields.DST_ADDRESS
+    assert packet_descriptor.fields[7].value == Buffer(content=b"\x20\x01\x0d\xb8\x00\x0a\x00\x00\x00\x00\x00\x00\x00\x00\x00\x20", bit_length=128)
 
-    assert udp_header.fields[0].id == UDPFields.SOURCE_PORT
-    assert udp_header.fields[0].value == Buffer(content=b'\xd1\x00', bit_length=16)
-    assert udp_header.fields[1].id == UDPFields.DESTINATION_PORT
-    assert udp_header.fields[1].value == Buffer(content=b'\x16\x33', bit_length=16)
-    assert udp_header.fields[2].id == UDPFields.LENGTH
-    assert udp_header.fields[2].value == Buffer(content=b'\x00\x68', bit_length=16)
-    assert udp_header.fields[3].id == UDPFields.CHECKSUM
-    assert udp_header.fields[3].value == Buffer(content=b'\x5c\x21', bit_length=16)
+    assert packet_descriptor.fields[8].id == UDPFields.SOURCE_PORT
+    assert packet_descriptor.fields[8].value == Buffer(content=b'\xd1\x00', bit_length=16)
+    assert packet_descriptor.fields[9].id == UDPFields.DESTINATION_PORT
+    assert packet_descriptor.fields[9].value == Buffer(content=b'\x16\x33', bit_length=16)
+    assert packet_descriptor.fields[10].id == UDPFields.LENGTH
+    assert packet_descriptor.fields[10].value == Buffer(content=b'\x00\x68', bit_length=16)
+    assert packet_descriptor.fields[11].id == UDPFields.CHECKSUM
+    assert packet_descriptor.fields[11].value == Buffer(content=b'\x5c\x21', bit_length=16)
 
-    assert coap_header.fields[0].id == CoAPFields.VERSION
-    assert coap_header.fields[0].value == Buffer(content=b'\x01', bit_length=2)
-    assert coap_header.fields[1].id == CoAPFields.TYPE
-    assert coap_header.fields[1].value == Buffer(content=b'\x02', bit_length=2)
-    assert coap_header.fields[2].id == CoAPFields.TOKEN_LENGTH
-    assert coap_header.fields[2].value == Buffer(content=b'\x08', bit_length=4)
-    assert coap_header.fields[3].id == CoAPFields.CODE 
-    assert coap_header.fields[3].value == Buffer(content=b'\x45', bit_length=8)
-    assert coap_header.fields[4].id == CoAPFields.MESSAGE_ID 
-    assert coap_header.fields[4].value == Buffer(content=b'\x22\xf6', bit_length=16)
-    assert coap_header.fields[5].id == CoAPFields.TOKEN 
-    assert coap_header.fields[5].value == Buffer(content=b"\xb8\x30\x0e\xfe\xe6\x62\x91\x22", bit_length=64)
-    assert coap_header.fields[6].id == CoAPFields.OPTION_DELTA 
-    assert coap_header.fields[6].value == Buffer(content=b'\x0c', bit_length=4)
-    assert coap_header.fields[7].id == CoAPFields.OPTION_LENGTH 
-    assert coap_header.fields[7].value == Buffer(content=b'\x01', bit_length=4)
-    assert coap_header.fields[8].id == CoAPFields.OPTION_VALUE 
-    assert coap_header.fields[8].value == Buffer(content=b'\x6e', bit_length=8)
-    assert coap_header.fields[9].id == CoAPFields.PAYLOAD_MARKER 
-    assert coap_header.fields[9].value == Buffer(content=b'\xff', bit_length=8)
+    assert packet_descriptor.fields[12].id == CoAPFields.VERSION
+    assert packet_descriptor.fields[12].value == Buffer(content=b'\x01', bit_length=2)
+    assert packet_descriptor.fields[13].id == CoAPFields.TYPE
+    assert packet_descriptor.fields[13].value == Buffer(content=b'\x02', bit_length=2)
+    assert packet_descriptor.fields[14].id == CoAPFields.TOKEN_LENGTH
+    assert packet_descriptor.fields[14].value == Buffer(content=b'\x08', bit_length=4)
+    assert packet_descriptor.fields[15].id == CoAPFields.CODE 
+    assert packet_descriptor.fields[15].value == Buffer(content=b'\x45', bit_length=8)
+    assert packet_descriptor.fields[16].id == CoAPFields.MESSAGE_ID 
+    assert packet_descriptor.fields[16].value == Buffer(content=b'\x22\xf6', bit_length=16)
+    assert packet_descriptor.fields[17].id == CoAPFields.TOKEN 
+    assert packet_descriptor.fields[17].value == Buffer(content=b"\xb8\x30\x0e\xfe\xe6\x62\x91\x22", bit_length=64)
+    assert packet_descriptor.fields[18].id == CoAPFields.OPTION_DELTA 
+    assert packet_descriptor.fields[18].value == Buffer(content=b'\x0c', bit_length=4)
+    assert packet_descriptor.fields[19].id == CoAPFields.OPTION_LENGTH 
+    assert packet_descriptor.fields[19].value == Buffer(content=b'\x01', bit_length=4)
+    assert packet_descriptor.fields[20].id == CoAPFields.OPTION_VALUE 
+    assert packet_descriptor.fields[20].value == Buffer(content=b'\x6e', bit_length=8)
+    assert packet_descriptor.fields[21].id == CoAPFields.PAYLOAD_MARKER 
+    assert packet_descriptor.fields[21].value == Buffer(content=b'\xff', bit_length=8)
 
     payload_content: bytes =    b"\x5b\x7b\x22\x62\x6e\x22\x3a\x22\x2f\x36\x2f\x22\x2c\x22\x6e\x22" \
                                 b"\x3a\x22\x30\x2f\x30\x22\x2c\x22\x76\x22\x3a\x35\x34\x2e\x30\x7d" \

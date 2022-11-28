@@ -30,12 +30,7 @@ class Ruler:
         """
         Find a rule matching the packet descriptor
         """
-        packet_fields: List[FieldDescriptor] = []
-        
-        for header_descriptor in packet_descriptor.headers:
-            header_fields: List[FieldDescriptor] = [FieldDescriptor(id=f.id, value=f.value, position=f.position)  for f in header_descriptor.fields]
-            packet_fields += header_fields
-
+        packet_fields: List[FieldDescriptor] = packet_descriptor.fields
         packet_direction: DirectionIndicator = packet_descriptor.direction
 
         for rule in self.rules[0:-1]:

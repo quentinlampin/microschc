@@ -60,7 +60,7 @@ class HeaderDescriptor:
 @dataclass
 class PacketDescriptor:
     direction: DirectionIndicator
-    headers: List[HeaderDescriptor]
+    fields: List[FieldDescriptor]
     payload: Buffer
 
 

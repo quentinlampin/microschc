@@ -43,7 +43,18 @@ class PacketParser:
                 pass
             buffer = buffer[bytes_consumed:]
         
-        packet_descriptor: PacketDescriptor = PacketDescriptor(direction=direction, headers=header_descriptors, payload=Buffer(content=buffer, bit_length=8*len(buffer)))
+        packet_fields: List[FieldDescriptor] = []
+        
+        for header_descriptor in header_descriptors:
+            header_fields: List[FieldDescriptor] = [FieldDescriptor(id=f.id, value=f.value, position=f.position)  for f in header_descriptor.fields]
+            packet_fields += header_fields
+
+        packet_descriptor: PacketDescriptor = PacketDescriptor(
+            direction=direction,
+            fields=packet_fields,
+            payload=Buffer(content=buffer, bit_length=8*len(buffer))
+        )
+        
         return packet_descriptor
 
 

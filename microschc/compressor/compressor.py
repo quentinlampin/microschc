@@ -22,11 +22,7 @@ def compress(packet_descriptor: PacketDescriptor, rule_descriptor: RuleDescripto
 
     schc_packet += rule_id
 
-    packet_fields: List[FieldDescriptor] = []
-    
-    for header_descriptor in packet_descriptor.headers:
-        header_fields: List[FieldDescriptor] = [FieldDescriptor(id=f.id, position=f.position, value=f.value )  for f in header_descriptor.fields]
-        packet_fields += header_fields
+    packet_fields: List[FieldDescriptor] = packet_descriptor.fields
 
     for pf, rf in zip(packet_fields, rule_descriptor.field_descriptors):
         field_residue: Buffer
