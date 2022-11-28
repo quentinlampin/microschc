@@ -116,7 +116,11 @@ class CoAPParser(HeaderParser):
         ]
 
         options_bytes: bytes = buffer[4+token_length_int:]
-        options_fields, option_bits_consumed = _parse_options(options_bytes)
+        if len(options_bytes):
+            options_fields, option_bits_consumed = _parse_options(options_bytes)
+        else:
+            option_bits_consumed = 0
+            options_fields = []
     
         header_descriptor:HeaderDescriptor = HeaderDescriptor(
             id= COAP_HEADER_ID,
@@ -154,8 +158,8 @@ def _parse_options(buffer: bytes) -> Tuple[List[FieldDescriptor], int]:
     cursor: int = 0
     option_index: int = 0
 
-    # parse options until reaching the payload marker byte
-    while buffer[cursor] != 0xff:
+    # parse options until reaching the payload marker byte or end of buffer
+    while cursor < len(buffer) and buffer[cursor] != 0xff:
         option_index += 1
         option_bytes: bytes = buffer[cursor:]
         
@@ -207,8 +211,9 @@ def _parse_options(buffer: bytes) -> Tuple[List[FieldDescriptor], int]:
         cursor += option_offset
 
     # append payload marker field
-    cursor += 1
-    fields.append(FieldDescriptor(id=CoAPFields.PAYLOAD_MARKER, position=0, value=Buffer(content=b'\xff', bit_length=8)))
+    if cursor < len(buffer):
+        cursor += 1
+        fields.append(FieldDescriptor(id=CoAPFields.PAYLOAD_MARKER, position=0, value=Buffer(content=b'\xff', bit_length=8)))
 
     # return CoAP fields descriptors list
     return (fields, 8*cursor)
