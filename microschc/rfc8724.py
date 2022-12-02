@@ -62,6 +62,7 @@ class PacketDescriptor:
     direction: DirectionIndicator
     fields: List[FieldDescriptor]
     payload: Buffer
+    length: int
 
 
 @dataclass

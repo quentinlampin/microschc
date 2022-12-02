@@ -65,9 +65,10 @@ def test_match_packet_descriptor():
         b"\x38\x2e\x30\x7d\x2c\x7b\x22\x6e\x22\x3a\x22\x30\x2f\x35\x22\x2c" \
         b"\x22\x76\x22\x3a\x31\x36\x36\x36\x32\x36\x33\x33\x33\x39\x7d\x5d"
     )
+    packet_buffer = Buffer(content=valid_stack_packet, bit_length=len(valid_stack_packet)*8)
 
     packet_parser: PacketParser = factory(stack_implementation=StacksImplementation.IPV6_UDP_COAP)
-    packet_descriptor: PacketDescriptor = packet_parser.parse(buffer=valid_stack_packet, direction=DirectionIndicator.UP)
+    packet_descriptor: PacketDescriptor = packet_parser.parse(buffer=packet_buffer, direction=DirectionIndicator.UP)
 
     
     field_descriptors_1: List[RuleFieldDescriptor] = [

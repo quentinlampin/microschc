@@ -60,9 +60,10 @@ def test_parser_ipv6_udp_coap():
         b"\x38\x2e\x30\x7d\x2c\x7b\x22\x6e\x22\x3a\x22\x30\x2f\x35\x22\x2c" \
         b"\x22\x76\x22\x3a\x31\x36\x36\x36\x32\x36\x33\x33\x33\x39\x7d\x5d"
     )
+    packet_buffer = Buffer(content=valid_stack_packet, bit_length=len(valid_stack_packet)*8)
 
     packet_parser: PacketParser = factory(stack_implementation=StacksImplementation.IPV6_UDP_COAP)
-    packet_descriptor: PacketDescriptor = packet_parser.parse(buffer=valid_stack_packet, direction=DirectionIndicator.DOWN)
+    packet_descriptor: PacketDescriptor = packet_parser.parse(buffer=packet_buffer, direction=DirectionIndicator.DOWN)
 
     assert packet_descriptor.fields[0].id == IPv6Fields.VERSION
     assert packet_descriptor.fields[0].value == Buffer(content=b'\x06', bit_length=4)
@@ -124,8 +125,10 @@ def test_parser_ipv6_udp_coap():
                                 b"\x00\x00\x00\x00\x00\x00\x00\x02\x20\x01\x0d\xb8\x00\x0a\x00\x00" \
                                 b"\x00\x00\x00\x00\x00\x00\x00\x20\xd1\x00\x16\x33\x00\x14\x5b\xcd" \
                                 b"\x68\x44\x22\xf8\x0c\x68\xa4\xf0\xaf\xe7\xa8\x17"
+    packet_buffer = Buffer(content=valid_stack_packet, bit_length=len(valid_stack_packet)*8)
+
     packet_parser: PacketParser = factory(stack_implementation=StacksImplementation.IPV6_UDP_COAP)
-    packet_descriptor: PacketDescriptor = packet_parser.parse(buffer=valid_stack_packet, direction=DirectionIndicator.DOWN)
+    packet_descriptor: PacketDescriptor = packet_parser.parse(buffer=packet_buffer, direction=DirectionIndicator.DOWN)
     assert True # no raised exception for zero option CoAP packet
 
     # leshan 0 - 2to20 frame 15
@@ -134,7 +137,9 @@ def test_parser_ipv6_udp_coap():
                                 b"\x00\x00\x00\x00\x00\x00\x00\x20\xd1\x00\x16\x33\x00\x22\x5b\xdb" \
                                 b"\x48\x02\xc7\x0b\x48\xa0\x8a\x71\x59\xb7\x94\x83\xb2\x72\x64\x0a" \
                                 b"\x61\x30\x6e\x72\x6a\x76\x45\x46\x37\x47"
+    packet_buffer = Buffer(content=valid_stack_packet, bit_length=len(valid_stack_packet)*8)
+
     packet_parser: PacketParser = factory(stack_implementation=StacksImplementation.IPV6_UDP_COAP)
-    packet_descriptor: PacketDescriptor = packet_parser.parse(buffer=valid_stack_packet, direction=DirectionIndicator.DOWN)
+    packet_descriptor: PacketDescriptor = packet_parser.parse(buffer=packet_buffer, direction=DirectionIndicator.DOWN)
     assert True # no raised exception for no payload CoAP packet
 

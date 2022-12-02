@@ -28,20 +28,16 @@ class PacketParser:
         self.name = name
         self.parsers = parsers
 
-    def parse(self, buffer: bytes, direction: DirectionIndicator) -> PacketDescriptor:
+    def parse(self, buffer: Buffer, direction: DirectionIndicator) -> PacketDescriptor:
         header_descriptors: List[HeaderDescriptor] = []
 
+        packet_length: int = buffer.bit_length
         for parser in self.parsers:
-            header_descriptor = parser.parse(buffer=buffer)
+            header_descriptor = parser.parse(buffer=buffer.content)
             header_descriptors.append(header_descriptor)
 
             # update buffer to pass on to the next parser
-            bytes_consumed: int = header_descriptor.length // 8
-            extra_bits_consumed: int = header_descriptor.length % 8
-            if extra_bits_consumed != 0:
-                # TODO: circular shift on the buffer
-                pass
-            buffer = buffer[bytes_consumed:]
+            buffer = buffer[header_descriptor.length:]
         
         packet_fields: List[FieldDescriptor] = []
         
@@ -52,7 +48,8 @@ class PacketParser:
         packet_descriptor: PacketDescriptor = PacketDescriptor(
             direction=direction,
             fields=packet_fields,
-            payload=Buffer(content=buffer, bit_length=8*len(buffer))
+            payload=buffer,
+            length=packet_length
         )
         
         return packet_descriptor
