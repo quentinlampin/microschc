@@ -44,7 +44,7 @@ def most_significant_bits(field_descriptor: FieldDescriptor, pattern: Buffer) ->
     we also assume that the pattern is provided as bytes and that it is left-padded, if necessary. 
     """
     field_value: Buffer = field_descriptor.value
-    most_significant_bits = field_value.shift(shift=(field_value.bit_length-pattern.bit_length), inplace=False)
+    most_significant_bits = field_value.shift(shift=(field_value.length-pattern.length), inplace=False)
     return most_significant_bits == pattern
 
 def match_mapping(field_descriptor: FieldDescriptor, target_values: MatchMapping) -> bool:

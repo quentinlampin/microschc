@@ -42,19 +42,19 @@ def test_udp_parser_parse():
     source_port_fd:FieldDescriptor = udp_header_descriptor.fields[0]
     assert source_port_fd.id == UDPFields.SOURCE_PORT
     assert source_port_fd.position == 0
-    assert source_port_fd.value == Buffer(content=b'\x23\x29', bit_length=16)
+    assert source_port_fd.value == Buffer(content=b'\x23\x29', length=16)
 
     destination_port_fd:FieldDescriptor = udp_header_descriptor.fields[1]
     assert destination_port_fd.id == UDPFields.DESTINATION_PORT
     assert destination_port_fd.position == 0
-    assert destination_port_fd.value == Buffer(content=b'\x23\x2a', bit_length=16)
+    assert destination_port_fd.value == Buffer(content=b'\x23\x2a', length=16)
 
     length_fd:FieldDescriptor = udp_header_descriptor.fields[2]
     assert length_fd.id == UDPFields.LENGTH
     assert length_fd.position == 0
-    assert length_fd.value == Buffer(content=b'\x00\x10', bit_length=16)
+    assert length_fd.value == Buffer(content=b'\x00\x10', length=16)
 
     checksum_fd:FieldDescriptor = udp_header_descriptor.fields[3]
     assert checksum_fd.id == UDPFields.CHECKSUM
     assert checksum_fd.position == 0
-    assert checksum_fd.value == Buffer(content=b'\x2d\xa1', bit_length=16)
+    assert checksum_fd.value == Buffer(content=b'\x2d\xa1', length=16)

@@ -107,12 +107,12 @@ class CoAPParser(HeaderParser):
         token: bytes = header_bytes[4: 4+token_length_int]
 
         header_fields: List[FieldDescriptor] = [
-                FieldDescriptor(id=CoAPFields.VERSION,          position=0,    value=Buffer(content=version, bit_length=2)),
-                FieldDescriptor(id=CoAPFields.TYPE,             position=0,    value=Buffer(content=type, bit_length=2)),
-                FieldDescriptor(id=CoAPFields.TOKEN_LENGTH,     position=0,    value=Buffer(content=token_length, bit_length=4)),
-                FieldDescriptor(id=CoAPFields.CODE,             position=0,    value=Buffer(content=code, bit_length=8)),
-                FieldDescriptor(id=CoAPFields.MESSAGE_ID,       position=0,    value=Buffer(content=message_id, bit_length=16)),
-                FieldDescriptor(id=CoAPFields.TOKEN,            position=0,    value=Buffer(content=token, bit_length=token_length_int*8)),
+                FieldDescriptor(id=CoAPFields.VERSION,          position=0,    value=Buffer(content=version, length=2)),
+                FieldDescriptor(id=CoAPFields.TYPE,             position=0,    value=Buffer(content=type, length=2)),
+                FieldDescriptor(id=CoAPFields.TOKEN_LENGTH,     position=0,    value=Buffer(content=token_length, length=4)),
+                FieldDescriptor(id=CoAPFields.CODE,             position=0,    value=Buffer(content=code, length=8)),
+                FieldDescriptor(id=CoAPFields.MESSAGE_ID,       position=0,    value=Buffer(content=message_id, length=16)),
+                FieldDescriptor(id=CoAPFields.TOKEN,            position=0,    value=Buffer(content=token, length=token_length_int*8)),
         ]
 
         options_bytes: bytes = buffer[4+token_length_int:]
@@ -165,12 +165,12 @@ def _parse_options(buffer: bytes) -> Tuple[List[FieldDescriptor], int]:
         
         # option_delta: 4 bits
         option_delta: bytes = ((option_bytes[0] & 0xf0) >> 4).to_bytes(1, 'big')
-        fields.append(FieldDescriptor(id=CoAPFields.OPTION_DELTA, position=option_index, value=Buffer(content=option_delta, bit_length=4)))
+        fields.append(FieldDescriptor(id=CoAPFields.OPTION_DELTA, position=option_index, value=Buffer(content=option_delta, length=4)))
 
         # option_length: 4 bits
         option_length_int: int = option_bytes[0] & 0x0f
         option_length: bytes = option_length_int.to_bytes(1, 'big')
-        fields.append(FieldDescriptor(id=CoAPFields.OPTION_LENGTH, position=option_index, value=Buffer(content=option_length, bit_length=4)))
+        fields.append(FieldDescriptor(id=CoAPFields.OPTION_LENGTH, position=option_index, value=Buffer(content=option_length, length=4)))
 
         # option_length_extended: 
         option_length_extended_int: int = 0
@@ -180,32 +180,32 @@ def _parse_options(buffer: bytes) -> Tuple[List[FieldDescriptor], int]:
         if option_delta == CoAPDefinitions.OPTION_DELTA_EXTENDED_8BITS:
             # option_delta_extended: 8 bits
             option_delta_extended: bytes = option_bytes[1:2]
-            fields.append(FieldDescriptor(id=CoAPFields.OPTION_DELTA_EXTENDED, position=option_index, value=Buffer(content=option_delta_extended, bit_length=8)))
+            fields.append(FieldDescriptor(id=CoAPFields.OPTION_DELTA_EXTENDED, position=option_index, value=Buffer(content=option_delta_extended, length=8)))
             option_offset = 2
 
         elif option_delta == CoAPDefinitions.OPTION_DELTA_EXTENDED_16BITS:
             # option_delta_extended: 16 bits
             option_delta_extended: bytes = option_bytes[1:3]
-            fields.append(FieldDescriptor(id=CoAPFields.OPTION_DELTA_EXTENDED, position=option_index, value=Buffer(content=option_delta_extended, bit_length=16)))
+            fields.append(FieldDescriptor(id=CoAPFields.OPTION_DELTA_EXTENDED, position=option_index, value=Buffer(content=option_delta_extended, length=16)))
             option_offset = 3
 
         if option_length == CoAPDefinitions.OPTION_LENGTH_EXTENDED_8BITS:
             # option_length_extended: 8 bits
             option_length_extended_int: int = option_bytes[option_offset]
             option_length_extended: bytes = option_length_extended_int.to_bytes(1, 'big')
-            fields.append(FieldDescriptor(id=CoAPFields.OPTION_LENGTH_EXTENDED, position=option_index, value=Buffer(content=option_length_extended, bit_length=8)))
+            fields.append(FieldDescriptor(id=CoAPFields.OPTION_LENGTH_EXTENDED, position=option_index, value=Buffer(content=option_length_extended, length=8)))
             option_offset += 1
 
         elif option_length == CoAPDefinitions.OPTION_LENGTH_EXTENDED_16BITS:
             # option_length_extended: 16 bits
             option_length_extended_int: int = (option_bytes[option_offset] << 8) & option_bytes[option_offset+1]
             option_length_extended: bytes = option_bytes[option_offset:option_offset+2]
-            fields.append(FieldDescriptor(id=CoAPFields.OPTION_LENGTH_EXTENDED, position=option_index, value=Buffer(content=option_length_extended, bit_length=16)))
+            fields.append(FieldDescriptor(id=CoAPFields.OPTION_LENGTH_EXTENDED, position=option_index, value=Buffer(content=option_length_extended, length=16)))
             option_offset += 2
 
         option_value_length = option_length_int + option_length_extended_int
         option_value: bytes = option_bytes[option_offset: option_offset+option_value_length]
-        fields.append(FieldDescriptor(id=CoAPFields.OPTION_VALUE, position=option_index, value=Buffer(content=option_value, bit_length=option_value_length*8)))
+        fields.append(FieldDescriptor(id=CoAPFields.OPTION_VALUE, position=option_index, value=Buffer(content=option_value, length=option_value_length*8)))
 
         option_offset += option_value_length
         cursor += option_offset
@@ -213,7 +213,7 @@ def _parse_options(buffer: bytes) -> Tuple[List[FieldDescriptor], int]:
     # append payload marker field
     if cursor < len(buffer):
         cursor += 1
-        fields.append(FieldDescriptor(id=CoAPFields.PAYLOAD_MARKER, position=0, value=Buffer(content=b'\xff', bit_length=8)))
+        fields.append(FieldDescriptor(id=CoAPFields.PAYLOAD_MARKER, position=0, value=Buffer(content=b'\xff', length=8)))
 
     # return CoAP fields descriptors list
     return (fields, 8*cursor)

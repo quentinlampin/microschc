@@ -11,11 +11,11 @@ def test_not_sent():
     Test that residue is of size 0 and empty
     """
 
-    field_descriptor: FieldDescriptor = FieldDescriptor(id=SOME_ID, value=Buffer(content=b'\xff', bit_length=8), position=0)
+    field_descriptor: FieldDescriptor = FieldDescriptor(id=SOME_ID, value=Buffer(content=b'\xff', length=8), position=0)
     
     field_residue: Buffer = not_sent(field_descriptor)
 
-    assert field_residue.bit_length == 0
+    assert field_residue.length == 0
     assert field_residue.content == b''
 
 def test_value_sent():
@@ -25,10 +25,10 @@ def test_value_sent():
 
     # test on bytes value
     bytes_value = b'\x13\xff'
-    bytes_field: FieldDescriptor = FieldDescriptor(id=SOME_ID, position=0, value=Buffer(content=bytes_value, bit_length=16))
+    bytes_field: FieldDescriptor = FieldDescriptor(id=SOME_ID, position=0, value=Buffer(content=bytes_value, length=16))
     field_residue: Buffer = value_sent(field_descriptor=bytes_field)
     assert field_residue.content == bytes_value
-    assert field_residue.bit_length == bytes_field.value.bit_length
+    assert field_residue.length == bytes_field.value.length
 
 def test_mapping_sent():
     """test: `mapping-sent` compression action
@@ -36,17 +36,17 @@ def test_mapping_sent():
     """
     
     # test on bytes value
-    bytes_value = Buffer(content=b'\x13\xff', bit_length=16)
+    bytes_value = Buffer(content=b'\x13\xff', length=16)
     bytes_forward_mapping: Mapping = {
-        Buffer(content=b'\xff', bit_length=8): Buffer(content=b'\x01', bit_length=3), 
-        Buffer(content=b'\x13\xff', bit_length=16): Buffer(content=b'\x02', bit_length=3)
+        Buffer(content=b'\xff', length=8): Buffer(content=b'\x01', length=3), 
+        Buffer(content=b'\x13\xff', length=16): Buffer(content=b'\x02', length=3)
     }
 
     bytes_match_mapping : MatchMapping = MatchMapping(forward_mapping=bytes_forward_mapping)
     bytes_field: FieldDescriptor = FieldDescriptor(id=SOME_ID, position=0, value=bytes_value)
     field_residue: Buffer = mapping_sent(field_descriptor=bytes_field, mapping=bytes_match_mapping)
     assert field_residue.content == b'\x02'
-    assert field_residue.bit_length == 3
+    assert field_residue.length == 3
 
 def test_least_significant_bits():
     """test: `LSB` compression action
@@ -70,14 +70,14 @@ def test_least_significant_bits():
     
     """
 
-    pattern: Buffer = Buffer(content=b'\x01\x9f\xf9', bit_length=17)
+    pattern: Buffer = Buffer(content=b'\x01\x9f\xf9', length=17)
 
-    field_value: Buffer = Buffer(content=b'\x33\xff\x23\xdb\xda', bit_length=38)
+    field_value: Buffer = Buffer(content=b'\x33\xff\x23\xdb\xda', length=38)
 
-    expected_residue: Buffer = Buffer(content=b'\x03\xdb\xda', bit_length=field_value.bit_length - pattern.bit_length)
+    expected_residue: Buffer = Buffer(content=b'\x03\xdb\xda', length=field_value.length - pattern.length)
 
     bytes_field: FieldDescriptor = FieldDescriptor(id=SOME_ID, position=0, value=field_value)
 
-    field_residue: Buffer = least_significant_bits(field_descriptor=bytes_field, bit_length=field_value.bit_length - pattern.bit_length)
-    assert field_residue.bit_length == expected_residue.bit_length
+    field_residue: Buffer = least_significant_bits(field_descriptor=bytes_field, bit_length=field_value.length - pattern.length)
+    assert field_residue.length == expected_residue.length
     assert field_residue.content == expected_residue.content

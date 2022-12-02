@@ -16,7 +16,7 @@ def compress(packet_descriptor: PacketDescriptor, rule_descriptor: RuleDescripto
         Compress the packet fields following the rule's compression actions.
         See section 7.2 of [1].
     """
-    schc_packet: Buffer = Buffer(content=b'', bit_length=0, padding=Padding.RIGHT)
+    schc_packet: Buffer = Buffer(content=b'', length=0, padding=Padding.RIGHT)
 
     rule_id: Buffer = rule_descriptor.id
 
@@ -30,7 +30,7 @@ def compress(packet_descriptor: PacketDescriptor, rule_descriptor: RuleDescripto
             continue
         elif rf.compression_decompression_action == CDA.LSB:
             assert isinstance(rf.target_value, Buffer)
-            field_residue = least_significant_bits(field_descriptor=pf, bit_length=pf.value.bit_length - rf.target_value.bit_length)
+            field_residue = least_significant_bits(field_descriptor=pf, bit_length=pf.value.length - rf.target_value.length)
         elif rf.compression_decompression_action == CDA.MAPPING_SENT:
             assert isinstance(rf.target_value, MatchMapping)
             field_residue = mapping_sent(field_descriptor=pf, mapping=rf.target_value)
@@ -38,7 +38,7 @@ def compress(packet_descriptor: PacketDescriptor, rule_descriptor: RuleDescripto
             field_residue = value_sent(field_descriptor=pf)
 
         if rf.compression_decompression_action in {CDA.LSB, CDA.VALUE_SENT} and rf.length == 0:
-            encoded_length: Buffer = _encode_length(field_residue.bit_length)
+            encoded_length: Buffer = _encode_length(field_residue.length)
             schc_packet += encoded_length
 
         schc_packet += field_residue
@@ -61,4 +61,4 @@ def _encode_length(length:int) -> Buffer:
     else:
         encoded_length_value = b'\x0f\xff' + length.to_bytes(2, 'big')
         encoded_length_length = 28
-    return Buffer(content=encoded_length_value, bit_length=encoded_length_length)
+    return Buffer(content=encoded_length_value, length=encoded_length_length)

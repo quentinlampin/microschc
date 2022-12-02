@@ -81,14 +81,14 @@ class IPv6Parser(HeaderParser):
             id=IPv6_HEADER_ID,
             length=40*8,
             fields=[
-                FieldDescriptor(id=IPv6Fields.VERSION,         position=0, value=Buffer(content=version, bit_length=4)),
-                FieldDescriptor(id=IPv6Fields.TRAFFIC_CLASS,   position=0, value=Buffer(content=traffic_class, bit_length=8)),
-                FieldDescriptor(id=IPv6Fields.FLOW_LABEL,      position=0, value=Buffer(content=flow_label, bit_length=20)),
-                FieldDescriptor(id=IPv6Fields.PAYLOAD_LENGTH,  position=0, value=Buffer(content=payload_length, bit_length=16)),
-                FieldDescriptor(id=IPv6Fields.NEXT_HEADER,     position=0, value=Buffer(content=next_header, bit_length=8)),
-                FieldDescriptor(id=IPv6Fields.HOP_LIMIT,       position=0, value=Buffer(content=hop_limit, bit_length=8)),
-                FieldDescriptor(id=IPv6Fields.SRC_ADDRESS,     position=0, value=Buffer(content=source_address, bit_length=128)),
-                FieldDescriptor(id=IPv6Fields.DST_ADDRESS,     position=0, value=Buffer(content=destination_address, bit_length=128))
+                FieldDescriptor(id=IPv6Fields.VERSION,         position=0, value=Buffer(content=version, length=4)),
+                FieldDescriptor(id=IPv6Fields.TRAFFIC_CLASS,   position=0, value=Buffer(content=traffic_class, length=8)),
+                FieldDescriptor(id=IPv6Fields.FLOW_LABEL,      position=0, value=Buffer(content=flow_label, length=20)),
+                FieldDescriptor(id=IPv6Fields.PAYLOAD_LENGTH,  position=0, value=Buffer(content=payload_length, length=16)),
+                FieldDescriptor(id=IPv6Fields.NEXT_HEADER,     position=0, value=Buffer(content=next_header, length=8)),
+                FieldDescriptor(id=IPv6Fields.HOP_LIMIT,       position=0, value=Buffer(content=hop_limit, length=8)),
+                FieldDescriptor(id=IPv6Fields.SRC_ADDRESS,     position=0, value=Buffer(content=source_address, length=128)),
+                FieldDescriptor(id=IPv6Fields.DST_ADDRESS,     position=0, value=Buffer(content=destination_address, length=128))
             ]
         )
         return header_descriptor

@@ -19,14 +19,14 @@ class Padding(str, Enum):
     RIGHT = 'right'
 
 class Buffer:
-    def __init__(self, content: bytes, bit_length:int, padding=Padding.LEFT) -> None:
+    def __init__(self, content: bytes, length:int, padding=Padding.LEFT) -> None:
         self.content:bytes = content
-        self.bit_length:int = bit_length
+        self.length:int = length
         self.padding:Padding = padding
-        self.padding_length:int = 8*len(self.content) - self.bit_length
+        self.padding_length:int = 8*len(self.content) - self.length
         
     def _update_padding(self):
-        self.padding_length = 8*len(self.content) - self.bit_length
+        self.padding_length = 8*len(self.content) - self.length
 
     def shift(self, shift: int, inplace=True):
         '''
@@ -34,7 +34,7 @@ class Buffer:
         negative value means shifting to the left, positive value to the right
         '''
 
-        shifted_buffer: Buffer = Buffer(content=b'', bit_length=self.bit_length, padding=self.padding)
+        shifted_buffer: Buffer = Buffer(content=b'', length=self.length, padding=self.padding)
         padding_length = self.padding_length
 
         temp_buffer_content = self.content
@@ -42,7 +42,7 @@ class Buffer:
         if shift < 0:
             # left shift
             shift *= -1
-            shifted_buffer.bit_length += shift
+            shifted_buffer.length += shift
             if self.padding == Padding.LEFT:
                 if shift > self.padding_length:
                     # left shift is larger than padding, prepend null bytes to buffer prior to shifting
@@ -81,8 +81,8 @@ class Buffer:
                 shifted_buffer.content = temp_buffer_content
         elif shift > 0:
             # right shift
-            if shift < self.bit_length:
-                shifted_buffer.bit_length -= shift
+            if shift < self.length:
+                shifted_buffer.length -= shift
                 if self.padding == Padding.LEFT:
                     bytes_to_remove: int = shift // 8
                     temp_buffer_content = temp_buffer_content[0:len(temp_buffer_content)-bytes_to_remove]
@@ -103,7 +103,7 @@ class Buffer:
             shifted_buffer.content = temp_buffer_content
         if inplace == True:
             self.content = shifted_buffer.content
-            self.bit_length = shifted_buffer.bit_length
+            self.length = shifted_buffer.length
             self._update_padding()
             return self
         else:
@@ -111,8 +111,8 @@ class Buffer:
             return shifted_buffer
 
     def trim(self, inplace=True):
-        self_byte_length: int = self.bit_length // 8
-        self_offset: int = -self.bit_length % 8
+        self_byte_length: int = self.length // 8
+        self_offset: int = -self.length % 8
 
         if self.padding == Padding.LEFT:
             self_content = self.content[-self_byte_length:] if self_byte_length > 0 else b""
@@ -130,7 +130,7 @@ class Buffer:
             self._update_padding()
             return self
         else:
-            new_buffer: Buffer = Buffer(content=self_content, bit_length=self.bit_length, padding=self.padding)
+            new_buffer: Buffer = Buffer(content=self_content, length=self.length, padding=self.padding)
             return new_buffer
 
     def pad(self, padding: Padding, inplace=True):
@@ -139,7 +139,7 @@ class Buffer:
             return self
 
         if inplace == False and padding == self.padding:
-            return Buffer(content=self.content, bit_length=self.bit_length, padding=self.padding)
+            return Buffer(content=self.content, length=self.length, padding=self.padding)
 
         self_copy: Buffer = self.copy()
 
@@ -151,23 +151,23 @@ class Buffer:
         else:
             # self padding is Padding.RIGHT
             # we shift right
-            self_copy.bit_length = 8*len(self.content)
+            self_copy.length = 8*len(self.content)
             self_copy._update_padding()
             self_copy.padding = padding
             shift_value = + padding_length
         
         buffer: Buffer = self_copy.shift(shift=shift_value, inplace=True)
-        buffer.bit_length = self.bit_length
+        buffer.length = self.length
         buffer.padding = padding
         buffer._update_padding()
         if inplace == True:
             self.content = buffer.content
-            self.bit_length = buffer.bit_length
+            self.length = buffer.length
             self.padding = buffer.padding
         return buffer
 
     def copy(self):
-        return Buffer(content=self.content, bit_length= self.bit_length, padding=self.padding)
+        return Buffer(content=self.content, length= self.length, padding=self.padding)
 
     def __eq__(self, another: object) -> bool:
         '''
@@ -176,7 +176,7 @@ class Buffer:
         if isinstance(another, Buffer) is False:
             return False
         assert isinstance(another, Buffer) # for linter
-        if self.bit_length != another.bit_length:
+        if self.length != another.length:
             return False
 
         trimmed_self = self.trim(inplace=False)
@@ -199,10 +199,10 @@ class Buffer:
         # remove excess padding
         if self_copy.padding == Padding.RIGHT:
             self_copy.trim(inplace=True)
-            self_copy_offset = self_copy.bit_length % 8
+            self_copy_offset = self_copy.length % 8
         if another_copy.padding == Padding.LEFT:
             another_copy.trim(inplace=True)
-            another_copy_offset = (- another_copy.bit_length)%8 
+            another_copy_offset = (- another_copy.length)%8 
 
         if another_copy_offset != self_copy_offset:
             # need realignment of another_copy
@@ -210,25 +210,25 @@ class Buffer:
             if shift > 0:
                 if another_copy.padding == Padding.LEFT:
                     another_copy.content += b'\x00'
-                    another_copy.bit_length += 8
+                    another_copy.length += 8
                 elif another_copy.padding == Padding.RIGHT:
                     if shift <= another_copy.padding_length:
-                        another_copy.bit_length += shift
+                        another_copy.length += shift
                     else:
-                        another_copy.bit_length += shift
+                        another_copy.length += shift
                         another_copy.content += b'\x00'
 
             elif shift < 0:
                 if another_copy.padding == Padding.RIGHT or shift < - another_copy.padding_length:
                     another_copy.content = b'\x00' + another_copy.content
-                    another_copy.bit_length += 8
+                    another_copy.length += 8
             another_copy.shift(shift=shift, inplace=True)
         
         if self_copy_offset == 0:
             self_copy.content += another_copy.content
         else:
             self_copy.content = self_copy.content[0:-1] + (self_copy.content[-1] + another_copy.content[0]).to_bytes(1, 'big') + another_copy.content[1:]
-        self_copy.bit_length += another.bit_length
+        self_copy.length += another.length
         self_copy._update_padding()
         return self_copy
 
@@ -237,7 +237,7 @@ class Buffer:
         assert isinstance(items, (slice, int))
 
         if isinstance(items, slice):
-            start_bit, stop_bit, _ = items.indices(self.bit_length)
+            start_bit, stop_bit, _ = items.indices(self.length)
 
         else:
             start_bit = items
@@ -297,7 +297,7 @@ class Buffer:
             #            start_bit       stop_bit
             # ^---------------^---------------^
             #    start_byte       stop_byte
-            subset: Buffer = Buffer(content=subset_content, bit_length=subset_bit_length, padding=self.padding)
+            subset: Buffer = Buffer(content=subset_content, length=subset_bit_length, padding=self.padding)
 
             return subset
         
@@ -348,7 +348,7 @@ class Buffer:
             else:
                 subset_content = content_of_interest
             # and rightmost unneeded bits by padding
-            subset: Buffer = Buffer(content=subset_content, bit_length=subset_bit_length, padding=self.padding)
+            subset: Buffer = Buffer(content=subset_content, length=subset_bit_length, padding=self.padding)
             subset.trim(inplace=True)
             return subset
 
@@ -368,15 +368,15 @@ class Buffer:
             format = f"0{8-padding_length}b"
             content_repr += f"{padding_str}{self.content[index]:{format}} "
             index += 1
-        if self.bit_length < 65:
-            content_repr += " ".join([f"{b:08b}" for b in self.content[index:index + (self.bit_length//8)]])
+        if self.length < 65:
+            content_repr += " ".join([f"{b:08b}" for b in self.content[index:index + (self.length//8)]])
             
         else:
             content_repr += " ".join([f"{b:08b}" for b in self.content[index:index + 4]])
             content_repr += " ... "
-            content_repr += " ".join([f"{b:08b}" for b in self.content[(self.bit_length//8) -4:self.bit_length//8]])
+            content_repr += " ".join([f"{b:08b}" for b in self.content[(self.length//8) -4:self.length//8]])
         
-        index += (self.bit_length//8)
+        index += (self.length//8)
         if self.padding == Padding.RIGHT and padding_length > 0:
             padding_str: str = " "
             if padding_length // 8 > 0:
@@ -387,4 +387,4 @@ class Buffer:
             last_byte = self.content[index] >> padding_length
             content_repr += f" {last_byte:{format}}{padding_str}"
 
-        return f"[{content_repr}] | len: {self.bit_length} | pad: {self.padding_length} {self.padding}"
+        return f"[{content_repr}] | len: {self.length} | pad: {self.padding_length} {self.padding}"

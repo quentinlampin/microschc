@@ -15,10 +15,10 @@ def decompress(schc_packet: Buffer, direction: DirectionIndicator, rule: RuleDes
         Decompress the packet fields following the rule's compression actions.
         See section 7.2 of [1].
     """
-    decompressed: Buffer = Buffer(content=b'', bit_length=0,padding=Padding.RIGHT)
+    decompressed: Buffer = Buffer(content=b'', length=0,padding=Padding.RIGHT)
 
     # remove rule ID
-    schc_packet = schc_packet[rule.id.bit_length:]
+    schc_packet = schc_packet[rule.id.length:]
 
     # decompress all fields
     field_residue: Buffer
@@ -26,12 +26,12 @@ def decompress(schc_packet: Buffer, direction: DirectionIndicator, rule: RuleDes
     decompressed_field: Buffer
     for rf in rule.field_descriptors:
         residue_bitlength = 0
-        decompressed_field = Buffer(content=b'', bit_length=0, padding=Padding.RIGHT)
+        decompressed_field = Buffer(content=b'', length=0, padding=Padding.RIGHT)
         if rf.compression_decompression_action == CDA.NOT_SENT:
             decompressed_field += rf.target_value
         elif rf.compression_decompression_action == CDA.LSB:
             assert isinstance(rf.target_value, Buffer)
-            lsb_bitlength: int = rf.length-rf.target_value.bit_length
+            lsb_bitlength: int = rf.length-rf.target_value.length
             field_residue = schc_packet[:lsb_bitlength]
             decompressed_field += rf.target_value
             decompressed_field += field_residue
@@ -39,10 +39,10 @@ def decompress(schc_packet: Buffer, direction: DirectionIndicator, rule: RuleDes
         elif rf.compression_decompression_action == CDA.MAPPING_SENT:
             assert isinstance(rf.target_value, MatchMapping)
             for key, value in rf.target_value.reverse.items():
-                if key == schc_packet[0:key.bit_length]:
+                if key == schc_packet[0:key.length]:
                     field_residue = key
                     decompressed_field += value
-                    residue_bitlength = key.bit_length
+                    residue_bitlength = key.length
                     break
         elif rf.compression_decompression_action == CDA.VALUE_SENT:
             assert isinstance(rf.target_value, Buffer)

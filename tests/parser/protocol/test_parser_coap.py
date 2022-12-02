@@ -81,32 +81,32 @@ def test_coap_parser_parse():
     version_fd:FieldDescriptor = coap_header_descriptor.fields[0]
     assert version_fd.id == CoAPFields.VERSION
     assert version_fd.position == 0
-    assert version_fd.value == Buffer(content=b'\x01', bit_length=2)
+    assert version_fd.value == Buffer(content=b'\x01', length=2)
 
     type_fd:FieldDescriptor = coap_header_descriptor.fields[1]
     assert type_fd.id == CoAPFields.TYPE
     assert type_fd.position == 0
-    assert type_fd.value == Buffer(content=b'\x00', bit_length=2)
+    assert type_fd.value == Buffer(content=b'\x00', length=2)
 
     token_length_fd:FieldDescriptor = coap_header_descriptor.fields[2]
     assert token_length_fd.id == CoAPFields.TOKEN_LENGTH
     assert token_length_fd.position == 0
-    assert token_length_fd.value == Buffer(content=b'\x08', bit_length=4)
+    assert token_length_fd.value == Buffer(content=b'\x08', length=4)
 
     code_fd:FieldDescriptor = coap_header_descriptor.fields[3]
     assert code_fd.id == CoAPFields.CODE
     assert code_fd.position == 0
-    assert code_fd.value == Buffer(content=b'\x02', bit_length=8)
+    assert code_fd.value == Buffer(content=b'\x02', length=8)
 
     message_id_fd:FieldDescriptor = coap_header_descriptor.fields[4]
     assert message_id_fd.id == CoAPFields.MESSAGE_ID
     assert message_id_fd.position == 0
-    assert message_id_fd.value == Buffer(content=b'\x84\x99', bit_length=16)
+    assert message_id_fd.value == Buffer(content=b'\x84\x99', length=16)
 
     token_fd:FieldDescriptor = coap_header_descriptor.fields[5]
     assert token_fd.id == CoAPFields.TOKEN
     assert token_fd.position == 0
-    assert token_fd.value == Buffer(content=b'\x74\xcd\xe8\xcb\x4e\x8c\x0d\xb7', bit_length=64)
+    assert token_fd.value == Buffer(content=b'\x74\xcd\xe8\xcb\x4e\x8c\x0d\xb7', length=64)
 
 
     # TODO: assert the list of options field descriptors match the CoAP options

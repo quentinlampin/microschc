@@ -60,9 +60,9 @@ class Ruler:
         # iterate though rules and try matching the rule ID with SCHC packet beginning
         for rule in self.rules:
             rule_id: Buffer = rule.id
-            if rule_id.bit_length > schc_packet.bit_length:
+            if rule_id.length > schc_packet.length:
                 continue
-            if rule_id == schc_packet[0:rule_id.bit_length]:
+            if rule_id == schc_packet[0:rule_id.length]:
                 return rule
         
         # if no rule matched, return default
@@ -84,7 +84,7 @@ def _field_match(packet_field: FieldDescriptor, rule_field: RuleFieldDescriptor)
 
     elif rule_field.matching_operator == MatchingOperator.MSB:
         pattern: TargetValue = rule_field.target_value
-        if (rule_field.length != packet_field.value.bit_length):
+        if (rule_field.length != packet_field.value.length):
             return False
         assert isinstance(pattern, Buffer)
         return most_significant_bits(packet_field, pattern=pattern)

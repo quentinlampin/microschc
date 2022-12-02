@@ -31,7 +31,7 @@ def not_sent(_: FieldDescriptor) -> Buffer:
     `not-sent` compression action (CA): do not send the field value as it's supposed known by the receiver
 
     """
-    field_residue: Buffer = Buffer(content=b'', bit_length=0)
+    field_residue: Buffer = Buffer(content=b'', length=0)
     return field_residue
 
 
@@ -115,7 +115,7 @@ def least_significant_bits(field_descriptor: FieldDescriptor, bit_length: int) -
         leading_bits_residue: int = residue_partial_byte & bitmask
         residue = leading_bits_residue.to_bytes(1, 'big') + residue
     
-    field_residue: Buffer = Buffer(content=residue, bit_length=residue_length)
+    field_residue: Buffer = Buffer(content=residue, length=residue_length)
     return field_residue
 
 

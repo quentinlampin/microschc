@@ -58,10 +58,10 @@ class UDPParser(HeaderParser):
             id=UDP_HEADER_ID,
             length=8*8,
             fields=[
-                FieldDescriptor(id=UDPFields.SOURCE_PORT,       position=0, value=Buffer(content=source_port, bit_length=16)),
-                FieldDescriptor(id=UDPFields.DESTINATION_PORT,  position=0, value=Buffer(content=destination_port, bit_length=16)),
-                FieldDescriptor(id=UDPFields.LENGTH,            position=0, value=Buffer(content=length, bit_length=16)),
-                FieldDescriptor(id=UDPFields.CHECKSUM,          position=0, value=Buffer(content=checksum, bit_length=16)),
+                FieldDescriptor(id=UDPFields.SOURCE_PORT,       position=0, value=Buffer(content=source_port, length=16)),
+                FieldDescriptor(id=UDPFields.DESTINATION_PORT,  position=0, value=Buffer(content=destination_port, length=16)),
+                FieldDescriptor(id=UDPFields.LENGTH,            position=0, value=Buffer(content=length, length=16)),
+                FieldDescriptor(id=UDPFields.CHECKSUM,          position=0, value=Buffer(content=checksum, length=16)),
             ]
         )
         return header_descriptor
