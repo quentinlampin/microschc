@@ -167,7 +167,7 @@ class Buffer:
         return buffer
 
     def copy(self):
-        return Buffer(content=self.content, length= self.length, padding=self.padding)
+        return Buffer(content=self.content, length=self.length, padding=self.padding)
 
     def __eq__(self, another: object) -> bool:
         '''
@@ -352,6 +352,19 @@ class Buffer:
             subset.trim(inplace=True)
             return subset
 
+    def __iter__(self):
+        padding_offset: int = self.padding_length if self.padding == Padding.LEFT else 0
+        for i in range(self.length):
+
+            byte_index = (i+padding_offset)//8
+            bit_offset = (i+padding_offset)%8
+
+            byte = self.content[byte_index]
+            bit = (byte & 2**(8-bit_offset-1)) >> (8-bit_offset-1)
+            yield bit
+
+    def __len__(self):
+        return self.length
 
     def __repr__(self) -> str:
         content_repr:str = ""

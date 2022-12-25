@@ -246,4 +246,17 @@ def test_add():
     expected: Buffer = Buffer(content=b'\x68', length=8, padding=Padding.RIGHT)
     assert left_right == expected
 
+def test_iter():
+    #              0x08          0x68              0x00
+    #       |0 0 0 0 1 0 0 0|0 1 1 0 1 - - -|- - - - - - - -|  (-) padding (11 bits padding on the right)
+    buffer: Buffer = Buffer(content=bytes(b'\x08\x68'), length=13, padding=Padding.RIGHT)
+
+    bits = list(buffer)
+    assert bits == [0, 0, 0, 0, 1, 0 , 0, 0, 0, 1, 1, 0, 1]
+
+    #         0x01            0x0d
+    # | - - - 0 0 0 0 1|0 0 0 0 1 1 0 1|  (-) padding (3 bits padding on the left)
+    buffer = Buffer(content=bytes(b'\x01\x0d'), length=13, padding=Padding.LEFT)
+    bits = list(buffer)
+    assert bits == [0, 0, 0, 0, 1, 0 , 0, 0, 0, 1, 1, 0, 1]
 
