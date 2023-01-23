@@ -10,6 +10,7 @@ from enum import Enum
 
 class StacksImplementation(str, Enum):
     IPV6_UDP_COAP = 'IPv6-UDP-CoAP'
+    IPV4_UDP_COAP = 'IPv4-UDP-CoAP'
 
 class ParserDefinitions(str, Enum): 
     PAYLOAD = 'Payload'
