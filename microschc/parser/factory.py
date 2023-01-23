@@ -16,6 +16,7 @@ from microschc.rfc8724extras import StacksImplementation
 from microschc.parser.protocol.coap import CoAPParser
 from microschc.parser.protocol.udp import UDPParser
 from microschc.parser.protocol.ipv6 import IPv6Parser
+from microschc.parser.protocol.ipv4 import IPv4Parser
 
 
 
@@ -25,4 +26,10 @@ def factory(stack_implementation: StacksImplementation) -> PacketParser:
         udp_parser: HeaderParser = UDPParser()
         coap_parser: HeaderParser = CoAPParser()
         packet_parser: PacketParser = PacketParser(stack_implementation, [ipv6_parser, udp_parser, coap_parser])
+        return packet_parser
+    elif stack_implementation == StacksImplementation.IPV4_UDP_COAP:
+        ipv4_parser: HeaderParser = IPv4Parser()
+        udp_parser: HeaderParser = UDPParser()
+        coap_parser: HeaderParser = CoAPParser()
+        packet_parser: PacketParser = PacketParser(stack_implementation, [ipv4_parser, udp_parser, coap_parser])
         return packet_parser
