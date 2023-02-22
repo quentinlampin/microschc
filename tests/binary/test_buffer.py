@@ -260,3 +260,20 @@ def test_iter():
     bits = list(buffer)
     assert bits == [0, 0, 0, 0, 1, 0 , 0, 0, 0, 1, 1, 0, 1]
 
+def test_json_str():
+    """
+    test JSON serialization of buffer objects
+    """
+    buffer: Buffer = Buffer(content=b"\xaa\xf0", length=12)
+    json_str: str = buffer.json()
+    assert json_str == '{"content": "aaf0", "length": 12, "padding": "left"}'
+
+def test_from_json():
+    """
+    test JSON serialized to object instance
+    """
+    json_str = '{"content": "aaf0", "length": 12, "padding": "left"}'
+    buffer: Buffer = Buffer.from_json(json_str=json_str)
+    assert buffer.content == b"\xaa\xf0"
+    assert buffer.length == 12
+    assert buffer.padding == Padding.LEFT
