@@ -413,7 +413,7 @@ class Buffer:
         return json_object
 
     def json(self, indent=None, separators=None) -> str:
-        return json.dumps(self.__json__(), indent=None, separators=None)
+        return json.dumps(self.__json__(), indent=indent, separators=separators)
 
     def __from_json_object__(json_object:object):
         return Buffer(
