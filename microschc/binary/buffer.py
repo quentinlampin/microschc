@@ -13,12 +13,14 @@ using slicing notations.
 """
 
 from enum import Enum
+import json
 
 class Padding(str, Enum):
     LEFT = 'left'
     RIGHT = 'right'
 
 class Buffer:
+
     def __init__(self, content: bytes, length:int, padding=Padding.LEFT) -> None:
         self.content:bytes = content
         self.length:int = length
@@ -401,3 +403,25 @@ class Buffer:
             content_repr += f" {last_byte:{format}}{padding_str}"
 
         return f"[{content_repr}] | len: {self.length} | pad: {self.padding_length} {self.padding}"
+
+    def __json__(self) -> dict:
+        json_object: dict = {
+            'content': self.content.hex(),
+            'length': self.length,
+            'padding': self.padding
+        }
+        return json_object
+
+    def json(self, indent=None, separators=None) -> str:
+        return json.dumps(self.__json__(), indent=None, separators=None)
+
+    def __from_json_object__(json_object:object):
+        return Buffer(
+            content=bytes.fromhex(json_object['content']), 
+            length=json_object['length'],
+            padding=json_object['padding']
+        )
+
+    def from_json(json_str: str):
+        json_object: dict = json.loads(json_str)
+        return Buffer.__from_json_object__(json_object=json_object)
