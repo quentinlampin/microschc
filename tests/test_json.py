@@ -1,6 +1,6 @@
 from microschc.binary.buffer import Buffer
 from microschc.parser.protocol.ipv6 import IPv6Fields
-from microschc.rfc8724 import DirectionIndicator, FieldDescriptor, HeaderDescriptor, MatchMapping, PacketDescriptor, RuleDescriptor, RuleFieldDescriptor
+from microschc.rfc8724 import Context, DirectionIndicator, FieldDescriptor, HeaderDescriptor, MatchMapping, PacketDescriptor, RuleDescriptor, RuleFieldDescriptor
 from microschc.rfc8724 import CompressionDecompressionAction as CDA
 from microschc.rfc8724 import MatchingOperator as MO
 
@@ -158,7 +158,7 @@ def test_rule_descriptor_to_json():
 
 def test_rule_descriptor_from_json():
     """
-    test JSON deserialization of PacketDescriptor objects
+    test JSON deserialization of RuleDescriptor objects
     """
     json_str = '{"id": {"content": "00", "length": 2, "padding": "left"}, "field_descriptors": [{"id": "field1", "length": 16, "position": 0, "direction": "Bi", "target_value": {"content": "", "length": 0, "padding": "left"}, "matching_operator": "ignore", "compression_decompression_action": "value-sent"}, {"id": "field2", "length": 8, "position": 0, "direction": "Bi", "target_value": {"content": "ef", "length": 8, "padding": "left"}, "matching_operator": "equal", "compression_decompression_action": "not-sent"}]}'
 
@@ -181,3 +181,53 @@ def test_rule_descriptor_from_json():
     assert rule_descriptor.field_descriptors[1].target_value == Buffer(content=b'\xef', length=8)
     assert rule_descriptor.field_descriptors[1].matching_operator == MO.EQUAL
     assert rule_descriptor.field_descriptors[1].compression_decompression_action == CDA.NOT_SENT
+
+
+def test_context_to_json():
+    """
+    test JSON serialization of RuleDescriptor objects
+    """
+
+    rule_field_descriptors: List[RuleFieldDescriptor] = [
+        RuleFieldDescriptor(
+            id='field1', length=16, position=0, direction=DirectionIndicator.BIDIRECTIONAL, 
+            target_value=Buffer(content=b'', length=0), matching_operator=MO.IGNORE, compression_decompression_action=CDA.VALUE_SENT
+        ),
+        RuleFieldDescriptor(
+            id='field2', length=8, position=0, direction=DirectionIndicator.BIDIRECTIONAL, 
+            target_value=Buffer(content=b'\xef', length=8), matching_operator=MO.EQUAL, compression_decompression_action=CDA.NOT_SENT
+        )
+    ]
+    rule_descriptor: RuleDescriptor = RuleDescriptor(id=Buffer(content=b'\x00', length=2), field_descriptors=rule_field_descriptors)
+
+    context: Context = Context(id='test_context', description='this is a test context', interface_id='eth0', ruleset=[rule_descriptor])
+
+    json_str = context.json()
+    assert json_str == '{"id": "test_context", "description": "this is a test context", "interface_id": "eth0", "ruleset": [{"id": {"content": "00", "length": 2, "padding": "left"}, "field_descriptors": [{"id": "field1", "length": 16, "position": 0, "direction": "Bi", "target_value": {"content": "", "length": 0, "padding": "left"}, "matching_operator": "ignore", "compression_decompression_action": "value-sent"}, {"id": "field2", "length": 8, "position": 0, "direction": "Bi", "target_value": {"content": "ef", "length": 8, "padding": "left"}, "matching_operator": "equal", "compression_decompression_action": "not-sent"}]}]}'
+
+def test_context_from_json():
+    """
+    test JSON deserialization of Context objects
+    """
+    json_str = '{"id": "test_context", "description": "this is a test context", "interface_id": "eth0", "ruleset": [{"id": {"content": "00", "length": 2, "padding": "left"}, "field_descriptors": [{"id": "field1", "length": 16, "position": 0, "direction": "Bi", "target_value": {"content": "", "length": 0, "padding": "left"}, "matching_operator": "ignore", "compression_decompression_action": "value-sent"}, {"id": "field2", "length": 8, "position": 0, "direction": "Bi", "target_value": {"content": "ef", "length": 8, "padding": "left"}, "matching_operator": "equal", "compression_decompression_action": "not-sent"}]}]}'
+
+    context: Context = Context.from_json(json_str=json_str)
+    assert context.id == 'test_context'
+    assert context.description == 'this is a test context'
+    assert context.interface_id == 'eth0'
+
+    assert context.ruleset[0].field_descriptors[0].id == 'field1'
+    assert context.ruleset[0].field_descriptors[0].length == 16
+    assert context.ruleset[0].field_descriptors[0].position == 0
+    assert context.ruleset[0].field_descriptors[0].direction == DirectionIndicator.BIDIRECTIONAL
+    assert context.ruleset[0].field_descriptors[0].target_value == Buffer(content=b'', length=0)
+    assert context.ruleset[0].field_descriptors[0].matching_operator == MO.IGNORE
+    assert context.ruleset[0].field_descriptors[0].compression_decompression_action == CDA.VALUE_SENT
+
+    assert context.ruleset[0].field_descriptors[1].id == 'field2'
+    assert context.ruleset[0].field_descriptors[1].length == 8
+    assert context.ruleset[0].field_descriptors[1].position == 0
+    assert context.ruleset[0].field_descriptors[1].direction == DirectionIndicator.BIDIRECTIONAL
+    assert context.ruleset[0].field_descriptors[1].target_value == Buffer(content=b'\xef', length=8)
+    assert context.ruleset[0].field_descriptors[1].matching_operator == MO.EQUAL
+    assert context.ruleset[0].field_descriptors[1].compression_decompression_action == CDA.NOT_SENT
