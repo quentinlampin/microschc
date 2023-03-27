@@ -13,7 +13,10 @@ class HeaderParser:
     def __init__(self, name: str) -> None:
         self.name = name
 
-    def parse(self, buffer: bytes) -> HeaderDescriptor:
+    def match(self, buffer: Buffer) -> bool:
+        raise NotImplementedError
+
+    def parse(self, buffer: Buffer) -> HeaderDescriptor:
         raise NotImplementedError
 
 
@@ -28,12 +31,15 @@ class PacketParser:
         self.name = name
         self.parsers = parsers
 
+    def match(self, buffer: Buffer, direction: DirectionIndicator) -> bool:
+        return all((parser.match(buffer) for parser in self.parsers))
+            
     def parse(self, buffer: Buffer, direction: DirectionIndicator) -> PacketDescriptor:
         header_descriptors: List[HeaderDescriptor] = []
 
         packet_length: int = buffer.length
         for parser in self.parsers:
-            header_descriptor = parser.parse(buffer=buffer.content)
+            header_descriptor = parser.parse(buffer=buffer)
             header_descriptors.append(header_descriptor)
 
             # update buffer to pass on to the next parser

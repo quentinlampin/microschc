@@ -3,9 +3,9 @@ from microschc.parser.parser import HeaderDescriptor
 from microschc.rfc8724 import FieldDescriptor
 from microschc.binary.buffer import Buffer
 
-def test_ipv6_parser_import():
-    """test: IPv6 header parser import and instanciation
-    The test instanciate an IPv6 parser and checks for import errors
+def test_udp_parser_import():
+    """test: UDP header parser import and instanciation
+    The test instanciate a UDP parser and checks for import errors
     """
     parser = UDPParser()
     assert( isinstance(parser, UDPParser) )
@@ -24,9 +24,12 @@ def test_udp_parser_parse():
     valid_udp_packet:bytes = bytes( b"\x23\x29\x23\x2a\x00\x10\x2d\xa1"
                                     b"\x64\x65\x61\x64\x62\x65\x65\x66"
     )
-
+    valid_udp_packet_buffer:Buffer = Buffer(content=valid_udp_packet, length=len(valid_udp_packet)*8)
     parser:UDPParser = UDPParser()
-    udp_header_descriptor: HeaderDescriptor = parser.parse(buffer=valid_udp_packet)
+
+    assert parser.match(valid_udp_packet_buffer)
+
+    udp_header_descriptor: HeaderDescriptor = parser.parse(buffer=valid_udp_packet_buffer)
 
     # test udp_header_descriptor type
     assert isinstance(udp_header_descriptor, HeaderDescriptor)

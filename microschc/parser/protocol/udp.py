@@ -26,7 +26,12 @@ class UDPParser(HeaderParser):
     def __init__(self) -> None:
         super().__init__(name=UDP_HEADER_ID)
 
-    def parse(self, buffer:bytes) -> HeaderDescriptor:
+    def match(self, buffer: bytes) -> bool:
+        if len(buffer) < 8:
+            return False
+        return True
+
+    def parse(self, buffer:Buffer) -> HeaderDescriptor:
         """
          0      7 8     15 16    23 24    31
         +--------+--------+--------+--------+
@@ -40,28 +45,26 @@ class UDPParser(HeaderParser):
         |          data octets ...          |
         +---------------- ... --------------|
         """
-        header_bytes:bytes = buffer[0:8]
-
         # source port: 16 bits
-        source_port:bytes = header_bytes[0:2]
+        source_port:Buffer = buffer[0:16]
 
         # destination port: 16 bits
-        destination_port:bytes = header_bytes[2:4]
+        destination_port:Buffer = buffer[16:32]
 
-        # length
-        length:bytes = header_bytes[4:6]
+        # length: 16 bits
+        length:Buffer = buffer[32:48]
 
-        # checksum
-        checksum:bytes = header_bytes[6:8]
+        # checksum: 16 bits
+        checksum:Buffer = buffer[48:64]
 
         header_descriptor:HeaderDescriptor = HeaderDescriptor(
             id=UDP_HEADER_ID,
-            length=8*8,
+            length=64,
             fields=[
-                FieldDescriptor(id=UDPFields.SOURCE_PORT,       position=0, value=Buffer(content=source_port, length=16)),
-                FieldDescriptor(id=UDPFields.DESTINATION_PORT,  position=0, value=Buffer(content=destination_port, length=16)),
-                FieldDescriptor(id=UDPFields.LENGTH,            position=0, value=Buffer(content=length, length=16)),
-                FieldDescriptor(id=UDPFields.CHECKSUM,          position=0, value=Buffer(content=checksum, length=16)),
+                FieldDescriptor(id=UDPFields.SOURCE_PORT,       position=0, value=source_port),
+                FieldDescriptor(id=UDPFields.DESTINATION_PORT,  position=0, value=destination_port),
+                FieldDescriptor(id=UDPFields.LENGTH,            position=0, value=length),
+                FieldDescriptor(id=UDPFields.CHECKSUM,          position=0, value=checksum),
             ]
         )
         return header_descriptor

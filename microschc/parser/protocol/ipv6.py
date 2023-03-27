@@ -34,7 +34,17 @@ class IPv6Parser(HeaderParser):
     def __init__(self) -> None:
         super().__init__(name=IPv6_HEADER_ID)
 
-    def parse(self, buffer:bytes) -> HeaderDescriptor:
+    def match(self, buffer: Buffer) -> bool:
+        
+        if buffer.length < 320:
+            return False
+        
+        version:Buffer = buffer[0:4]
+        
+        return (version == b'\x06')
+        
+
+    def parse(self, buffer:Buffer) -> HeaderDescriptor:
         """
         +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
         |Version| Traffic Class |           Flow Label                  |
@@ -58,37 +68,36 @@ class IPv6Parser(HeaderParser):
         |                                                               |
         +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
         """
-        header_bytes:bytes = buffer[0:40]
 
         # version: 4 bits
-        version:bytes = ((header_bytes[0] & 0xf0) >> 4).to_bytes(1, 'big')
+        version:Buffer = buffer[0:4]
         # traffic_class: 8 bits
-        traffic_class:bytes = (( (header_bytes[0] & 0x0f) << 4 ) | ( (header_bytes[1] & 0xf0) >> 4 )).to_bytes(1, 'big')
+        traffic_class:Buffer = buffer[4:12]
         # flow label: 20 bits
-        flow_label:bytes = ((header_bytes[1] & 0xf0) >> 4).to_bytes(1, 'big') + header_bytes[2:4]
+        flow_label:Buffer = buffer[12:32]
         # payload length: 16 bits
-        payload_length:bytes = header_bytes[4:6]
+        payload_length:Buffer = buffer[32:48]
         # next header: 8 bits
-        next_header:bytes = header_bytes[6:7]
+        next_header:Buffer = buffer[48:56]
         # hop limit: 8 bits
-        hop_limit:bytes = header_bytes[7:8]
+        hop_limit:Buffer = buffer[56:64]
         # source address: 128 bits (16 bytes)
-        source_address:bytes = header_bytes[8:24]
+        source_address:Buffer = buffer[64:192]
         # destination address: 128 bits (16 bytes)
-        destination_address:bytes = header_bytes[24:40]
+        destination_address:Buffer = buffer[192:320]
 
         header_descriptor:HeaderDescriptor = HeaderDescriptor(
             id=IPv6_HEADER_ID,
-            length=40*8,
+            length=320,
             fields=[
-                FieldDescriptor(id=IPv6Fields.VERSION,         position=0, value=Buffer(content=version, length=4)),
-                FieldDescriptor(id=IPv6Fields.TRAFFIC_CLASS,   position=0, value=Buffer(content=traffic_class, length=8)),
-                FieldDescriptor(id=IPv6Fields.FLOW_LABEL,      position=0, value=Buffer(content=flow_label, length=20)),
-                FieldDescriptor(id=IPv6Fields.PAYLOAD_LENGTH,  position=0, value=Buffer(content=payload_length, length=16)),
-                FieldDescriptor(id=IPv6Fields.NEXT_HEADER,     position=0, value=Buffer(content=next_header, length=8)),
-                FieldDescriptor(id=IPv6Fields.HOP_LIMIT,       position=0, value=Buffer(content=hop_limit, length=8)),
-                FieldDescriptor(id=IPv6Fields.SRC_ADDRESS,     position=0, value=Buffer(content=source_address, length=128)),
-                FieldDescriptor(id=IPv6Fields.DST_ADDRESS,     position=0, value=Buffer(content=destination_address, length=128))
+                FieldDescriptor(id=IPv6Fields.VERSION,         position=0, value=version),
+                FieldDescriptor(id=IPv6Fields.TRAFFIC_CLASS,   position=0, value=traffic_class),
+                FieldDescriptor(id=IPv6Fields.FLOW_LABEL,      position=0, value=flow_label),
+                FieldDescriptor(id=IPv6Fields.PAYLOAD_LENGTH,  position=0, value=payload_length),
+                FieldDescriptor(id=IPv6Fields.NEXT_HEADER,     position=0, value=next_header),
+                FieldDescriptor(id=IPv6Fields.HOP_LIMIT,       position=0, value=hop_limit),
+                FieldDescriptor(id=IPv6Fields.SRC_ADDRESS,     position=0, value=source_address),
+                FieldDescriptor(id=IPv6Fields.DST_ADDRESS,     position=0, value=destination_address)
             ]
         )
         return header_descriptor

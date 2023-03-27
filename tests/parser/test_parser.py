@@ -24,7 +24,7 @@ def test_parser_ipv6_udp_coap():
     - a UDP header with following fields:
         - id='Source Port'          length=16    position=0  value=b'\xd1\x00'
         - id='Destination Port'     length=16    position=0  value=b'\x16\x33'
-        - id='Length'               length=16    position=0  value=b'\x68'
+        - id='Length'               length=16    position=0  value=b'\x00\x68'
         - id='Checksum'             length=16    position=0  value=b'\x5c\x21'
 
     - a CoAP header with following fields:
@@ -63,6 +63,9 @@ def test_parser_ipv6_udp_coap():
     packet_buffer = Buffer(content=valid_stack_packet, length=len(valid_stack_packet)*8)
 
     packet_parser: PacketParser = factory(stack_implementation=StacksImplementation.IPV6_UDP_COAP)
+
+    assert packet_parser.match(packet_buffer, direction=DirectionIndicator.DOWN)
+
     packet_descriptor: PacketDescriptor = packet_parser.parse(buffer=packet_buffer, direction=DirectionIndicator.DOWN)
 
     assert packet_descriptor.fields[0].id == IPv6Fields.VERSION
