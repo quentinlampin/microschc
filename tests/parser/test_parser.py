@@ -1,10 +1,9 @@
-from microschc.parser.factory import factory
 from microschc.parser.parser import PacketParser
+from microschc.parser.protocol.registry import Stack, factory
 from microschc.parser.protocol.coap import CoAPFields
 from microschc.parser.protocol.ipv6 import IPv6Fields
 from microschc.parser.protocol.udp import UDPFields
-from microschc.rfc8724 import DirectionIndicator, HeaderDescriptor, PacketDescriptor
-from microschc.rfc8724extras import StacksImplementation
+from microschc.rfc8724 import DirectionIndicator, PacketDescriptor
 from microschc.binary.buffer import Buffer
 
 def test_parser_ipv6_udp_coap():
@@ -62,7 +61,7 @@ def test_parser_ipv6_udp_coap():
     )
     packet_buffer = Buffer(content=valid_stack_packet, length=len(valid_stack_packet)*8)
 
-    packet_parser: PacketParser = factory(stack_implementation=StacksImplementation.IPV6_UDP_COAP)
+    packet_parser: PacketParser = factory(stack_id=Stack.IPV6_UDP_COAP)
 
     assert packet_parser.match(packet_buffer, direction=DirectionIndicator.DOWN)
 
@@ -130,7 +129,7 @@ def test_parser_ipv6_udp_coap():
                                 b"\x68\x44\x22\xf8\x0c\x68\xa4\xf0\xaf\xe7\xa8\x17"
     packet_buffer = Buffer(content=valid_stack_packet, length=len(valid_stack_packet)*8)
 
-    packet_parser: PacketParser = factory(stack_implementation=StacksImplementation.IPV6_UDP_COAP)
+    packet_parser: PacketParser = factory(stack_id=Stack.IPV6_UDP_COAP)
     packet_descriptor: PacketDescriptor = packet_parser.parse(buffer=packet_buffer, direction=DirectionIndicator.DOWN)
     assert True # no raised exception for zero option CoAP packet
 
@@ -142,7 +141,7 @@ def test_parser_ipv6_udp_coap():
                                 b"\x61\x30\x6e\x72\x6a\x76\x45\x46\x37\x47"
     packet_buffer = Buffer(content=valid_stack_packet, length=len(valid_stack_packet)*8)
 
-    packet_parser: PacketParser = factory(stack_implementation=StacksImplementation.IPV6_UDP_COAP)
+    packet_parser: PacketParser = factory(stack_id=Stack.IPV6_UDP_COAP)
     packet_descriptor: PacketDescriptor = packet_parser.parse(buffer=packet_buffer, direction=DirectionIndicator.DOWN)
     assert True # no raised exception for no payload CoAP packet
 

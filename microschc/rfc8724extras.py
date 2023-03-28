@@ -7,10 +7,5 @@ definitions of literals described in RFC 8724 [1] whose values are not specified
 
 from enum import Enum
 
-
-class StacksImplementation(str, Enum):
-    IPV6_UDP_COAP = 'IPv6-UDP-CoAP'
-    IPV4_UDP_COAP = 'IPv4-UDP-CoAP'
-
 class ParserDefinitions(str, Enum): 
     PAYLOAD = 'Payload'
