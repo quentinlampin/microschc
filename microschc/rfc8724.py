@@ -11,8 +11,6 @@ from typing import  Dict, List, Union
 
 from microschc.binary.buffer import Buffer
 
-
-
 ReverseMapping = Dict[Buffer, Buffer]
 Mapping = Dict[Buffer, Buffer]
 
@@ -231,13 +229,19 @@ class Context:
     id: str
     description: str
     interface_id: str
+    parser_id: str
     ruleset: List[RuleDescriptor]
+
+    def __repr__(self) -> str:
+        content_repr:str = f"id:{self.id} description:{self.description} interface_id: {self.interface_id} parser_id: {self.parser_id} rules: {len(self.rules)}"
+        return content_repr
 
     def __json__(self) -> dict:
         jsonisable: dict = {
             'id': self.id,
             'description': self.description,
             'interface_id': self.interface_id,
+            'parser_id': self.parser_id,
             'ruleset': [ rule_field_descriptor.__json__() for rule_field_descriptor in self.ruleset ]
         }
         return jsonisable
@@ -250,6 +254,7 @@ class Context:
             id=json_object['id'],
             description=json_object['description'],
             interface_id=json_object['interface_id'],
+            parser_id=json_object['parser_id'],
             ruleset=[RuleDescriptor.__from_json_object__(rd_json) for rd_json in json_object['ruleset']],
         )
 
