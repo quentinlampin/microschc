@@ -175,19 +175,18 @@ class Buffer:
         '''
         returns True if `another` has the same first `bit_length` bits (excluding padding)
         '''
-        if isinstance(another, Buffer) is False:
+        if isinstance(another, bytes):
+            return self.content == another
+        elif isinstance(another, Buffer):
+            if self.length != another.length:
+                return False
+            trimmed_self = self.trim(inplace=False)
+            trimmed_another = another.trim(inplace=False)
+            if self.padding != another.padding:
+                trimmed_another.pad(padding=self.padding, inplace=True)
+            return trimmed_self.content == trimmed_another.content
+        else:
             return False
-        assert isinstance(another, Buffer) # for linter
-        if self.length != another.length:
-            return False
-
-        trimmed_self = self.trim(inplace=False)
-        trimmed_another = another.trim(inplace=False)
-
-        if self.padding != another.padding:
-            trimmed_another.pad(padding=self.padding, inplace=True)
-        
-        return trimmed_self.content == trimmed_another.content
 
     def __hash__(self) -> int:
         trimmed_buffer: Buffer = self.trim(inplace=False)
@@ -248,6 +247,9 @@ class Buffer:
         
         subset_bit_length: int = stop_bit - start_bit
 
+        if subset_bit_length == 0:
+            return Buffer(content=b'', length=0, padding=self.padding)
+
         if self.padding == Padding.LEFT:
             # retrieve bits 1 to 10 
             # 
@@ -267,10 +269,12 @@ class Buffer:
             stop_bit += self.padding_length
             start_byte = start_bit//8
             stop_byte = stop_bit//8 if stop_bit%8 == 0 else 1 + stop_bit//8
+            start_byte_mask = (0xff >> (start_bit%8))
             
             # |- - - 0 0 0 0 1|0 0 0 0 0 1 0 1|      subset_content
             #          + + + + + + + + +         (+) bits to output
-            content_of_interest = self.content[start_byte:stop_byte]
+            # content_of_interest = self.content[start_byte:stop_byte]
+            content_of_interest = (self.content[start_byte] & start_byte_mask).to_bytes(1,'big') + self.content[start_byte+1:stop_byte]
             subset_content = b''
 
             # remove rightmost unneeded bits by right-shifting
@@ -321,6 +325,7 @@ class Buffer:
             #                    start_byte       stop_byte
             start_byte = start_bit//8
             stop_byte = stop_bit//8 if stop_bit%8 == 0 else 1 + stop_bit//8
+            start_byte_mask = (0xff >> (start_bit%8))
 
             #         0x08          0x68        
             #  |0 0 0 0 1 0 0 0|0 1 1 0 1 - - -|    content of interest
@@ -328,8 +333,7 @@ class Buffer:
             #     ^               ^ 
             # start_bit        stop_bit
             #  ^---------------^---------------^
-            content_of_interest = self.content[start_byte:stop_byte]
-
+            content_of_interest = (self.content[start_byte] & start_byte_mask).to_bytes(1,'big') + self.content[start_byte+1:stop_byte]
             # remove leftmost unneeded bits by shifting left
             #         0x08          0x68        
             #  |0 0 0 0 1 0 0 0|0 1 1 0 1 - - -|    content of interest

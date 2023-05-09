@@ -63,9 +63,11 @@ def test_coap_parser_parse():
                                     b"\x6c\x74\x3d\x33\x30\x30\x0d\x02\x65\x70\x3d\x38\x35\x62\x61\x39" \
                                     b"\x62\x64\x61\x63\x30\x62\x65\xc1\x0d\xd2\x14\x07\x2b\xff"
     )
+    valid_coap_packet_buffer: Buffer = Buffer(content=valid_coap_packet, length=len(valid_coap_packet)*8)
 
     parser:CoAPParser = CoAPParser()
-    coap_header_descriptor: HeaderDescriptor = parser.parse(buffer=valid_coap_packet)
+
+    coap_header_descriptor: HeaderDescriptor = parser.parse(buffer=valid_coap_packet_buffer)
 
     # test ipv6_header_descriptor type
     assert isinstance(coap_header_descriptor, HeaderDescriptor)

@@ -1,13 +1,13 @@
 from typing import List
 from microschc.binary.buffer import Buffer, Padding
 from microschc.compressor.compressor import _encode_length, compress
-from microschc.parser.factory import factory
 from microschc.parser.parser import PacketParser
+from microschc.parser.protocol.registry import Stack, factory
 from microschc.parser.protocol.coap import CoAPFields
 from microschc.parser.protocol.ipv6 import IPv6Fields
 from microschc.parser.protocol.udp import UDPFields
 from microschc.rfc8724 import DirectionIndicator, MatchMapping, PacketDescriptor, RuleDescriptor, RuleFieldDescriptor
-from microschc.rfc8724extras import ParserDefinitions, StacksImplementation
+from microschc.rfc8724extras import ParserDefinitions
 from microschc.rfc8724 import MatchingOperator as MO
 from microschc.rfc8724 import CompressionDecompressionAction as CDA
 
@@ -27,8 +27,9 @@ def test_compress():
     )
     packet_buffer = Buffer(content=valid_stack_packet, length=len(valid_stack_packet)*8)
 
-    packet_parser: PacketParser = factory(stack_implementation=StacksImplementation.IPV6_UDP_COAP)
-    packet_descriptor: PacketDescriptor = packet_parser.parse(buffer=packet_buffer, direction=DirectionIndicator.UP)
+    packet_parser: PacketParser = factory(stack_id=Stack.IPV6_UDP_COAP)
+    packet_descriptor: PacketDescriptor = packet_parser.parse(buffer=packet_buffer)
+    packet_descriptor.direction =  DirectionIndicator.UP
 
     field_descriptors_1: List[RuleFieldDescriptor] = [
         RuleFieldDescriptor(
@@ -94,7 +95,7 @@ def test_compress():
     rule_descriptor_1: RuleDescriptor = RuleDescriptor(id=Buffer(content=b'\x03', length=2), field_descriptors=field_descriptors_1)
 
     schc_packet = compress(packet_descriptor=packet_descriptor, rule_descriptor=rule_descriptor_1)
-    schc_packet += packet_descriptor.payload
+    
     assert schc_packet == Buffer(content= b'\xc0\x1a\x00\x80\x06\x85\xc2\x18\x45\x22\xf6\xf4' \
                                           b'\x0b\x83\x00\xef\xee\x66\x29\x12\x21\x86\xe5\xb7' \
                                           b'\xb2\x26\x26\xe2\x23\xa2\x22\xf3\x62\xf2\x22\xc2' \

@@ -24,7 +24,7 @@ Note: The case of CoAP in the context of SCHC is a odd one.
 from enum import Enum
 from typing import List, Tuple
 from microschc.binary.buffer import Buffer
-from microschc.parser import HeaderParser
+from microschc.parser import HeaderParser, ParserError
 from microschc.rfc8724 import FieldDescriptor, HeaderDescriptor
 
 
@@ -69,6 +69,7 @@ class CoAPDefinitions(bytes, Enum):
     OPTION_DELTA_EXTENDED_16BITS     = b'\x0e'
     OPTION_LENGTH_EXTENDED_8BITS     = b'\x0d'
     OPTION_LENGTH_EXTENDED_16BITS    = b'\x0e'
+    PAYLOAD_MARKER_VALUE             = b'\xff'
 
 
 class CoAPParser(HeaderParser):
@@ -76,6 +77,9 @@ class CoAPParser(HeaderParser):
     def __init__(self, interpret_options=False) -> None:
         super().__init__(name=COAP_HEADER_ID)
 
+    def match(self, buffer: Buffer) -> bool:
+        return (buffer.length >= 32)
+        
     def parse(self, buffer: bytes) -> HeaderDescriptor:
         """
          0                   1                   2                   3
@@ -90,34 +94,42 @@ class CoAPParser(HeaderParser):
         |1 1 1 1 1 1 1 1|    Payload (if any) ...
         +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
         """
-        header_bytes: bytes = buffer[0:]
+
+        if buffer.length < 32:
+            raise ParserError(buffer=buffer, message=f'length too short: {buffer.length} < 32')
 
         # version: 2 bits
-        version: bytes = ((header_bytes[0] & 0b1100_0000) >> 6).to_bytes(1, 'big')
+        version: Buffer = buffer[0:2]
         # type: 2 bits # noqa: F723 
-        type: bytes = ((header_bytes[0] & 0b0011_0000) >> 4).to_bytes(1, 'big')
+        type: Buffer = buffer[2:4]
         # token_length: 4 bits
-        token_length_int = (header_bytes[0] & 0x0f)
-        token_length: bytes = (token_length_int).to_bytes(1, 'big')
+        token_length: Buffer = buffer[4:8]
+        token_length_int = token_length.content[0]
         # code: 8 bits
-        code: bytes = header_bytes[1:2]
+        code: Buffer = buffer[8:16]
         # message ID : 16 bits
-        message_id: bytes = header_bytes[2:4]
-        # token : token_length_int x 8 bits (token length is in bytes)
-        token: bytes = header_bytes[4: 4+token_length_int]
+        message_id: Buffer = buffer[16:32]
+        try:
+            # token : token_length_int x 8 bits (token length is in bytes)
+            token: Buffer = buffer[32: 32+token_length_int*8]
+        except Exception:
+            raise ParserError(buffer=buffer, message=f'error parsing token at bits 32-{32+token_length_int}')
 
         header_fields: List[FieldDescriptor] = [
-                FieldDescriptor(id=CoAPFields.VERSION,          position=0,    value=Buffer(content=version, length=2)),
-                FieldDescriptor(id=CoAPFields.TYPE,             position=0,    value=Buffer(content=type, length=2)),
-                FieldDescriptor(id=CoAPFields.TOKEN_LENGTH,     position=0,    value=Buffer(content=token_length, length=4)),
-                FieldDescriptor(id=CoAPFields.CODE,             position=0,    value=Buffer(content=code, length=8)),
-                FieldDescriptor(id=CoAPFields.MESSAGE_ID,       position=0,    value=Buffer(content=message_id, length=16)),
-                FieldDescriptor(id=CoAPFields.TOKEN,            position=0,    value=Buffer(content=token, length=token_length_int*8)),
+                FieldDescriptor(id=CoAPFields.VERSION,          position=0,    value=version),
+                FieldDescriptor(id=CoAPFields.TYPE,             position=0,    value=type),
+                FieldDescriptor(id=CoAPFields.TOKEN_LENGTH,     position=0,    value=token_length),
+                FieldDescriptor(id=CoAPFields.CODE,             position=0,    value=code),
+                FieldDescriptor(id=CoAPFields.MESSAGE_ID,       position=0,    value=message_id),
+                FieldDescriptor(id=CoAPFields.TOKEN,            position=0,    value=token),
         ]
 
-        options_bytes: bytes = buffer[4+token_length_int:]
-        if len(options_bytes):
-            options_fields, option_bits_consumed = _parse_options(options_bytes)
+        options_bytes: Buffer = buffer[32+token_length_int*8:]
+        if options_bytes.length > 0:
+            try:
+                options_fields, option_bits_consumed = _parse_options(options_bytes)
+            except Exception:
+                raise ParserError(buffer=options_bytes, message='error parsing options')
         else:
             option_bits_consumed = 0
             options_fields = []
@@ -129,7 +141,7 @@ class CoAPParser(HeaderParser):
         )
         return header_descriptor
 
-def _parse_options(buffer: bytes) -> Tuple[List[FieldDescriptor], int]:
+def _parse_options(buffer: Buffer) -> Tuple[List[FieldDescriptor], int]:
     """
         0   1   2   3   4   5   6   7
     +---------------+---------------+
@@ -159,61 +171,61 @@ def _parse_options(buffer: bytes) -> Tuple[List[FieldDescriptor], int]:
     option_index: int = 0
 
     # parse options until reaching the payload marker byte or end of buffer
-    while cursor < len(buffer) and buffer[cursor] != 0xff:
+    while cursor < buffer.length and buffer[cursor:cursor+8] != CoAPDefinitions.PAYLOAD_MARKER_VALUE:
         option_index += 1
-        option_bytes: bytes = buffer[cursor:]
+        option_bytes: Buffer = buffer[cursor:]
         
         # option_delta: 4 bits
-        option_delta: bytes = ((option_bytes[0] & 0xf0) >> 4).to_bytes(1, 'big')
-        fields.append(FieldDescriptor(id=CoAPFields.OPTION_DELTA, position=option_index, value=Buffer(content=option_delta, length=4)))
+        option_delta: Buffer = option_bytes[0:4]
+        fields.append(FieldDescriptor(id=CoAPFields.OPTION_DELTA, position=option_index, value=option_delta))
 
         # option_length: 4 bits
-        option_length_int: int = option_bytes[0] & 0x0f
-        option_length: bytes = option_length_int.to_bytes(1, 'big')
-        fields.append(FieldDescriptor(id=CoAPFields.OPTION_LENGTH, position=option_index, value=Buffer(content=option_length, length=4)))
+        option_length: Buffer = option_bytes[4:8]
+        option_length_int: int = option_length.content[0]
+        fields.append(FieldDescriptor(id=CoAPFields.OPTION_LENGTH, position=option_index, value=option_length))
 
         # option_length_extended: 
         option_length_extended_int: int = 0
 
-        option_offset: int = 1 # to keep track of variable length fields
+        option_offset: int = 8 # to keep track of variable length fields
 
         if option_delta == CoAPDefinitions.OPTION_DELTA_EXTENDED_8BITS:
             # option_delta_extended: 8 bits
-            option_delta_extended: bytes = option_bytes[1:2]
-            fields.append(FieldDescriptor(id=CoAPFields.OPTION_DELTA_EXTENDED, position=option_index, value=Buffer(content=option_delta_extended, length=8)))
-            option_offset = 2
+            option_delta_extended: Buffer = option_bytes[option_offset:option_offset+8]
+            fields.append(FieldDescriptor(id=CoAPFields.OPTION_DELTA_EXTENDED, position=option_index, value=option_delta_extended))
+            option_offset += 8
 
         elif option_delta == CoAPDefinitions.OPTION_DELTA_EXTENDED_16BITS:
             # option_delta_extended: 16 bits
-            option_delta_extended: bytes = option_bytes[1:3]
-            fields.append(FieldDescriptor(id=CoAPFields.OPTION_DELTA_EXTENDED, position=option_index, value=Buffer(content=option_delta_extended, length=16)))
-            option_offset = 3
+            option_delta_extended: bytes = option_bytes[option_offset:option_offset+16]
+            fields.append(FieldDescriptor(id=CoAPFields.OPTION_DELTA_EXTENDED, position=option_index, value=option_delta_extended))
+            option_offset += 16
 
         if option_length == CoAPDefinitions.OPTION_LENGTH_EXTENDED_8BITS:
             # option_length_extended: 8 bits
-            option_length_extended_int: int = option_bytes[option_offset]
-            option_length_extended: bytes = option_length_extended_int.to_bytes(1, 'big')
-            fields.append(FieldDescriptor(id=CoAPFields.OPTION_LENGTH_EXTENDED, position=option_index, value=Buffer(content=option_length_extended, length=8)))
-            option_offset += 1
+            option_length_extended: Buffer = option_bytes[option_offset:option_offset+8]
+            option_length_extended_int: int = option_length_extended.content[0]
+            fields.append(FieldDescriptor(id=CoAPFields.OPTION_LENGTH_EXTENDED, position=option_index, value=option_length_extended))
+            option_offset += 8
 
         elif option_length == CoAPDefinitions.OPTION_LENGTH_EXTENDED_16BITS:
             # option_length_extended: 16 bits
-            option_length_extended_int: int = (option_bytes[option_offset] << 8) & option_bytes[option_offset+1]
-            option_length_extended: bytes = option_bytes[option_offset:option_offset+2]
-            fields.append(FieldDescriptor(id=CoAPFields.OPTION_LENGTH_EXTENDED, position=option_index, value=Buffer(content=option_length_extended, length=16)))
-            option_offset += 2
+            option_length_extended: Buffer = option_bytes[option_offset:option_offset+16]
+            option_length_extended_int: int = (option_length_extended.content[0] << 8) + option_length_extended[1]
+            fields.append(FieldDescriptor(id=CoAPFields.OPTION_LENGTH_EXTENDED, position=option_index, value=option_length_extended))
+            option_offset += 16
 
-        option_value_length = option_length_int + option_length_extended_int
-        option_value: bytes = option_bytes[option_offset: option_offset+option_value_length]
-        fields.append(FieldDescriptor(id=CoAPFields.OPTION_VALUE, position=option_index, value=Buffer(content=option_value, length=option_value_length*8)))
+        option_value_length = (option_length_int + option_length_extended_int) * 8
+        option_value: Buffer = option_bytes[option_offset: option_offset+option_value_length]
+        fields.append(FieldDescriptor(id=CoAPFields.OPTION_VALUE, position=option_index, value=option_value))
 
         option_offset += option_value_length
         cursor += option_offset
 
     # append payload marker field
-    if cursor < len(buffer):
-        cursor += 1
+    if cursor < buffer.length:
+        cursor += 8
         fields.append(FieldDescriptor(id=CoAPFields.PAYLOAD_MARKER, position=0, value=Buffer(content=b'\xff', length=8)))
 
     # return CoAP fields descriptors list
-    return (fields, 8*cursor)
+    return (fields, cursor)

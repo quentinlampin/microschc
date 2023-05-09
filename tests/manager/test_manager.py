@@ -1,17 +1,19 @@
 from typing import List
-from microschc.binary.buffer import Buffer, Padding
+from microschc.binary import Buffer
 from microschc.parser.protocol.coap import CoAPFields
+from microschc.parser.protocol.registry import Stack, factory
+from microschc.manager import ContextManager
+from microschc.parser import PacketParser
 from microschc.parser.protocol.ipv6 import IPv6Fields
 from microschc.parser.protocol.udp import UDPFields
-from microschc.rfc8724 import MatchMapping, MatchingOperator as MO, RuleDescriptor
+from microschc.rfc8724 import MatchMapping, PacketDescriptor, DirectionIndicator, RuleFieldDescriptor, RuleDescriptor
 from microschc.rfc8724 import CompressionDecompressionAction as CDA
-from microschc.rfc8724 import DirectionIndicator, RuleFieldDescriptor
+from microschc.rfc8724 import MatchingOperator as MO
 
-from microschc.decompressor.decompressor import decompress
+from microschc.rfc8724extras import Context, ParserDefinitions
 
+def test_manager():
 
-
-def test_decompress():
     valid_stack_packet:bytes = bytes(
         b"\x60\x00\xef\x2d\x00\x68\x11\x40\x20\x01\x0d\xb8\x00\x0a\x00\x00" \
         b"\x00\x00\x00\x00\x00\x00\x00\x02\x20\x01\x0d\xb8\x00\x0a\x00\x00" \
@@ -23,7 +25,7 @@ def test_decompress():
         b"\x38\x2e\x30\x7d\x2c\x7b\x22\x6e\x22\x3a\x22\x30\x2f\x35\x22\x2c" \
         b"\x22\x76\x22\x3a\x31\x36\x36\x36\x32\x36\x33\x33\x33\x39\x7d\x5d"
     )
-    valid_buffer: Buffer = Buffer(content=valid_stack_packet, length=8*len(valid_stack_packet), padding=Padding.RIGHT)
+    packet_buffer = Buffer(content=valid_stack_packet, length=len(valid_stack_packet)*8)
 
     field_descriptors_1: List[RuleFieldDescriptor] = [
         RuleFieldDescriptor(
@@ -82,20 +84,14 @@ def test_decompress():
         RuleFieldDescriptor(id=CoAPFields.OPTION_VALUE, length=0, position=0, direction=DirectionIndicator.UP,
             target_value=Buffer(content=b'', length=0), matching_operator=MO.IGNORE, compression_decompression_action=CDA.VALUE_SENT),
         RuleFieldDescriptor(id=CoAPFields.PAYLOAD_MARKER, length=8, position=0, direction=DirectionIndicator.UP,
-            target_value=Buffer(content=b'\xff', length=8), matching_operator=MO.EQUAL, compression_decompression_action=CDA.NOT_SENT),
+            target_value=Buffer(content=b'\xff', length=8), matching_operator=MO.EQUAL, compression_decompression_action=CDA.NOT_SENT)
     ]
     rule_descriptor_1: RuleDescriptor = RuleDescriptor(id=Buffer(content=b'\x03', length=2), field_descriptors=field_descriptors_1)
 
-    schc_packet: Buffer = Buffer(content= b'\xc0\x1a\x00\x80\x06\x85\xc2\x18\x45\x22\xf6\xf4' \
-                                          b'\x0b\x83\x00\xef\xee\x66\x29\x12\x21\x86\xe5\xb7' \
-                                          b'\xb2\x26\x26\xe2\x23\xa2\x22\xf3\x62\xf2\x22\xc2' \
-                                          b'\x26\xe2\x23\xa2\x23\x02\xf3\x02\x22\xc2\x27\x62' \
-                                          b'\x23\xa3\x53\x42\xe3\x07\xd2\xc7\xb2\x26\xe2\x23' \
-                                          b'\xa2\x23\x02\xf3\x12\x22\xc2\x27\x62\x23\xa3\x43' \
-                                          b'\x82\xe3\x07\xd2\xc7\xb2\x26\xe2\x23\xa2\x23\x02' \
-                                          b'\xf3\x52\x22\xc2\x27\x62\x23\xa3\x13\x63\x63\x63' \
-                                          b'\x23\x63\x33\x33\x33\x97\xd5\xd0',
-                                 length=828, padding=Padding.RIGHT)
+    context: Context = Context(id='default', description='IPv6 UDP CoAP', interface_id='wlan0', parser_id=Stack.IPV6_UDP_COAP, ruleset=[rule_descriptor_1])
 
-    decompressed_packet = decompress(schc_packet=schc_packet, rule_descriptor=rule_descriptor_1)
-    assert decompressed_packet.content == valid_stack_packet
+    context_manager: ContextManager = ContextManager(context=context)
+
+    compressed_packet = context_manager.compress(packet=packet_buffer, direction=DirectionIndicator.UP)
+    decompressed_packet = context_manager.decompress(schc_packet=compressed_packet)
+    assert decompressed_packet == packet_buffer

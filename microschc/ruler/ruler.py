@@ -33,11 +33,10 @@ class Ruler:
         packet_fields: List[FieldDescriptor] = packet_descriptor.fields
         packet_direction: DirectionIndicator = packet_descriptor.direction
 
-        for rule in self.rules[0:-1]:
+        for rule in self.rules:
             
             # rules field descriptors and IDs that apply to packet direction
             rule_fields: List[RuleFieldDescriptor] = [f for f in filter(lambda f: f.direction in {packet_direction, DirectionIndicator.BIDIRECTIONAL}, rule.field_descriptors)]
-            # TODO: implement alternative algorithm for mandatory/optional fields
 
             # sanity check: both lists are of the same size
             if len(packet_fields) != len(rule_fields):
@@ -49,8 +48,9 @@ class Ruler:
 
             # rule matches, return it
             return rule
-        # if no rule matches, use the default
-        return self.rules[-1]
+        
+        # if no rule matches, raise RuleDescriptorMatchError
+        raise RuleDescriptorMatchError(packet_descriptor=packet_descriptor)
     
     def match_schc_packet(self, schc_packet: Buffer) -> RuleDescriptor:
         '''
@@ -65,8 +65,8 @@ class Ruler:
             if rule_id == schc_packet[0:rule_id.length]:
                 return rule
         
-        # if no rule matched, return default
-        return self.rules[-1]
+        # if no rule matched, raise RuleIDMatchError
+        raise RuleIDMatchError(rule_id=rule_id)
 
 
 def _field_match(packet_field: FieldDescriptor, rule_field: RuleFieldDescriptor):
@@ -93,3 +93,13 @@ def _field_match(packet_field: FieldDescriptor, rule_field: RuleFieldDescriptor)
         mapping: TargetValue = rule_field.target_value
         assert isinstance(mapping, MatchMapping)
         return match_mapping(packet_field, target_values=mapping)
+
+class RuleDescriptorMatchError(Exception):
+    def __init__(self, packet_descriptor: PacketDescriptor):
+        exception_message: str = f"error: no rule matching for: {packet_descriptor}"
+        super().__init__(exception_message)
+
+class RuleIDMatchError(Exception):
+    def __init__(self, rule_id: Buffer):
+        exception_message: str = f"error: no rule matching ID: {rule_id}"
+        super().__init__(exception_message)

@@ -12,7 +12,7 @@ Note 1: Options parsing is not implemented yet.
 from enum import Enum
 from typing import List, Tuple
 from microschc.binary.buffer import Buffer
-from microschc.parser import HeaderParser
+from microschc.parser import HeaderParser, ParserError
 from microschc.rfc8724 import FieldDescriptor, HeaderDescriptor
 
 IPV4_HEADER_ID = 'IPv4'
@@ -43,6 +43,14 @@ class IPv4Parser(HeaderParser):
     def __init__(self) -> None:
         super().__init__(name=IPV4_HEADER_ID)
 
+    def match(self, buffer: Buffer) -> bool:
+        if buffer.length < 160:
+            return False
+        
+        version:Buffer = buffer[0:4]
+        
+        return (version == b'\x04')
+
     def parse(self, buffer:bytes) -> HeaderDescriptor:
         """
         
@@ -59,66 +67,68 @@ class IPv4Parser(HeaderParser):
         +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
         |                    Destination Address                        |
         +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
-        |                    Options                    |    Padding    |
-        +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
 
         """
-        header_bytes:bytes = buffer[0:20]
+
+        if buffer.length < 160:
+            raise ParserError(buffer=buffer, message=f'length too short: {buffer.length} < 160')
 
         # version: 4 bits
-        version:bytes = ((header_bytes[0] & 0xf0) >> 4).to_bytes(1, 'big')
+        version:Buffer = buffer[0:4]
+
+        if version != b'\x04':
+            raise ParserError(buffer=buffer, message=f"version mismatch: {version.content} != '\x04'")
+
         # header length(IHL): 4 bits
-        header_length:bytes = (header_bytes[0] & 0x0f).to_bytes(1, 'big')
+        header_length:Buffer = buffer[4:8]
+
         # type of service: 8 bits
-        type_of_service:bytes = header_bytes[1:2]
+        type_of_service:Buffer = buffer[8:16]
+        
         # total length: 16 bits
-        total_length:bytes = header_bytes[2:4]
+        total_length:Buffer = buffer[16:32]
+        
         # identification: 16 bits
-        identification:bytes = header_bytes[4:6]
+        identification:Buffer = buffer[32:48]
+
         # flags: 3 bits
-        flags:bytes = ((header_bytes[6] & 0b11100000) >> 5).to_bytes(1, 'big')
+        flags:Buffer = buffer[48:51]
+        
         # fragment offset: 13 bits
-        fragment_offset:bytes = (header_bytes[6] & 0b00011111).to_bytes(1, 'big') + header_bytes[7:8]
+        fragment_offset:Buffer = buffer[51:64]
+
         # time to live: 8 bits
-        time_to_live:bytes = header_bytes[8:9]
+        time_to_live:Buffer = buffer[64:72]
+
         # protocol: 8 bits
-        protocol:bytes = header_bytes[9:10]
+        protocol:Buffer = buffer[72:80]
+
         # header checksum: 16 bits
-        header_checksum:bytes = header_bytes[10:12]
+        header_checksum:Buffer = buffer[80:96]
+
         # source address: 32 bits
-        source_address:bytes = header_bytes[12:16]
+        source_address:Buffer = buffer[96:128]
+
         # destination address: 32 bits
-        destination_address:bytes = header_bytes[16:20]
-
-        # header_length: int = 32 * ihl[0]
-        # options_bytelength: int = 4*(ihl[0] - 5)
-        # options_bytes: bytes = buffer[20:20 + options_bytelength]
-        # if len(options_bytes):
-        #     options_fields, option_bits_consumed = _parse_options(options_bytes)
-        # else:
-        #     option_bits_consumed = 0
-        #     options_fields = []
-        
-
+        destination_address:Buffer = buffer[128:160]
 
         
-
         header_descriptor:HeaderDescriptor = HeaderDescriptor(
             id=IPV4_HEADER_ID,
             length=160,
             fields=[
-                FieldDescriptor(id=IPv4Fields.VERSION,         position=0, value=Buffer(content=version, length=4)),
-                FieldDescriptor(id=IPv4Fields.HEADER_LENGTH,   position=0, value=Buffer(content=header_length, length=4)),
-                FieldDescriptor(id=IPv4Fields.TYPE_OF_SERVICE, position=0, value=Buffer(content=type_of_service, length=8)),
-                FieldDescriptor(id=IPv4Fields.TOTAL_LENGTH,    position=0, value=Buffer(content=total_length, length=16)),
-                FieldDescriptor(id=IPv4Fields.IDENTIFICATION,  position=0, value=Buffer(content=identification, length=16)),
-                FieldDescriptor(id=IPv4Fields.FLAGS,           position=0, value=Buffer(content=flags, length=3)),
-                FieldDescriptor(id=IPv4Fields.FRAGMENT_OFFSET, position=0, value=Buffer(content=fragment_offset, length=13)),
-                FieldDescriptor(id=IPv4Fields.TIME_TO_LIVE,    position=0, value=Buffer(content=time_to_live, length=8)),
-                FieldDescriptor(id=IPv4Fields.PROTOCOL,        position=0, value=Buffer(content=protocol, length=8)),
-                FieldDescriptor(id=IPv4Fields.HEADER_CHECKSUM, position=0, value=Buffer(content=header_checksum, length=16)),
-                FieldDescriptor(id=IPv4Fields.SRC_ADDRESS,     position=0, value=Buffer(content=source_address, length=32)),
-                FieldDescriptor(id=IPv4Fields.DST_ADDRESS,     position=0, value=Buffer(content=destination_address, length=32)),
+                FieldDescriptor(id=IPv4Fields.VERSION,         position=0, value=version),
+                FieldDescriptor(id=IPv4Fields.HEADER_LENGTH,   position=0, value=header_length),
+                FieldDescriptor(id=IPv4Fields.TYPE_OF_SERVICE, position=0, value=type_of_service),
+                FieldDescriptor(id=IPv4Fields.TOTAL_LENGTH,    position=0, value=total_length),
+                FieldDescriptor(id=IPv4Fields.IDENTIFICATION,  position=0, value=identification),
+                FieldDescriptor(id=IPv4Fields.FLAGS,           position=0, value=flags),
+                FieldDescriptor(id=IPv4Fields.FRAGMENT_OFFSET, position=0, value=fragment_offset),
+                FieldDescriptor(id=IPv4Fields.TIME_TO_LIVE,    position=0, value=time_to_live),
+                FieldDescriptor(id=IPv4Fields.PROTOCOL,        position=0, value=protocol),
+                FieldDescriptor(id=IPv4Fields.HEADER_CHECKSUM, position=0, value=header_checksum),
+                FieldDescriptor(id=IPv4Fields.SRC_ADDRESS,     position=0, value=source_address),
+                FieldDescriptor(id=IPv4Fields.DST_ADDRESS,     position=0, value=destination_address),
             ]
         )
         return header_descriptor

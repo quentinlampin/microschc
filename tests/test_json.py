@@ -1,8 +1,10 @@
 from microschc.binary.buffer import Buffer
+from microschc.parser.protocol.registry import Stack
 from microschc.parser.protocol.ipv6 import IPv6Fields
-from microschc.rfc8724 import Context, DirectionIndicator, FieldDescriptor, HeaderDescriptor, MatchMapping, PacketDescriptor, RuleDescriptor, RuleFieldDescriptor
+from microschc.rfc8724 import DirectionIndicator, FieldDescriptor, HeaderDescriptor, MatchMapping, PacketDescriptor, RuleDescriptor, RuleFieldDescriptor
 from microschc.rfc8724 import CompressionDecompressionAction as CDA
 from microschc.rfc8724 import MatchingOperator as MO
+from microschc.rfc8724extras import Context
 
 from typing import List
 
@@ -200,21 +202,22 @@ def test_context_to_json():
     ]
     rule_descriptor: RuleDescriptor = RuleDescriptor(id=Buffer(content=b'\x00', length=2), field_descriptors=rule_field_descriptors)
 
-    context: Context = Context(id='test_context', description='this is a test context', interface_id='eth0', ruleset=[rule_descriptor])
+    context: Context = Context(id='test_context', description='this is a test context', interface_id='eth0', parser_id=Stack.IPV6_UDP_COAP, ruleset=[rule_descriptor])
 
     json_str = context.json()
-    assert json_str == '{"id": "test_context", "description": "this is a test context", "interface_id": "eth0", "ruleset": [{"id": {"content": "00", "length": 2, "padding": "left"}, "field_descriptors": [{"id": "field1", "length": 16, "position": 0, "direction": "Bi", "target_value": {"content": "", "length": 0, "padding": "left"}, "matching_operator": "ignore", "compression_decompression_action": "value-sent"}, {"id": "field2", "length": 8, "position": 0, "direction": "Bi", "target_value": {"content": "ef", "length": 8, "padding": "left"}, "matching_operator": "equal", "compression_decompression_action": "not-sent"}]}]}'
+    assert json_str == '{"id": "test_context", "description": "this is a test context", "interface_id": "eth0", "parser_id": "IPv6-UDP-CoAP", "ruleset": [{"id": {"content": "00", "length": 2, "padding": "left"}, "field_descriptors": [{"id": "field1", "length": 16, "position": 0, "direction": "Bi", "target_value": {"content": "", "length": 0, "padding": "left"}, "matching_operator": "ignore", "compression_decompression_action": "value-sent"}, {"id": "field2", "length": 8, "position": 0, "direction": "Bi", "target_value": {"content": "ef", "length": 8, "padding": "left"}, "matching_operator": "equal", "compression_decompression_action": "not-sent"}]}]}'
 
 def test_context_from_json():
     """
     test JSON deserialization of Context objects
     """
-    json_str = '{"id": "test_context", "description": "this is a test context", "interface_id": "eth0", "ruleset": [{"id": {"content": "00", "length": 2, "padding": "left"}, "field_descriptors": [{"id": "field1", "length": 16, "position": 0, "direction": "Bi", "target_value": {"content": "", "length": 0, "padding": "left"}, "matching_operator": "ignore", "compression_decompression_action": "value-sent"}, {"id": "field2", "length": 8, "position": 0, "direction": "Bi", "target_value": {"content": "ef", "length": 8, "padding": "left"}, "matching_operator": "equal", "compression_decompression_action": "not-sent"}]}]}'
+    json_str = '{"id": "test_context", "description": "this is a test context", "interface_id": "eth0", "parser_id": "IPv6-UDP-CoAP", "ruleset": [{"id": {"content": "00", "length": 2, "padding": "left"}, "field_descriptors": [{"id": "field1", "length": 16, "position": 0, "direction": "Bi", "target_value": {"content": "", "length": 0, "padding": "left"}, "matching_operator": "ignore", "compression_decompression_action": "value-sent"}, {"id": "field2", "length": 8, "position": 0, "direction": "Bi", "target_value": {"content": "ef", "length": 8, "padding": "left"}, "matching_operator": "equal", "compression_decompression_action": "not-sent"}]}]}'
 
     context: Context = Context.from_json(json_str=json_str)
     assert context.id == 'test_context'
     assert context.description == 'this is a test context'
     assert context.interface_id == 'eth0'
+    assert context.parser_id == Stack.IPV6_UDP_COAP
 
     assert context.ruleset[0].field_descriptors[0].id == 'field1'
     assert context.ruleset[0].field_descriptors[0].length == 16

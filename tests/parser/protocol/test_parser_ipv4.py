@@ -32,9 +32,11 @@ def test_ipv4_parser_parse():
     valid_ipv4_packet:bytes = bytes(b'\x45\x00\x02\x5a\x21\xfa\x40\x00\x40\x11\xbc\x52\xac\x1e\x01\x08' \
                                     b'\xac\x1e\x01\x02'
     )
+    valid_ipv4_packet_buffer:Buffer = Buffer(content=valid_ipv4_packet, length=len(valid_ipv4_packet)*8)
 
     parser:IPv4Parser = IPv4Parser()
-    ipv4_header_descriptor: HeaderDescriptor = parser.parse(buffer=valid_ipv4_packet)
+    
+    ipv4_header_descriptor: HeaderDescriptor = parser.parse(buffer=valid_ipv4_packet_buffer)
 
     # test ipv4_header_descriptor type
     assert isinstance(ipv4_header_descriptor, HeaderDescriptor)
