@@ -28,7 +28,8 @@ def test_compress():
     packet_buffer = Buffer(content=valid_stack_packet, length=len(valid_stack_packet)*8)
 
     packet_parser: PacketParser = factory(stack_id=Stack.IPV6_UDP_COAP)
-    packet_descriptor: PacketDescriptor = packet_parser.parse(buffer=packet_buffer, direction=DirectionIndicator.UP)
+    packet_descriptor: PacketDescriptor = packet_parser.parse(buffer=packet_buffer)
+    packet_descriptor.direction =  DirectionIndicator.UP
 
     field_descriptors_1: List[RuleFieldDescriptor] = [
         RuleFieldDescriptor(
@@ -94,7 +95,7 @@ def test_compress():
     rule_descriptor_1: RuleDescriptor = RuleDescriptor(id=Buffer(content=b'\x03', length=2), field_descriptors=field_descriptors_1)
 
     schc_packet = compress(packet_descriptor=packet_descriptor, rule_descriptor=rule_descriptor_1)
-    schc_packet += packet_descriptor.payload
+    
     assert schc_packet == Buffer(content= b'\xc0\x1a\x00\x80\x06\x85\xc2\x18\x45\x22\xf6\xf4' \
                                           b'\x0b\x83\x00\xef\xee\x66\x29\x12\x21\x86\xe5\xb7' \
                                           b'\xb2\x26\x26\xe2\x23\xa2\x22\xf3\x62\xf2\x22\xc2' \

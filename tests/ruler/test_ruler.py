@@ -69,7 +69,8 @@ def test_match_packet_descriptor():
     packet_buffer = Buffer(content=valid_stack_packet, length=len(valid_stack_packet)*8)
 
     packet_parser: PacketParser = factory(stack_id=Stack.IPV6_UDP_COAP)
-    packet_descriptor: PacketDescriptor = packet_parser.parse(buffer=packet_buffer, direction=DirectionIndicator.UP)
+    packet_descriptor: PacketDescriptor = packet_parser.parse(buffer=packet_buffer)
+    packet_descriptor.direction = DirectionIndicator.UP
 
     
     field_descriptors_1: List[RuleFieldDescriptor] = [
