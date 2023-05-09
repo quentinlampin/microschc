@@ -43,6 +43,7 @@ def compress(packet_descriptor: PacketDescriptor, rule_descriptor: RuleDescripto
 
         schc_packet += field_residue
     
+    schc_packet += packet_descriptor.payload
     return schc_packet
 
 def _encode_length(length:int) -> Buffer:
