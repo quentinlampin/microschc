@@ -8,7 +8,7 @@ Parser for the UDP protocol header as defined in RFC768 [1].
 """
 
 from enum import Enum
-from microschc.parser import HeaderParser
+from microschc.parser import HeaderParser, ParserError
 from microschc.rfc8724 import FieldDescriptor, HeaderDescriptor
 from microschc.binary.buffer import Buffer
 
@@ -26,11 +26,6 @@ class UDPParser(HeaderParser):
     def __init__(self) -> None:
         super().__init__(name=UDP_HEADER_ID)
 
-    def match(self, buffer: bytes) -> bool:
-        if len(buffer) < 8:
-            return False
-        return True
-
     def parse(self, buffer:Buffer) -> HeaderDescriptor:
         """
          0      7 8     15 16    23 24    31
@@ -45,6 +40,10 @@ class UDPParser(HeaderParser):
         |          data octets ...          |
         +---------------- ... --------------|
         """
+
+        if buffer.length < 64:
+            raise ParserError(buffer, message=f'length too short: {buffer.length} < 64')
+
         # source port: 16 bits
         source_port:Buffer = buffer[0:16]
 
