@@ -5,12 +5,12 @@ Implementation SCHC packet decompression as described in section 7.2 of [1].
 '''
 
 from microschc.binary.buffer import Buffer, Padding
-from microschc.rfc8724 import DirectionIndicator, MatchMapping, RuleDescriptor
+from microschc.rfc8724 import MatchMapping, RuleDescriptor
 from microschc.rfc8724 import CompressionDecompressionAction as CDA
 
 
 
-def decompress(schc_packet: Buffer, direction: DirectionIndicator, rule: RuleDescriptor) -> Buffer:
+def decompress(schc_packet: Buffer, rule_descriptor: RuleDescriptor) -> Buffer:
     """
         Decompress the packet fields following the rule's compression actions.
         See section 7.2 of [1].
@@ -18,13 +18,13 @@ def decompress(schc_packet: Buffer, direction: DirectionIndicator, rule: RuleDes
     decompressed: Buffer = Buffer(content=b'', length=0,padding=Padding.RIGHT)
 
     # remove rule ID
-    schc_packet = schc_packet[rule.id.length:]
+    schc_packet = schc_packet[rule_descriptor.id.length:]
 
     # decompress all fields
     field_residue: Buffer
     residue_bitlength: int
     decompressed_field: Buffer
-    for rf in rule.field_descriptors:
+    for rf in rule_descriptor.field_descriptors:
         residue_bitlength = 0
         decompressed_field = Buffer(content=b'', length=0, padding=Padding.RIGHT)
         if rf.compression_decompression_action == CDA.NOT_SENT:
