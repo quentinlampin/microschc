@@ -34,6 +34,7 @@ on IPv6 [2], UDP [3], CoAP [4], lwM2M.
 Current features:
 
 1. Parsers
+   - [x] IPv4
    - [x] IPv6
    - [x] UDP
    - [x] CoAP (partial test coverage: options missing)
@@ -70,6 +71,8 @@ Current features:
    - [x] field residues concatenation
    - [x] length of variable length field encoding
    - [x] packet compression
+6. Context Management
+   - [x] Definition & implementation of custom SCHC Context (not specified in RFCs)
 
 - [1] "RFC 8724 SCHC: Generic Framework for Static Context Header Compression and Fragmentation" , A. Minaburo et al.
 - [2] "RFC 8200 Internet Protocol, Version 6 (IPv6) Specification, S. Deering et al."
