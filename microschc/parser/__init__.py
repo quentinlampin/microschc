@@ -1,1 +1,1 @@
-from .parser import HeaderParser, PacketParser
+from .parser import HeaderParser, PacketParser, ParserError

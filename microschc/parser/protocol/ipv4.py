@@ -12,7 +12,7 @@ Note 1: Options parsing is not implemented yet.
 from enum import Enum
 from typing import List, Tuple
 from microschc.binary.buffer import Buffer
-from microschc.parser import HeaderParser
+from microschc.parser import HeaderParser, ParserError
 from microschc.rfc8724 import FieldDescriptor, HeaderDescriptor
 
 IPV4_HEADER_ID = 'IPv4'
@@ -67,12 +67,17 @@ class IPv4Parser(HeaderParser):
         +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
         |                    Destination Address                        |
         +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
-        |                    Options                    |    Padding    |
-        +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
 
         """
+
+        if buffer.length < 160:
+            raise ParserError(buffer=buffer, message=f'length too short: {buffer.length} < 160')
+
         # version: 4 bits
         version:Buffer = buffer[0:4]
+
+        if version != b'\x04':
+            raise ParserError(buffer=buffer, message=f"version mismatch: {version.content} != '\x04'")
 
         # header length(IHL): 4 bits
         header_length:Buffer = buffer[4:8]
@@ -108,10 +113,6 @@ class IPv4Parser(HeaderParser):
         destination_address:Buffer = buffer[128:160]
 
         
-
-
-        
-
         header_descriptor:HeaderDescriptor = HeaderDescriptor(
             id=IPV4_HEADER_ID,
             length=160,

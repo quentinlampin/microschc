@@ -1,6 +1,7 @@
 from typing import List
 from microschc.rfc8724 import DirectionIndicator, FieldDescriptor, HeaderDescriptor, PacketDescriptor
 from microschc.binary.buffer import Buffer
+from microschc.rfc8724extras import ParserDefinitions
 
 class HeaderParser:
     """Abstract Base Class for header parsers.
@@ -12,9 +13,6 @@ class HeaderParser:
     """
     def __init__(self, name: str) -> None:
         self.name = name
-
-    def match(self, buffer: Buffer) -> bool:
-        raise NotImplementedError
 
     def parse(self, buffer: Buffer) -> HeaderDescriptor:
         raise NotImplementedError
@@ -30,11 +28,8 @@ class PacketParser:
     def __init__(self, name: str, parsers: List[HeaderParser]) -> None:
         self.name = name
         self.parsers = parsers
-
-    def match(self, buffer: Buffer, direction: DirectionIndicator) -> bool:
-        return all((parser.match(buffer) for parser in self.parsers))
             
-    def parse(self, buffer: Buffer, direction: DirectionIndicator) -> PacketDescriptor:
+    def parse(self, buffer: Buffer) -> PacketDescriptor:
         header_descriptors: List[HeaderDescriptor] = []
 
         packet_length: int = buffer.length
@@ -52,7 +47,7 @@ class PacketParser:
             packet_fields += header_fields
 
         packet_descriptor: PacketDescriptor = PacketDescriptor(
-            direction=direction,
+            direction=DirectionIndicator.DOWN, # default value
             fields=packet_fields,
             payload=buffer,
             length=packet_length
@@ -60,7 +55,10 @@ class PacketParser:
         
         return packet_descriptor
 
-
+class ParserError(Exception):
+    def __init__(self, buffer: Buffer, message=None):
+        exception_message: str = f"error: {message} while parsing buffer: {buffer}"
+        super().__init__(message=exception_message)
 
 
 

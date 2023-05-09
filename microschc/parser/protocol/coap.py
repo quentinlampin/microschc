@@ -24,7 +24,7 @@ Note: The case of CoAP in the context of SCHC is a odd one.
 from enum import Enum
 from typing import List, Tuple
 from microschc.binary.buffer import Buffer
-from microschc.parser import HeaderParser
+from microschc.parser import HeaderParser, ParserError
 from microschc.rfc8724 import FieldDescriptor, HeaderDescriptor
 
 
@@ -95,6 +95,9 @@ class CoAPParser(HeaderParser):
         +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
         """
 
+        if buffer.length < 32:
+            raise ParserError(buffer=buffer, message=f'length too short: {buffer.length} < 32')
+
         # version: 2 bits
         version: Buffer = buffer[0:2]
         # type: 2 bits # noqa: F723 
@@ -106,8 +109,11 @@ class CoAPParser(HeaderParser):
         code: Buffer = buffer[8:16]
         # message ID : 16 bits
         message_id: Buffer = buffer[16:32]
-        # token : token_length_int x 8 bits (token length is in bytes)
-        token: Buffer = buffer[32: 32+token_length_int*8]
+        try:
+            # token : token_length_int x 8 bits (token length is in bytes)
+            token: Buffer = buffer[32: 32+token_length_int*8]
+        except Exception:
+            raise ParserError(buffer=buffer, message=f'error parsing token at bits 32-{32+token_length_int}')
 
         header_fields: List[FieldDescriptor] = [
                 FieldDescriptor(id=CoAPFields.VERSION,          position=0,    value=version),
@@ -120,7 +126,10 @@ class CoAPParser(HeaderParser):
 
         options_bytes: Buffer = buffer[32+token_length_int*8:]
         if options_bytes.length > 0:
-            options_fields, option_bits_consumed = _parse_options(options_bytes)
+            try:
+                options_fields, option_bits_consumed = _parse_options(options_bytes)
+            except Exception:
+                raise ParserError(buffer=options_bytes, message='error parsing options')
         else:
             option_bits_consumed = 0
             options_fields = []

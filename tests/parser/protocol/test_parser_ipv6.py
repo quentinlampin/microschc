@@ -33,8 +33,6 @@ def test_ipv6_parser_parse():
     valid_ipv6_packet_buffer: Buffer = Buffer(content=valid_ipv6_packet, length=len(valid_ipv6_packet)*8)
     parser:IPv6Parser = IPv6Parser()
     
-    assert parser.match(valid_ipv6_packet_buffer)
-
     ipv6_header_descriptor: HeaderDescriptor = parser.parse(buffer=valid_ipv6_packet_buffer)
 
     # test ipv6_header_descriptor type

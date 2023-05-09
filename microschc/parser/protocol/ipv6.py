@@ -13,7 +13,7 @@ Note 3: Authentication and Encapsulating Security payload parsing is not impleme
 
 from enum import Enum
 from microschc.binary.buffer import Buffer
-from microschc.parser import HeaderParser
+from microschc.parser import HeaderParser, ParserError
 from microschc.rfc8724 import FieldDescriptor, HeaderDescriptor
 
 IPv6_HEADER_ID = 'IPv6'
@@ -33,16 +33,6 @@ class IPv6Parser(HeaderParser):
 
     def __init__(self) -> None:
         super().__init__(name=IPv6_HEADER_ID)
-
-    def match(self, buffer: Buffer) -> bool:
-        
-        if buffer.length < 320:
-            return False
-        
-        version:Buffer = buffer[0:4]
-        
-        return (version == b'\x06')
-        
 
     def parse(self, buffer:Buffer) -> HeaderDescriptor:
         """
@@ -69,8 +59,15 @@ class IPv6Parser(HeaderParser):
         +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
         """
 
+        if buffer.length < 320:
+            raise ParserError(buffer=buffer, message=f'length too short: {buffer.length} < 320')
+        
         # version: 4 bits
         version:Buffer = buffer[0:4]
+
+        if version != b'\x06':
+            raise ParserError(buffer=buffer, message=f"version mismatch: {version.content} != '\x06'")
+        
         # traffic_class: 8 bits
         traffic_class:Buffer = buffer[4:12]
         # flow label: 20 bits

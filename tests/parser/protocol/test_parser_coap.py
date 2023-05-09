@@ -67,9 +67,6 @@ def test_coap_parser_parse():
 
     parser:CoAPParser = CoAPParser()
 
-    assert parser.match(valid_coap_packet_buffer)
-
-
     coap_header_descriptor: HeaderDescriptor = parser.parse(buffer=valid_coap_packet_buffer)
 
     # test ipv6_header_descriptor type

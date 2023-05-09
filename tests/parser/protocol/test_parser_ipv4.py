@@ -36,8 +36,6 @@ def test_ipv4_parser_parse():
 
     parser:IPv4Parser = IPv4Parser()
     
-    parser.match(valid_ipv4_packet_buffer)
-
     ipv4_header_descriptor: HeaderDescriptor = parser.parse(buffer=valid_ipv4_packet_buffer)
 
     # test ipv4_header_descriptor type

@@ -27,8 +27,6 @@ def test_udp_parser_parse():
     valid_udp_packet_buffer:Buffer = Buffer(content=valid_udp_packet, length=len(valid_udp_packet)*8)
     parser:UDPParser = UDPParser()
 
-    assert parser.match(valid_udp_packet_buffer)
-
     udp_header_descriptor: HeaderDescriptor = parser.parse(buffer=valid_udp_packet_buffer)
 
     # test udp_header_descriptor type
