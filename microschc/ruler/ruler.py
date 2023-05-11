@@ -40,11 +40,11 @@ class Ruler:
 
             # sanity check: both lists are of the same size
             if len(packet_fields) != len(rule_fields):
-                break
+                continue
 
             # assert that the list of packet fields matches that of rule fields
             if any(_field_match(packet_field=pf, rule_field=rf) == False for (pf, rf) in zip(packet_fields, rule_fields)):
-                break
+                continue
 
             # rule matches, return it
             return rule
