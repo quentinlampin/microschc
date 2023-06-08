@@ -88,35 +88,35 @@ def test_repr():
     buffer: Buffer = Buffer(content=bytes(b'\x08\x28\x00'), length=13, padding=Padding.RIGHT)
     repr: str = buffer.__repr__()
 
-    assert repr == '[00001000 00101--- --------] | len: 13 | pad: 11 right'
+    assert repr == '[00001000 00101--- --------](13)'
 
     # 11 bits padding on the left
     # |- - - - - - - -|- - - 0 1 0 0 0|0 0 1 0 1 0 0 0|  (-) padding 
     buffer: Buffer = Buffer(content=bytes(b'\x00\x08\x28'), length=13, padding=Padding.LEFT)
     repr: str = buffer.__repr__()
 
-    assert repr == '[-------- ---01000 00101000] | len: 13 | pad: 11 left'
+    assert repr == '[-------- ---01000 00101000](13)'
 
     # 3 bits padding on the right
     # |0 0 0 0 1 0 0 0|0 0 1 0 1 - - -|  (-)  padding 
     buffer: Buffer = Buffer(content=bytes(b'\x08\x28'), length=13, padding=Padding.RIGHT)
     repr: str = buffer.__repr__()
 
-    assert repr == '[00001000 00101---] | len: 13 | pad: 3 right'
+    assert repr == '[00001000 00101---](13)'
 
     # 3 bits padding on the left
     # |- - - 0 1 0 0 0|0 0 1 0 1 0 0 0|  (-) padding 
     buffer: Buffer = Buffer(content=bytes(b'\x08\x28'), length=13, padding=Padding.LEFT)
     repr: str = buffer.__repr__()
 
-    assert repr == '[---01000 00101000] | len: 13 | pad: 3 left'
+    assert repr == '[---01000 00101000](13)'
 
     # b'\x33\xff\x60' ('b'3\xff`') len: 24 padding: right
     # |0 0 1 1 0 0 1 1| 1 1 1 1 1 1 1 1| 0 1 1 0 0 0 0 0|
     buffer: Buffer = Buffer(content=bytes(b'\x33\xff\x60'), length=24, padding=Padding.RIGHT)
     repr: str = buffer.__repr__()
 
-    assert repr == '[00110011 11111111 01100000] | len: 24 | pad: 0 right'
+    assert repr == '[33ff60](24)'
 
 def test_pad():
     # 11 bits padding on the right

@@ -22,9 +22,12 @@ class MatchMapping:
 
     def __json__(self) -> list:
         json_object: list = [{'index': k.__json__(), 'value': v.__json__()} for k, v in self.reverse.items()]
-
         return json_object
-
+    
+    def __repr__(self) -> str:
+        repr: str = "{" + ",".join([f"{k}:{v}" for k,v in self.reverse.items()]) + "}"
+        return repr
+    
     def json(self, indent=None, separators=None):
         return json.dumps(self.__json__(), indent=indent, separators=separators)
 
@@ -62,6 +65,9 @@ class CompressionDecompressionAction(str, Enum):
     MAPPING_SENT = 'mapping-sent'
     VALUE_SENT = 'value-sent'
 
+DI = DirectionIndicator
+MO = MatchingOperator
+CDA = CompressionDecompressionAction
 
 @dataclass
 class FieldDescriptor:
@@ -76,6 +82,9 @@ class FieldDescriptor:
             'position': self.position
         }
         return jsonisable
+    
+    def __repr__(self) -> str:
+        return f"[{self.id}|{self.value}]"
 
     def json(self, indent=None, separators=None):
         return json.dumps(self.__json__(), indent=indent, separators=separators)
@@ -127,6 +136,11 @@ class PacketDescriptor:
     payload: Buffer
     length: int
 
+    def __repr__(self):
+        fields_str: str = ','.join([str(field) for field in self.fields])
+        repr: str = f"[{self.direction}|{fields_str}]"
+        return repr
+
     def __json__(self) -> dict:
         jsonisable: dict = {
             'direction': self.direction,
@@ -161,6 +175,26 @@ class RuleFieldDescriptor:
     target_value: TargetValue
     matching_operator: MatchingOperator
     compression_decompression_action: CompressionDecompressionAction
+
+    def __eq__(self, other: object) -> bool:
+        if not isinstance(other, RuleFieldDescriptor):
+            return False
+        if other.id != self.id or \
+            other.length != self.length or \
+            other.position != self.position or \
+            other.direction != self.direction or \
+            other.target_value != self.target_value or \
+            other.matching_operator != self.matching_operator or \
+            other.compression_decompression_action != self.compression_decompression_action:
+            return False
+        return True
+
+
+    def __repr__(self) -> str:
+        mo_to_short_str: Dict[str,str] = {MO.EQUAL:'eq', MO.IGNORE:'ig', MO.MATCH_MAPPING:'ma', MO.MSB:'ms'}
+        cda_to_short_str: Dict[str,str] = {CDA.NOT_SENT:'ns', CDA.VALUE_SENT:'vs', CDA.MAPPING_SENT:'ma', CDA.LSB:'ls'}
+        repr: str = "{"+f"{self.id}({self.length}):{mo_to_short_str[self.matching_operator]}/{cda_to_short_str[self.compression_decompression_action]}|{self.target_value}"+"}"
+        return repr
 
     def __json__(self) -> dict:
         jsonisable: dict = {
@@ -203,6 +237,10 @@ class RuleFieldDescriptor:
 class RuleDescriptor:
     id: Buffer
     field_descriptors: List[RuleFieldDescriptor]
+
+    def __repr__(self) -> str:
+        repr: str = f"[{self.id}]({len(self.field_descriptors)}) {'|'.join(str(rfd) for rfd in self.field_descriptors)}"
+        return repr
 
     def __json__(self) -> dict:
         jsonisable: dict = {

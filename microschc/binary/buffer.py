@@ -197,6 +197,11 @@ class Buffer:
         another_copy: Buffer = another.copy()
         self_copy_offset = 0
         another_copy_offset = 0
+        # special case: empty buffer
+        if self_copy.length == 0:
+            return another_copy
+        elif another_copy.length == 0:
+            return self_copy
         # remove excess padding
         if self_copy.padding == Padding.RIGHT:
             self_copy.trim(inplace=True)
@@ -377,36 +382,34 @@ class Buffer:
         padding_length: int = self.padding_length
         index:int = 0
         
-        if self.padding == Padding.LEFT and padding_length > 0:
-            padding_str: str = ""
-            if padding_length // 8 > 0:
-                index += padding_length//8
-                padding_str += "-------- " * (padding_length//8)
-                padding_length %= 8
-            padding_str += "-" * padding_length
-            format = f"0{8-padding_length}b"
-            content_repr += f"{padding_str}{self.content[index]:{format}} "
-            index += 1
-        if self.length < 65:
+        if self.length <= 16:
+            # return bit representation
+            if self.padding == Padding.LEFT and padding_length > 0:
+                padding_str: str = ""
+                if padding_length // 8 > 0:
+                    index += padding_length//8
+                    padding_str += "-------- " * (padding_length//8)
+                    padding_length %= 8
+                padding_str += "-" * padding_length
+                format = f"0{8-padding_length}b"
+                content_repr += f"{padding_str}{self.content[index]:{format}} "
+                index += 1
             content_repr += " ".join([f"{b:08b}" for b in self.content[index:index + (self.length//8)]])
-            
+            index += (self.length//8)
+            if self.padding == Padding.RIGHT and padding_length > 0:
+                padding_str: str = " "
+                if padding_length // 8 > 0:
+                    padding_str += "-------- " * (padding_length//8)
+                    padding_length %= 8
+                padding_str = "-" * padding_length + padding_str[:-1]
+                format = f"0{8-padding_length}b"
+                last_byte = self.content[index] >> padding_length
+                content_repr += f" {last_byte:{format}}{padding_str}"
         else:
-            content_repr += " ".join([f"{b:08b}" for b in self.content[index:index + 4]])
-            content_repr += " ... "
-            content_repr += " ".join([f"{b:08b}" for b in self.content[(self.length//8) -4:self.length//8]])
+            # return hex representation
+            content_repr = self.content.hex()
         
-        index += (self.length//8)
-        if self.padding == Padding.RIGHT and padding_length > 0:
-            padding_str: str = " "
-            if padding_length // 8 > 0:
-                padding_str += "-------- " * (padding_length//8)
-                padding_length %= 8
-            padding_str = "-" * padding_length + padding_str[:-1]
-            format = f"0{8-padding_length}b"
-            last_byte = self.content[index] >> padding_length
-            content_repr += f" {last_byte:{format}}{padding_str}"
-
-        return f"[{content_repr}] | len: {self.length} | pad: {self.padding_length} {self.padding}"
+        return f"[{content_repr}]({self.length})"
 
     def __json__(self) -> dict:
         json_object: dict = {
