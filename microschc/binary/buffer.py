@@ -197,11 +197,7 @@ class Buffer:
         another_copy: Buffer = another.copy()
         self_copy_offset = 0
         another_copy_offset = 0
-        # special case: empty buffer
-        if self_copy.length == 0:
-            return another_copy
-        elif another_copy.length == 0:
-            return self_copy
+        
         # remove excess padding
         if self_copy.padding == Padding.RIGHT:
             self_copy.trim(inplace=True)
