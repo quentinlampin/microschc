@@ -101,6 +101,8 @@ class Buffer:
                     temp_buffer_content = bytes(b'\x00') + temp_buffer_content
                     for i in range(1, len(temp_buffer_content)):
                         shifted_buffer.content += (((temp_buffer_content[i-1]<<shift_complement) & 0xff) | (temp_buffer_content[i]>>shift)).to_bytes(1, 'big')
+            else:
+                shifted_buffer.length = 0
         else:
             shifted_buffer.content = temp_buffer_content
         if inplace == True:
