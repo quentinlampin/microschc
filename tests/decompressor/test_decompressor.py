@@ -3,7 +3,7 @@ from microschc.binary.buffer import Buffer, Padding
 from microschc.parser.protocol.coap import CoAPFields
 from microschc.parser.protocol.ipv6 import IPv6Fields
 from microschc.parser.protocol.udp import UDPFields
-from microschc.rfc8724 import MatchMapping, MatchingOperator as MO, RuleDescriptor
+from microschc.rfc8724 import MatchMapping, MatchingOperator as MO, RuleDescriptor, RuleNature
 from microschc.rfc8724 import CompressionDecompressionAction as CDA
 from microschc.rfc8724 import DirectionIndicator, RuleFieldDescriptor
 
@@ -98,4 +98,16 @@ def test_decompress():
                                  length=828, padding=Padding.RIGHT)
 
     decompressed_packet = decompress(schc_packet=schc_packet, rule_descriptor=rule_descriptor_1)
-    assert decompressed_packet.content == valid_stack_packet
+    assert decompressed_packet == valid_buffer
+
+def test_no_compression_decompress():
+    rule_id: Buffer = Buffer(content=b"\x02", length=2)
+    packet: Buffer = Buffer(content=b"\x20\x01\x0d\xb8\x00\x0a\x00\x00\x00\x00\x00\x00\x00\x00\x00\x20", length=128)
+    schc_packet: Buffer = rule_id  + packet
+
+    no_compression_rule_descriptor: RuleDescriptor = RuleDescriptor(id=rule_id, nature=RuleNature.NO_COMPRESSION)
+    decompressed_packet: Buffer = decompress(schc_packet=schc_packet, rule_descriptor=no_compression_rule_descriptor)
+
+    assert decompressed_packet == packet
+
+

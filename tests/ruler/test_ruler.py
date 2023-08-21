@@ -5,7 +5,7 @@ from microschc.parser.protocol.registry import factory
 from microschc.parser.protocol.coap import CoAPFields
 from microschc.parser.protocol.ipv6 import IPv6Fields
 from microschc.parser.protocol.udp import UDPFields
-from microschc.rfc8724 import CompressionDecompressionAction, DirectionIndicator, FieldDescriptor, MatchMapping, MatchingOperator, PacketDescriptor, RuleDescriptor, RuleFieldDescriptor
+from microschc.rfc8724 import CompressionDecompressionAction, DirectionIndicator, FieldDescriptor, MatchMapping, MatchingOperator, PacketDescriptor, RuleDescriptor, RuleFieldDescriptor, RuleNature
 from microschc.rfc8724 import CompressionDecompressionAction as CDA
 from microschc.rfc8724 import MatchingOperator as MO
 from microschc.rfc8724extras import ParserDefinitions
@@ -133,8 +133,8 @@ def test_match_packet_descriptor():
         RuleFieldDescriptor(id=CoAPFields.PAYLOAD_MARKER, length=8, position=0, direction=DirectionIndicator.UP,
             target_value=Buffer(content=b'\xff', length=8), matching_operator=MO.EQUAL, compression_decompression_action=CDA.NOT_SENT)
     ]
-    rule_descriptor_1: RuleDescriptor = RuleDescriptor(id=Buffer(content=b'\x00', length=2), field_descriptors=field_descriptors_1)
-    default_rule_descriptor: RuleDescriptor = RuleDescriptor(id=Buffer(content=b'\x01', length=2), field_descriptors=[])
+    rule_descriptor_1: RuleDescriptor = RuleDescriptor(id=Buffer(content=b'\x00', length=2), nature=RuleNature.COMPRESSION, field_descriptors=field_descriptors_1)
+    default_rule_descriptor: RuleDescriptor = RuleDescriptor(id=Buffer(content=b'\x01', length=2), nature=RuleNature.NO_COMPRESSION, field_descriptors=[])
     ruler: Ruler = Ruler(rules_descriptors=[rule_descriptor_1, default_rule_descriptor])
 
     assert next(ruler.match_packet_descriptor(packet_descriptor=packet_descriptor)).id == rule_descriptor_1.id
@@ -151,11 +151,11 @@ def test_match_schc_packet():
                                           b'\x23\x63\x33\x33\x33\x97\xd5\xd0',
                                  length=828, padding=Padding.RIGHT)
 
-    rule_descriptor_0: RuleDescriptor = RuleDescriptor(id=Buffer(content=b'\x02', length=2), field_descriptors=[])
-    rule_descriptor_1: RuleDescriptor = RuleDescriptor(id=Buffer(content=b'\x03', length=2), field_descriptors=[])
-    rule_descriptor_2: RuleDescriptor = RuleDescriptor(id=Buffer(content=b'\x01', length=2), field_descriptors=[])
+    rule_descriptor_0: RuleDescriptor = RuleDescriptor(id=Buffer(content=b'\x02', length=2), nature=RuleNature.COMPRESSION, field_descriptors=[])
+    rule_descriptor_1: RuleDescriptor = RuleDescriptor(id=Buffer(content=b'\x03', length=2), nature=RuleNature.COMPRESSION, field_descriptors=[])
+    rule_descriptor_2: RuleDescriptor = RuleDescriptor(id=Buffer(content=b'\x01', length=2), nature=RuleNature.COMPRESSION, field_descriptors=[])
 
-    default_rule_descriptor: RuleDescriptor = RuleDescriptor(id=Buffer(content=b'\x00', length=2), field_descriptors=[])
+    default_rule_descriptor: RuleDescriptor = RuleDescriptor(id=Buffer(content=b'\x00', length=2), nature=RuleNature.NO_COMPRESSION)
     
     ruler: Ruler = Ruler(rules_descriptors=[rule_descriptor_0, rule_descriptor_1, rule_descriptor_2, default_rule_descriptor])
 
