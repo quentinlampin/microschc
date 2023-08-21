@@ -1,7 +1,7 @@
 from microschc.binary.buffer import Buffer
 from microschc.parser.protocol.registry import Stack
 from microschc.parser.protocol.ipv6 import IPv6Fields
-from microschc.rfc8724 import DirectionIndicator, FieldDescriptor, HeaderDescriptor, MatchMapping, PacketDescriptor, RuleDescriptor, RuleFieldDescriptor
+from microschc.rfc8724 import DirectionIndicator, FieldDescriptor, HeaderDescriptor, MatchMapping, PacketDescriptor, RuleDescriptor, RuleFieldDescriptor, RuleNature
 from microschc.rfc8724 import CompressionDecompressionAction as CDA
 from microschc.rfc8724 import MatchingOperator as MO
 from microschc.rfc8724extras import Context
@@ -138,9 +138,9 @@ def test_rule_field_descriptor_from_json():
     assert rule_field_descriptor.matching_operator == MO.IGNORE
     assert rule_field_descriptor.compression_decompression_action == CDA.VALUE_SENT
 
-def test_rule_descriptor_to_json():
+def test_compression_rule_descriptor_to_json():
     """
-    test JSON serialization of RuleDescriptor objects
+    test JSON serialization of RuleDescriptor objects for compression rules
     """
 
     rule_field_descriptors: List[RuleFieldDescriptor] = [
@@ -153,19 +153,20 @@ def test_rule_descriptor_to_json():
             target_value=Buffer(content=b'\xef', length=8), matching_operator=MO.EQUAL, compression_decompression_action=CDA.NOT_SENT
         )
     ]
-    rule_descriptor: RuleDescriptor = RuleDescriptor(id=Buffer(content=b'\x00', length=2), field_descriptors=rule_field_descriptors)
+    rule_descriptor: RuleDescriptor = RuleDescriptor(id=Buffer(content=b'\x00', length=2), nature=RuleNature.COMPRESSION, field_descriptors=rule_field_descriptors)
 
     json_str = rule_descriptor.json()
-    assert json_str == '{"id": {"content": "00", "length": 2, "padding": "left"}, "field_descriptors": [{"id": "field1", "length": 16, "position": 0, "direction": "Bi", "target_value": {"content": "", "length": 0, "padding": "left"}, "matching_operator": "ignore", "compression_decompression_action": "value-sent"}, {"id": "field2", "length": 8, "position": 0, "direction": "Bi", "target_value": {"content": "ef", "length": 8, "padding": "left"}, "matching_operator": "equal", "compression_decompression_action": "not-sent"}]}'
+    assert json_str == '{"id": {"content": "00", "length": 2, "padding": "left"}, "nature": "compression", "field_descriptors": [{"id": "field1", "length": 16, "position": 0, "direction": "Bi", "target_value": {"content": "", "length": 0, "padding": "left"}, "matching_operator": "ignore", "compression_decompression_action": "value-sent"}, {"id": "field2", "length": 8, "position": 0, "direction": "Bi", "target_value": {"content": "ef", "length": 8, "padding": "left"}, "matching_operator": "equal", "compression_decompression_action": "not-sent"}]}'
 
-def test_rule_descriptor_from_json():
+def test_compression_rule_descriptor_from_json():
     """
-    test JSON deserialization of RuleDescriptor objects
+    test JSON deserialization of RuleDescriptor objects for compression rules
     """
-    json_str = '{"id": {"content": "00", "length": 2, "padding": "left"}, "field_descriptors": [{"id": "field1", "length": 16, "position": 0, "direction": "Bi", "target_value": {"content": "", "length": 0, "padding": "left"}, "matching_operator": "ignore", "compression_decompression_action": "value-sent"}, {"id": "field2", "length": 8, "position": 0, "direction": "Bi", "target_value": {"content": "ef", "length": 8, "padding": "left"}, "matching_operator": "equal", "compression_decompression_action": "not-sent"}]}'
+    json_str = '{"id": {"content": "00", "length": 2, "padding": "left"}, "nature": "compression", "field_descriptors": [{"id": "field1", "length": 16, "position": 0, "direction": "Bi", "target_value": {"content": "", "length": 0, "padding": "left"}, "matching_operator": "ignore", "compression_decompression_action": "value-sent"}, {"id": "field2", "length": 8, "position": 0, "direction": "Bi", "target_value": {"content": "ef", "length": 8, "padding": "left"}, "matching_operator": "equal", "compression_decompression_action": "not-sent"}]}'
 
     rule_descriptor: RuleDescriptor = RuleDescriptor.from_json(json_str=json_str)
     assert rule_descriptor.id == Buffer(content=b'\x00', length=2)
+    assert rule_descriptor.nature == RuleNature.COMPRESSION
     assert len(rule_descriptor.field_descriptors) == 2
 
     assert rule_descriptor.field_descriptors[0].id == 'field1'
@@ -184,6 +185,25 @@ def test_rule_descriptor_from_json():
     assert rule_descriptor.field_descriptors[1].matching_operator == MO.EQUAL
     assert rule_descriptor.field_descriptors[1].compression_decompression_action == CDA.NOT_SENT
 
+def test_no_compression_rule_descriptor_to_json():
+    """
+    test JSON serialization of RuleDescriptor objects for no-compression rules
+    """
+    rule_descriptor: RuleDescriptor = RuleDescriptor(id=Buffer(content=b'\x01', length=2), nature=RuleNature.NO_COMPRESSION)
+
+    json_str: str = rule_descriptor.json()
+
+    assert json_str == '{"id": {"content": "01", "length": 2, "padding": "left"}, "nature": "no-compression"}'
+
+def test_no_compression_rule_descriptor_from_json():
+    """
+    test JSON deserialization of RuleDescriptor objects
+    """
+    json_str = '{"id": {"content": "01", "length": 2, "padding": "left"}, "nature": "no-compression"}'
+
+    rule_descriptor: RuleDescriptor = RuleDescriptor.from_json(json_str=json_str)
+    assert rule_descriptor.id == Buffer(content=b'\x01', length=2)
+    assert rule_descriptor.nature == RuleNature.NO_COMPRESSION
 
 def test_context_to_json():
     """
@@ -205,13 +225,13 @@ def test_context_to_json():
     context: Context = Context(id='test_context', description='this is a test context', interface_id='eth0', parser_id=Stack.IPV6_UDP_COAP, ruleset=[rule_descriptor])
 
     json_str = context.json()
-    assert json_str == '{"id": "test_context", "description": "this is a test context", "interface_id": "eth0", "parser_id": "IPv6-UDP-CoAP", "ruleset": [{"id": {"content": "00", "length": 2, "padding": "left"}, "field_descriptors": [{"id": "field1", "length": 16, "position": 0, "direction": "Bi", "target_value": {"content": "", "length": 0, "padding": "left"}, "matching_operator": "ignore", "compression_decompression_action": "value-sent"}, {"id": "field2", "length": 8, "position": 0, "direction": "Bi", "target_value": {"content": "ef", "length": 8, "padding": "left"}, "matching_operator": "equal", "compression_decompression_action": "not-sent"}]}]}'
+    assert json_str == '{"id": "test_context", "description": "this is a test context", "interface_id": "eth0", "parser_id": "IPv6-UDP-CoAP", "ruleset": [{"id": {"content": "00", "length": 2, "padding": "left"}, "nature": "compression", "field_descriptors": [{"id": "field1", "length": 16, "position": 0, "direction": "Bi", "target_value": {"content": "", "length": 0, "padding": "left"}, "matching_operator": "ignore", "compression_decompression_action": "value-sent"}, {"id": "field2", "length": 8, "position": 0, "direction": "Bi", "target_value": {"content": "ef", "length": 8, "padding": "left"}, "matching_operator": "equal", "compression_decompression_action": "not-sent"}]}]}'
 
 def test_context_from_json():
     """
     test JSON deserialization of Context objects
     """
-    json_str = '{"id": "test_context", "description": "this is a test context", "interface_id": "eth0", "parser_id": "IPv6-UDP-CoAP", "ruleset": [{"id": {"content": "00", "length": 2, "padding": "left"}, "field_descriptors": [{"id": "field1", "length": 16, "position": 0, "direction": "Bi", "target_value": {"content": "", "length": 0, "padding": "left"}, "matching_operator": "ignore", "compression_decompression_action": "value-sent"}, {"id": "field2", "length": 8, "position": 0, "direction": "Bi", "target_value": {"content": "ef", "length": 8, "padding": "left"}, "matching_operator": "equal", "compression_decompression_action": "not-sent"}]}]}'
+    json_str = '{"id": "test_context", "description": "this is a test context", "interface_id": "eth0", "parser_id": "IPv6-UDP-CoAP", "ruleset": [{"id": {"content": "00", "length": 2, "padding": "left"}, "nature": "compression", "field_descriptors": [{"id": "field1", "length": 16, "position": 0, "direction": "Bi", "target_value": {"content": "", "length": 0, "padding": "left"}, "matching_operator": "ignore", "compression_decompression_action": "value-sent"}, {"id": "field2", "length": 8, "position": 0, "direction": "Bi", "target_value": {"content": "ef", "length": 8, "padding": "left"}, "matching_operator": "equal", "compression_decompression_action": "not-sent"}]}]}'
 
     context: Context = Context.from_json(json_str=json_str)
     assert context.id == 'test_context'

@@ -59,11 +59,17 @@ class MatchingOperator(str, Enum):
     MSB = 'MSB'
     MATCH_MAPPING = 'match-mapping'
 
+
 class CompressionDecompressionAction(str, Enum):
     NOT_SENT = 'not-sent'
     LSB = 'least-significant-bits'
     MAPPING_SENT = 'mapping-sent'
     VALUE_SENT = 'value-sent'
+
+class RuleNature(str, Enum):
+    COMPRESSION = 'compression'
+    NO_COMPRESSION = 'no-compression'
+    FRAGMENTATION = 'fragmentation'
 
 DI = DirectionIndicator
 MO = MatchingOperator
@@ -236,27 +242,58 @@ class RuleFieldDescriptor:
 @dataclass
 class RuleDescriptor:
     id: Buffer
+    nature: RuleNature
     field_descriptors: List[RuleFieldDescriptor]
 
+    def __init__(self, id:Buffer, nature:RuleNature=RuleNature.COMPRESSION, field_descriptors:List[RuleFieldDescriptor]=[]):
+        self.id = id
+        self.nature = nature
+        self.field_descriptors=field_descriptors
+
     def __repr__(self) -> str:
-        repr: str = f"[{self.id}]({len(self.field_descriptors)}) {'|'.join(str(rfd) for rfd in self.field_descriptors)}"
+        if self.nature is RuleNature.COMPRESSION:
+            repr: str = f"[{self.id}]({len(self.field_descriptors)}) {'|'.join(str(rfd) for rfd in self.field_descriptors)}"
+        elif self.nature is RuleNature.NO_COMPRESSION:
+            repr: str = f"[{self.id}] no_compression"
+        elif self.nature is RuleNature.FRAGMENTATION:
+            raise NotImplementedError('Fragmentation/Reassembly is not implemented')
         return repr
 
     def __json__(self) -> dict:
         jsonisable: dict = {
             'id': self.id.__json__(),
-            'field_descriptors': [ field_descriptor.__json__() for field_descriptor in self.field_descriptors]
+            'nature': self.nature.value,
         }
+        if self.nature is RuleNature.COMPRESSION:
+            jsonisable['field_descriptors'] = [ field_descriptor.__json__() for field_descriptor in self.field_descriptors]
+
+        elif self.nature is RuleNature.NO_COMPRESSION:
+            pass
+
+        elif self.nature is RuleNature.FRAGMENTATION:
+            raise NotImplementedError('Fragmentation/Reassembly is not implemented')
+        
         return jsonisable
 
     def json(self, indent=None, separators=None) -> str:
         return json.dumps(self.__json__(), indent=indent, separators=separators)
 
     def __from_json_object__(json_object):
-        return RuleDescriptor(
-            id=Buffer.__from_json_object__(json_object['id']),
-            field_descriptors=[RuleFieldDescriptor.__from_json_object__(rfd_json) for rfd_json in json_object['field_descriptors']],
-        )
+        if json_object['nature'] == RuleNature.COMPRESSION.value:
+            field_descriptors = [RuleFieldDescriptor.__from_json_object__(rfd_json) for rfd_json in json_object['field_descriptors']]
+            return RuleDescriptor(
+                id=Buffer.__from_json_object__(json_object['id']),
+                nature=RuleNature.COMPRESSION,
+                field_descriptors=field_descriptors,
+            )
+        elif json_object['nature'] == RuleNature.NO_COMPRESSION.value:
+            return RuleDescriptor(
+                id=Buffer.__from_json_object__(json_object['id']),
+                nature=RuleNature.NO_COMPRESSION,
+            )
+        else:
+            raise NotImplementedError('Fragmentation/Reassembly is not implemented')
+        
 
     def from_json(json_str: str):
         json_object = json.loads(json_str)

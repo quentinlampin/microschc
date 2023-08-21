@@ -18,7 +18,7 @@ from typing import List, Iterator
 from microschc.binary.buffer import Buffer
 from microschc.matching.operators import equal, ignore, match_mapping, most_significant_bits
 
-from microschc.rfc8724 import DirectionIndicator, FieldDescriptor, MatchMapping, MatchingOperator, PacketDescriptor, RuleDescriptor, RuleFieldDescriptor, TargetValue
+from microschc.rfc8724 import DirectionIndicator, FieldDescriptor, MatchMapping, MatchingOperator, PacketDescriptor, RuleDescriptor, RuleFieldDescriptor, RuleNature, TargetValue
 
 
 class Ruler:
@@ -35,21 +35,24 @@ class Ruler:
 
         for rule in self.rules:
             
-            # rules field descriptors and IDs that apply to packet direction
-            rule_fields: List[RuleFieldDescriptor] = [f for f in filter(lambda f: f.direction in {packet_direction, DirectionIndicator.BIDIRECTIONAL}, rule.field_descriptors)]
+            if rule.nature is RuleNature.COMPRESSION:
+                # rules field descriptors and IDs that apply to packet direction
+                rule_fields: List[RuleFieldDescriptor] = [f for f in filter(lambda f: f.direction in {packet_direction, DirectionIndicator.BIDIRECTIONAL}, rule.field_descriptors)]
 
-            # sanity check: both lists are of the same size
-            if len(packet_fields) != len(rule_fields):
-                continue
+                # sanity check: both lists are of the same size
+                if len(packet_fields) != len(rule_fields):
+                    continue
 
-            # assert that the list of packet fields matches that of rule fields
-            if any(_field_match(packet_field=pf, rule_field=rf) == False for (pf, rf) in zip(packet_fields, rule_fields)):
-                continue
+                # assert that the list of packet fields matches that of rule fields
+                if any(_field_match(packet_field=pf, rule_field=rf) == False for (pf, rf) in zip(packet_fields, rule_fields)):
+                    continue
 
-            # rule matches, return it
-            yield rule
-        # # if no rule matches, raise RuleDescriptorMatchError
-        # raise RuleDescriptorMatchError(packet_descriptor=packet_descriptor)
+                # rule matches, return it
+                yield rule
+
+            elif rule.nature is RuleNature.NO_COMPRESSION:
+                yield rule
+        
     
     def match_schc_packet(self, schc_packet: Buffer) -> RuleDescriptor:
         '''
