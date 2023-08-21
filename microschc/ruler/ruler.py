@@ -14,7 +14,7 @@ the order of decompressed fields at the recompression is unambiguous.
 [1] "RFC 8724 SCHC: Generic Framework for Static Context Header Compression and Fragmentation" , A. Minaburo et al.
 """
 
-from typing import List
+from typing import List, Iterator
 from microschc.binary.buffer import Buffer
 from microschc.matching.operators import equal, ignore, match_mapping, most_significant_bits
 
@@ -26,7 +26,7 @@ class Ruler:
     def __init__(self, rules_descriptors: List[RuleDescriptor]) -> None:
         self.rules: List[RuleDescriptor] = rules_descriptors
 
-    def match_packet_descriptor(self, packet_descriptor: PacketDescriptor) -> RuleDescriptor:
+    def match_packet_descriptor(self, packet_descriptor: PacketDescriptor) -> Iterator[RuleDescriptor]:
         """
         Find a rule matching the packet descriptor
         """
@@ -47,10 +47,10 @@ class Ruler:
                 continue
 
             # rule matches, return it
-            return rule
-        
-        # if no rule matches, raise RuleDescriptorMatchError
-        raise RuleDescriptorMatchError(packet_descriptor=packet_descriptor)
+            yield rule
+        raise StopIteration("no more matching rules")
+        # # if no rule matches, raise RuleDescriptorMatchError
+        # raise RuleDescriptorMatchError(packet_descriptor=packet_descriptor)
     
     def match_schc_packet(self, schc_packet: Buffer) -> RuleDescriptor:
         '''

@@ -137,7 +137,7 @@ def test_match_packet_descriptor():
     default_rule_descriptor: RuleDescriptor = RuleDescriptor(id=Buffer(content=b'\x01', length=2), field_descriptors=[])
     ruler: Ruler = Ruler(rules_descriptors=[rule_descriptor_1, default_rule_descriptor])
 
-    assert ruler.match_packet_descriptor(packet_descriptor=packet_descriptor).id == rule_descriptor_1.id
+    assert next(ruler.match_packet_descriptor(packet_descriptor=packet_descriptor)).id == rule_descriptor_1.id
 
 def test_match_schc_packet():
     schc_packet:Buffer = Buffer(content= b'\xc0\x1a\x00\x80\x06\x85\xc2\x18\x45\x22\xf6\xf4' \
