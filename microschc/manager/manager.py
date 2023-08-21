@@ -1,3 +1,4 @@
+from enum import Enum
 from typing import Union
 from dataclasses import dataclass
 from microschc.binary import Buffer
@@ -10,6 +11,9 @@ from microschc.rfc8724 import DirectionIndicator, PacketDescriptor, RuleDescript
 from microschc.rfc8724extras import Context
 from microschc.ruler.ruler import Ruler
 
+class MatchStrategy(str, Enum):
+    FIRST = f'first'
+    BEST  = f'best'
 
 @dataclass
 class ContextManager:
@@ -28,11 +32,20 @@ class ContextManager:
 
         self.ruler = Ruler(rules_descriptors=self.context.ruleset)
 
-    def compress(self, packet: Buffer, direction=DirectionIndicator.UP):
+    def compress(self, packet: Buffer, direction=DirectionIndicator.UP, match_strategy:MatchStrategy=MatchStrategy.FIRST):
         packet_descriptor: PacketDescriptor = self.parser.parse(packet)
         packet_descriptor.direction = direction
-        rule_descriptor: RuleDescriptor = self.ruler.match_packet_descriptor(packet_descriptor=packet_descriptor)    
-        schc_packet: Buffer = compress(packet_descriptor=packet_descriptor, rule_descriptor=rule_descriptor)
+        if match_strategy == MatchStrategy.FIRST:
+            rule_descriptor: RuleDescriptor = next(self.ruler.match_packet_descriptor(packet_descriptor=packet_descriptor))
+            schc_packet: Buffer = compress(packet_descriptor=packet_descriptor, rule_descriptor=rule_descriptor)
+
+        elif match_strategy == MatchStrategy.BEST:
+            schc_packet: Buffer = None
+            for rule_descriptor in self.ruler.match_packet_descriptor(packet_descriptor=packet_descriptor):
+                compressed: Buffer = compress(packet_descriptor=packet_descriptor, rule_descriptor=rule_descriptor)
+                if schc_packet is None or compressed.length < schc_packet.length:
+                    schc_packet = compressed 
+        
         return schc_packet
     
     def decompress(self, schc_packet: Buffer):
