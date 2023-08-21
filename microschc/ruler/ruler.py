@@ -48,7 +48,6 @@ class Ruler:
 
             # rule matches, return it
             yield rule
-        raise StopIteration("no more matching rules")
         # # if no rule matches, raise RuleDescriptorMatchError
         # raise RuleDescriptorMatchError(packet_descriptor=packet_descriptor)
     
