@@ -1,1 +1,1 @@
-from .manager import ContextManager
+from .manager import ContextManager, MatchStrategy
