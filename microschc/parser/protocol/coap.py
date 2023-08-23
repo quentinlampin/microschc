@@ -216,8 +216,9 @@ def _parse_options(buffer: Buffer) -> Tuple[List[FieldDescriptor], int]:
             option_offset += 16
 
         option_value_length = (option_length_int + option_length_extended_int) * 8
-        option_value: Buffer = option_bytes[option_offset: option_offset+option_value_length]
-        fields.append(FieldDescriptor(id=CoAPFields.OPTION_VALUE, position=option_index, value=option_value))
+        if option_value_length > 0:
+            option_value: Buffer = option_bytes[option_offset: option_offset+option_value_length]
+            fields.append(FieldDescriptor(id=CoAPFields.OPTION_VALUE, position=option_index, value=option_value))
 
         option_offset += option_value_length
         cursor += option_offset
