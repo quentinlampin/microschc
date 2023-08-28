@@ -121,8 +121,10 @@ class CoAPParser(HeaderParser):
                 FieldDescriptor(id=CoAPFields.TOKEN_LENGTH,     position=0,    value=token_length),
                 FieldDescriptor(id=CoAPFields.CODE,             position=0,    value=code),
                 FieldDescriptor(id=CoAPFields.MESSAGE_ID,       position=0,    value=message_id),
-                FieldDescriptor(id=CoAPFields.TOKEN,            position=0,    value=token),
         ]
+        if token_length_int > 0:
+            token_field: FieldDescriptor = FieldDescriptor(id=CoAPFields.TOKEN, position=0, value=token)
+            header_fields.append(token_field)
 
         options_bytes: Buffer = buffer[32+token_length_int*8:]
         if options_bytes.length > 0:
