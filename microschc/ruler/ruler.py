@@ -86,7 +86,7 @@ def _field_match(packet_field: FieldDescriptor, rule_field: RuleFieldDescriptor)
 
     elif rule_field.matching_operator == MatchingOperator.MSB:
         pattern: TargetValue = rule_field.target_value
-        if (rule_field.length != packet_field.value.length): 
+        if rule_field.length != 0 and (rule_field.length != packet_field.value.length):
             return False
         assert isinstance(pattern, Buffer)
         return most_significant_bits(packet_field, pattern=pattern)
