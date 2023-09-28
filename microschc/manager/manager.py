@@ -5,7 +5,7 @@ from microschc.binary import Buffer
 from microschc.compressor.compressor import compress
 from microschc.decompressor.decompressor import decompress
 from microschc.parser.parser import PacketParser
-from microschc.parser.protocol.registry import factory
+from microschc.protocol.registry import factory
 from microschc.rfc8724 import DirectionIndicator, PacketDescriptor, RuleDescriptor
 
 from microschc.rfc8724extras import Context

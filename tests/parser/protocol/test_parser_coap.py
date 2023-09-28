@@ -1,4 +1,4 @@
-from microschc.parser.protocol.coap import CoAPFields, CoAPParser
+from microschc.protocol.coap import CoAPFields, CoAPParser
 from microschc.rfc8724 import FieldDescriptor, HeaderDescriptor
 from microschc.binary.buffer import Buffer
 

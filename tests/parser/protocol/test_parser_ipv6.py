@@ -1,4 +1,4 @@
-from microschc.parser.protocol.ipv6 import IPv6Parser, IPv6Fields
+from microschc.protocol.ipv6 import IPv6Parser, IPv6Fields
 from microschc.parser.parser import HeaderDescriptor
 from microschc.rfc8724 import FieldDescriptor
 from microschc.binary.buffer import Buffer

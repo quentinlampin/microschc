@@ -1,11 +1,11 @@
 from typing import List
 from microschc.binary import Buffer
-from microschc.parser.protocol.coap import CoAPFields
-from microschc.parser.protocol.registry import Stack, factory
+from microschc.protocol.coap import CoAPFields
+from microschc.protocol.registry import Stack, factory
 from microschc.manager import ContextManager
 from microschc.parser import PacketParser
-from microschc.parser.protocol.ipv6 import IPv6Fields
-from microschc.parser.protocol.udp import UDPFields
+from microschc.protocol.ipv6 import IPv6Fields
+from microschc.protocol.udp import UDPFields
 from microschc.rfc8724 import MatchMapping, PacketDescriptor, DirectionIndicator, RuleFieldDescriptor, RuleDescriptor
 from microschc.rfc8724 import CompressionDecompressionAction as CDA
 from microschc.rfc8724 import MatchingOperator as MO

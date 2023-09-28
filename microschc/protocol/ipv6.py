@@ -12,7 +12,7 @@ Note 3: Authentication and Encapsulating Security payload parsing is not impleme
 """
 
 from enum import Enum
-from microschc.binary.buffer import Buffer
+from microschc.binary.buffer import Buffer, Padding
 from microschc.parser import HeaderParser, ParserError
 from microschc.rfc8724 import FieldDescriptor, HeaderDescriptor
 
@@ -98,3 +98,15 @@ class IPv6Parser(HeaderParser):
             ]
         )
         return header_descriptor
+    
+def _compute_payload_length(packet: Buffer, field_cursor: int) -> Buffer:
+    payload: Buffer = packet[field_cursor + 288:]
+    payload_length: int = payload.length // 8 if payload_length%8 == 0 else payload.length // 8 + 1
+    buffer: Buffer = Buffer(content=payload_length.to_bytes(2, 'big'), length=16, padding=Padding.LEFT)
+    return buffer
+
+
+IPv6ComputeFunctions: dict(str, ) = {
+    IPv6Fields.PAYLOAD_LENGTH: _compute_payload_length
+}
+    

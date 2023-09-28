@@ -1,7 +1,7 @@
-from microschc.parser.protocol.ipv4 import IPV4_HEADER_ID, IPv4Parser
-from microschc.parser.protocol.ipv6 import IPv6_HEADER_ID, IPv6Parser
-from microschc.parser.protocol.udp import UDP_HEADER_ID, UDPParser
-from microschc.parser.protocol.coap import COAP_HEADER_ID, CoAPParser
+from microschc.protocol.ipv4 import IPV4_HEADER_ID, IPv4Parser
+from microschc.protocol.ipv6 import IPv6_HEADER_ID, IPv6Parser
+from microschc.protocol.udp import UDP_HEADER_ID, UDPParser
+from microschc.protocol.coap import COAP_HEADER_ID, CoAPParser
 
 from microschc.parser import PacketParser
 
