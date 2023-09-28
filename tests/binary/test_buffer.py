@@ -227,6 +227,25 @@ def test_get():
     assert buffer_subset == expected
     assert buffer_subset.padding == Padding.RIGHT
 
+def test_set():
+    buffer: Buffer = Buffer(content=bytes(b'\x00\x01\x0d'), length=24, padding=Padding.LEFT)
+    expected: Buffer = Buffer(content=bytes(b'\x0f\x01\x0d'), length=24, padding=Padding.LEFT)
+    buffer[4:8] = Buffer(content=b'\x0f', length=4, padding=Padding.LEFT)
+
+    assert buffer == expected
+    assert buffer.padding == Padding.LEFT
+    assert buffer.length == 24
+
+    buffer: Buffer = Buffer(content=bytes(b'\x00\x01\x0d'), length=24, padding=Padding.LEFT)
+    expected: Buffer = Buffer(content=bytes(b'\x00\x01\x00\xff'), length=32, padding=Padding.LEFT)
+    
+    buffer[16:32] = Buffer(content=bytes(b'\x00\xff'),length=16, padding=Padding.LEFT)
+    assert buffer == expected
+    assert buffer.padding == Padding.LEFT
+    assert buffer.length == 32
+
+
+
 def test_add():
     left: Buffer = Buffer(content=b'\x40', length=2, padding=Padding.RIGHT)
     right: Buffer = Buffer(content=b'\x80', length=2, padding=Padding.RIGHT)
@@ -245,6 +264,25 @@ def test_add():
     left_right = left + right
     expected: Buffer = Buffer(content=b'\x68', length=8, padding=Padding.RIGHT)
     assert left_right == expected
+
+    left: Buffer = Buffer(content=b'\x0f', length=4, padding=Padding.LEFT)
+    right: Buffer = Buffer(content=b'\x0f', length=4, padding=Padding.LEFT)
+    left_right = left + right
+    expected: Buffer = Buffer(content=b'\xff', length=8, padding=Padding.LEFT)
+    assert left_right == expected
+
+    left: Buffer = Buffer(content=b'\xf0', length=4, padding=Padding.RIGHT)
+    right: Buffer = Buffer(content=b'\x0f', length=4, padding=Padding.LEFT)
+    left_right = left + right
+    expected: Buffer = Buffer(content=b'\xff', length=8, padding=Padding.RIGHT)
+    assert left_right == expected
+
+    left: Buffer = Buffer(content=b'\x0f', length=4, padding=Padding.LEFT)
+    right: Buffer = Buffer(content=b'\xf0', length=4, padding=Padding.RIGHT)
+    left_right = left + right
+    expected: Buffer = Buffer(content=b'\xff', length=8, padding=Padding.LEFT)
+    assert left_right == expected
+
 
 def test_iter():
     #              0x08          0x68              0x00

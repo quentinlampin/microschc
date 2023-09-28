@@ -195,7 +195,11 @@ class Buffer:
         return trimmed_buffer.content.__hash__()
 
     def __add__(self, another):
-        self_copy: Buffer = self.copy()
+
+        if self.padding == Padding.LEFT:
+            self_copy = self.pad(padding=Padding.RIGHT, inplace=False)
+        else:
+            self_copy: Buffer = self.copy()
         another_copy: Buffer = another.copy()
         self_copy_offset = 0
         another_copy_offset = 0
@@ -235,6 +239,29 @@ class Buffer:
         self_copy.length += another.length
         self_copy._update_padding()
         return self_copy
+    
+    def __setitem__(self,items, values):
+
+        assert isinstance(items, (slice, int))
+        assert isinstance(values, Buffer)
+
+        if isinstance(items, slice):
+            start_bit, stop_bit, _ = items.indices(self.length)
+        else:
+            start_bit = items
+            stop_bit = start_bit + 1
+
+        prefix: Buffer = self[0:start_bit]
+        postfix: Buffer = self[stop_bit:]
+
+        new_buffer: Buffer = prefix + values + postfix
+
+        self.content = new_buffer.content
+        self.length = new_buffer.length
+        self.padding_length = new_buffer.padding_length
+        return self
+
+        
 
     def __getitem__(self, items):
         
