@@ -1,4 +1,5 @@
-from microschc.protocol.ipv6 import IPv6Parser, IPv6Fields
+from typing import Dict
+from microschc.protocol.ipv6 import IPv6ComputeFunctions, IPv6Parser, IPv6Fields
 from microschc.parser.parser import HeaderDescriptor
 from microschc.rfc8724 import FieldDescriptor
 from microschc.binary.buffer import Buffer
@@ -85,7 +86,3 @@ def test_ipv6_parser_parse():
     assert destination_address_fd.id == IPv6Fields.DST_ADDRESS
     assert destination_address_fd.position == 0
     assert destination_address_fd.value == Buffer(content=b'\xfe\x80\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\xa2', length=128)
-
-    
-
-
