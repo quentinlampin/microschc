@@ -1,4 +1,5 @@
 
+from typing import List
 from microschc.binary.buffer import Buffer, Padding
 
 def test_shift():
@@ -283,6 +284,89 @@ def test_add():
     expected: Buffer = Buffer(content=b'\xff', length=8, padding=Padding.LEFT)
     assert left_right == expected
 
+def test_or():
+    #              0x08          0x68        
+    #       |0 0 0 0 1 0 0 0|0 1 1 0 1 - - -|  (-) padding (3 bits padding on the right)
+    buffer_1: Buffer = Buffer(content=bytes(b'\x08\x68'), length=13, padding=Padding.RIGHT)
+    buffer_1_or_1: Buffer = buffer_1 | buffer_1
+    expected_1_or_1: Buffer = Buffer(content=b'\x08\x68', length=13, padding=Padding.RIGHT)
+    assert buffer_1_or_1 == expected_1_or_1
+
+    #              0x04          0x78        
+    #       |0 0 0 0 0 1 0 0|0 1 1 1 1 - - -|  (-) padding (3 bits padding on the right)
+    buffer_2: Buffer = Buffer(content=bytes(b'\x04\x78'), length=13, padding=Padding.RIGHT)
+    buffer_1_or_2: Buffer = buffer_1 | buffer_2
+
+    #              0x0c          0x78        
+    #       |0 0 0 0 1 1 0 0|0 1 1 1 1 - - -|  (-) padding (3 bits padding on the right)
+    expected_1_or_2: Buffer = Buffer(content=b'\x0c\x78', length=13, padding=Padding.RIGHT)
+    assert buffer_1_or_2 == expected_1_or_2
+
+    #              0xf0          0x0f        
+    #       |1 1 1 1 0 0 0 0|1 1 1 1 0 0 0 0|  (-) padding (0 bits padding on the right)
+    buffer_3: Buffer = Buffer(content=bytes(b'\xf0\xf0'), length=16, padding=Padding.RIGHT)
+    #              0x0f          0xf0        
+    #       |0 0 0 0 1 1 1 1|1 1 1 1 0 0 0 0|  (-) padding (0 bits padding on the right)
+    buffer_4: Buffer = Buffer(content=bytes(b'\x0f\x0f'), length=16, padding=Padding.RIGHT)
+    buffer_3_or_4: Buffer = buffer_3 | buffer_4
+    buffer_3_or_4_expected: Buffer = Buffer(content=bytes(b'\xff\xff'), length=16, padding=Padding.RIGHT)
+
+    assert buffer_3_or_4 == buffer_3_or_4_expected
+
+
+def test_and():
+    #              0x08          0x68        
+    #       |0 0 0 0 1 0 0 0|0 1 1 0 1 - - -|  (-) padding (3 bits padding on the right)
+    buffer_1: Buffer = Buffer(content=bytes(b'\x08\x68'), length=13, padding=Padding.RIGHT)
+    buffer_1_and_1: Buffer = buffer_1 & buffer_1
+    expected_1_and_1: Buffer = Buffer(content=b'\x08\x68', length=13, padding=Padding.RIGHT)
+    assert buffer_1_and_1 == expected_1_and_1
+
+    #              0x03          0x78        
+    #       |0 0 0 0 0 1 0 0|0 1 1 1 1 - - -|  (-) padding (3 bits padding on the right)
+    buffer_2: Buffer = Buffer(content=bytes(b'\x03\x78'), length=13, padding=Padding.RIGHT)
+    buffer_1_and_2: Buffer = buffer_1 & buffer_2
+    expected_1_and_2: Buffer = Buffer(content=b'\x00\x68', length=13, padding=Padding.RIGHT)
+    assert buffer_1_and_2 == expected_1_and_2
+
+    #              0x08          0x68        
+    #       |0 0 0 0 1 0 0 0|0 1 1 0 1 - - -|  (-) padding (3 bits padding on the right)
+    buffer_1: Buffer = Buffer(content=bytes(b'\x08\x68'), length=13, padding=Padding.RIGHT)
+
+    #              0x01          0x0D        
+    #       |- - - 0 0 0 0 1|0 0 0 0 1 1 0 1|  (-) padding (3 bits padding on the left)
+    buffer_1_pad_left: Buffer = Buffer(content=bytes(b'\x01\x0d'), length=13, padding=Padding.LEFT)
+
+    buffer_1_and_1_left: Buffer = buffer_1 & buffer_1_pad_left
+    expected_1_and_1_left: Buffer = Buffer(content=b'\x08\x68', length=13, padding=Padding.RIGHT)
+    assert buffer_1_and_1_left == expected_1_and_1_left
+
+
+def test_value():
+
+    buffer: Buffer = Buffer(content=b'\x00\x01', length=16)
+    value: int = buffer.value()
+    assert value == 1
+
+    buffer: Buffer = Buffer(content=b'\x00\x11', length=16)
+    value: int = buffer.value()
+    assert value == 17
+
+    #              0x01          0x0D        
+    #       |- - - 0 0 0 0 1|0 0 0 0 1 1 0 1|  (-) padding (3 bits padding on the left)
+    buffer: Buffer = Buffer(content=b'\x01\x0d', length=13, padding=Padding.LEFT)
+    value: int = buffer.value()
+    assert value == 1 + 4 + 8 + 256 
+
+    #              0x08          0x68        
+    #       |0 0 0 0 1 0 0 0| 0 1 1 0 1 - - -|  (-) padding (3 bits padding on the right)
+    buffer: Buffer = Buffer(content=b'\x08\x68', length=13, padding=Padding.RIGHT)
+    value: int = buffer.value()
+    assert value == 1 + 4 + 8 + 256 
+
+    buffer: Buffer = Buffer(content=b'Hello, World! \xe9', length=120)
+    value: str = buffer.value('str', encoding='iso-8859-1')
+    assert value == 'Hello, World! é'
 
 def test_iter():
     #              0x08          0x68              0x00
@@ -297,6 +381,24 @@ def test_iter():
     buffer = Buffer(content=bytes(b'\x01\x0d'), length=13, padding=Padding.LEFT)
     bits = list(buffer)
     assert bits == [0, 0, 0, 0, 1, 0 , 0, 0, 0, 1, 1, 0, 1]
+
+def test_chunks():
+    #              0x1B          0xE8        
+    #       |0 0 0 1 1 0 1 1|1 1 1 0 1 - - -| (-) padding (3 bits padding on the right)
+    buffer: Buffer = Buffer(content=bytes(b'\x1b\xe8'), length=13, padding=Padding.RIGHT)
+    chunks: List[Buffer] = [c for c in buffer.chunks(2)]
+    assert chunks[0] == Buffer(content=b'\x00', length=2, padding=Padding.RIGHT)
+    assert chunks[1] == Buffer(content=b'\x40', length=2, padding=Padding.RIGHT)
+    assert chunks[2] == Buffer(content=b'\x80', length=2, padding=Padding.RIGHT)
+    assert chunks[3] == Buffer(content=b'\xC0', length=2, padding=Padding.RIGHT)
+    assert chunks[4] == Buffer(content=b'\xC0', length=2, padding=Padding.RIGHT)
+    assert chunks[5] == Buffer(content=b'\x80', length=2, padding=Padding.RIGHT)
+    assert chunks[6] == Buffer(content=b'\x80', length=1, padding=Padding.RIGHT)
+
+    chunks_padded: List[Buffer] = [c for c in buffer.chunks(2, padding=True)]
+    assert chunks_padded[6] == Buffer(content=b'\x80', length=2, padding=Padding.RIGHT)
+
+
 
 def test_json_str():
     """
