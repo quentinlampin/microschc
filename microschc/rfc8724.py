@@ -65,6 +65,7 @@ class CompressionDecompressionAction(str, Enum):
     LSB = 'least-significant-bits'
     MAPPING_SENT = 'mapping-sent'
     VALUE_SENT = 'value-sent'
+    COMPUTE = 'compute'
 
 class RuleNature(str, Enum):
     COMPRESSION = 'compression'

@@ -86,3 +86,26 @@ def test_ipv6_parser_parse():
     assert destination_address_fd.id == IPv6Fields.DST_ADDRESS
     assert destination_address_fd.position == 0
     assert destination_address_fd.value == Buffer(content=b'\xfe\x80\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\xa2', length=128)
+
+    
+def test_ipv6_compute_length():
+    valid_ipv6_packet:bytes = bytes(b"\x60\x00\x00\x00\x00\x10\x11\x40\xfe\x80\x00\x00\x00\x00\x00\x00"
+                                    b"\x00\x00\x00\x00\x00\x00\x00\xa1\xfe\x80\x00\x00\x00\x00\x00\x00"
+                                    b"\x00\x00\x00\x00\x00\x00\x00\xa2\x23\x29\x23\x2a\x00\x10\x2d\xa1"
+                                    b"\x64\x65\x61\x64\x62\x65\x65\x66"
+    )
+    valid_ipv6_packet_buffer: Buffer = Buffer(content=valid_ipv6_packet, length=len(valid_ipv6_packet)*8)
+    parser:IPv6Parser = IPv6Parser()
+    ipv6_header_descriptor: HeaderDescriptor = parser.parse(buffer=valid_ipv6_packet_buffer)
+    decompressed_fields: Dict[str, Buffer] = {field.id: field.value for field in ipv6_header_descriptor.fields}
+
+    partially_reconstructed_ipv6_packet:bytes = bytes(
+        b"\x60\x00\x00\x00\x00\x00\x11\x40\xfe\x80\x00\x00\x00\x00\x00\x00" # payload length is \x00\x00, should be \x00\x10
+        b"\x00\x00\x00\x00\x00\x00\x00\xa1\xfe\x80\x00\x00\x00\x00\x00\x00"
+        b"\x00\x00\x00\x00\x00\x00\x00\xa2\x23\x29\x23\x2a\x00\x10\x2d\xa1"
+        b"\x64\x65\x61\x64\x62\x65\x65\x66"
+    )
+    partially_reconstructed_ipv6_packet_buffer: Buffer = Buffer(content=partially_reconstructed_ipv6_packet, length=len(partially_reconstructed_ipv6_packet)*8)
+
+    payload_length_buffer: Buffer = IPv6ComputeFunctions[IPv6Fields.PAYLOAD_LENGTH](partially_reconstructed_ipv6_packet_buffer, 32, decompressed_fields, 3)
+    assert payload_length_buffer == Buffer(content=b'\x00\x10', length=16)
