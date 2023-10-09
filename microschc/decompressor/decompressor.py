@@ -98,6 +98,7 @@ def decompress(schc_packet: Buffer, rule_descriptor: RuleDescriptor) -> Buffer:
                         residue_bitlength = 28 + encoded_length_value
         elif rf.compression_decompression_action == CDA.COMPUTE:
             # add a placeholder for the decompressed field and add the decompression action to the LIFO queue
+            field_id: str = rf.id
             field_length: int = rf.length
             decompressed_field: Buffer = Buffer(content=bytes(1+field_length//8), length=field_length)
 
