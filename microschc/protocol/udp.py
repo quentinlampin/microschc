@@ -8,9 +8,10 @@ Parser for the UDP protocol header as defined in RFC768 [1].
 """
 
 from enum import Enum
+from functools import reduce
 from typing import Callable, Dict, Iterator, List, Tuple
 from microschc.parser import HeaderParser, ParserError
-from microschc.protocol import ComputeFunctionType
+from microschc.protocol.compute import ComputeFunctionDependenciesType, ComputeFunctionType
 from microschc.protocol.ipv4 import IPV4_HEADER_ID, IPv4Fields
 from microschc.rfc8724 import FieldDescriptor, HeaderDescriptor, RuleFieldDescriptor
 from microschc.binary.buffer import Buffer, Padding
@@ -73,15 +74,18 @@ class UDPParser(HeaderParser):
         return header_descriptor
         
 
-def _compute_length(packet: Buffer, field_cursor: int, _: List[RuleFieldDescriptor], __: int) -> Buffer:
+def _compute_length(decompressed_fields: List[RuleFieldDescriptor], rule_field_position: int) -> Buffer:
     # retrieve the buffer containing the UDP header and payload
-    # 
-    udp_header_and_payload: Buffer = packet[field_cursor-32:]
+    fields_ids: List[str] = [field_id for field_id, _ in decompressed_fields]
+    fields_values: List[Buffer] = [field_value for _, field_value in decompressed_fields]
+
+    udp_header_and_payload_fields: List[Buffer] = [field for field in fields_values[rule_field_position-2:]]
+    udp_header_and_payload: Buffer = reduce(lambda x, y: x+y, udp_header_and_payload_fields)
     length: int = udp_header_and_payload.length // 8 if udp_header_and_payload.length%8 == 0 else udp_header_and_payload.length // 8 + 1
     buffer: Buffer = Buffer(content=length.to_bytes(2, 'big'), length=16, padding=Padding.LEFT)
     return buffer
 
-def _compute_checksum(packet: Buffer, field_cursor: int, decompressed_fields: List[Tuple[str, Buffer]], rule_field_position: int) -> Buffer:
+def _compute_checksum(decompressed_fields: List[Tuple[str, Buffer]], rule_field_position: int) -> Buffer:
     """
     Checksum is the 16-bit one's complement of the one's complement sum of a
     pseudo header of information from the IP header, the UDP header, and the
@@ -148,7 +152,8 @@ def _compute_checksum(packet: Buffer, field_cursor: int, decompressed_fields: Li
     preceding_protocol_last_field = fields_ids[preceding_protocol_last_position]
 
     # UDP header is 48 bits before the UDP checksum
-    udp_header_and_payload: Buffer = packet[field_cursor-48:]
+    udp_header_and_payload_fields: List[Buffer] = [field for field in fields_values[udp_checksum_position-3:]]
+    udp_header_and_payload: Buffer = reduce(lambda x, y: x+y, udp_header_and_payload_fields)
     udp_total_length: int = udp_header_and_payload.length // 8 if udp_header_and_payload.length%8 == 0 else udp_header_and_payload.length // 8 + 1
 
     fields_enumeration_reversed: Iterator[Tuple[int, str]] = enumerate(fields_ids[preceding_protocol_last_position:0:-1])
@@ -234,8 +239,8 @@ def _compute_checksum(packet: Buffer, field_cursor: int, decompressed_fields: Li
 
 
 
-UDPComputeFunctions: Dict[str, ComputeFunctionType] = {
-    UDPFields.LENGTH: _compute_length,
-    UDPFields.CHECKSUM: _compute_checksum,
+UDPComputeFunctions: Dict[str, Tuple[ComputeFunctionType, ComputeFunctionDependenciesType]] = {
+    UDPFields.LENGTH: (_compute_length, {}),
+    UDPFields.CHECKSUM: (_compute_checksum, {UDPFields.LENGTH, IPv6Fields.SRC_ADDRESS, IPv6Fields.DST_ADDRESS, IPv4Fields.SRC_ADDRESS, IPv4Fields.DST_ADDRESS}),
 }
-    
+

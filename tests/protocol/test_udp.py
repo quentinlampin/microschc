@@ -4,6 +4,7 @@ from microschc.protocol.udp import UDPComputeFunctions, UDPParser, UDPFields
 from microschc.parser.parser import HeaderDescriptor, PacketParser
 from microschc.rfc8724 import FieldDescriptor, PacketDescriptor
 from microschc.binary.buffer import Buffer
+from microschc.rfc8724extras import ParserDefinitions
 
 def test_udp_parser_import():
     """test: UDP header parser import and instanciation
@@ -103,24 +104,7 @@ def test_udp_compute_length():
 
 
     """
-    valid_stack_packet: bytes = bytes(
-        b"\x60\x0f" \
-        b"\xf8\x5f\x00\x20\x11\x40\x20\x01\x0d\xb8\x00\x0a\x00\x00\x00\x00" \
-        b"\x00\x00\x00\x00\x00\x03\x20\x01\x0d\xb8\x00\x0a\x00\x00\x00\x00" \
-        b"\x00\x00\x00\x00\x00\x20" \
-        b"\x90\xa0\x16\x33\x00\x20\x5b\xda" \
-        b"\x52\x45\x14\x65\xd1\x59\x61\x22\x62\x2d\x16\xff\xe8\x16\x44\x08"\
-        b"\x40\x46\xd9\x99\x99\x99\x99\x9a"
-    )
-
-    valid_stack_packet: Buffer = Buffer(content=valid_stack_packet, length=len(valid_stack_packet)*8)
-    packet_parser: PacketParser = factory(stack_id=Stack.IPV6_UDP_COAP)
-
-    packet_descriptor: PacketDescriptor = packet_parser.parse(buffer=valid_stack_packet)
-
-    decompressed_fields: Dict[str, Buffer] = {field.id: field.value for field in packet_descriptor.fields}
-
-    partially_reconstructed_packet:bytes = bytes(
+    partially_reconstructed_content:bytes = bytes(
         b"\x60\x00\xef\x2d\x00\x68\x11\x40\x20\x01\x0d\xb8\x00\x0a\x00\x00" \
         b"\x00\x00\x00\x00\x00\x00\x00\x02\x20\x01\x0d\xb8\x00\x0a\x00\x00" \
         b"\x00\x00\x00\x00\x00\x00\x00\x20\xd1\x00\x16\x33\x00\x68\x5c\x21" \
@@ -131,38 +115,35 @@ def test_udp_compute_length():
         b"\x38\x2e\x30\x7d\x2c\x7b\x22\x6e\x22\x3a\x22\x30\x2f\x35\x22\x2c" \
         b"\x22\x76\x22\x3a\x31\x36\x36\x36\x32\x36\x33\x33\x33\x39\x7d\x5d"
     )
-    partially_reconstructed_packet_buffer: Buffer = Buffer(content=partially_reconstructed_packet, length=len(partially_reconstructed_packet)*8)
+    partially_reconstructed_buffer: Buffer = Buffer(content=partially_reconstructed_content, length=len(partially_reconstructed_content)*8)
+    packet_parser: PacketParser = factory(stack_id=Stack.IPV6_UDP_COAP)
 
-    length_buffer: Buffer = UDPComputeFunctions[UDPFields.LENGTH](partially_reconstructed_packet_buffer, 352, decompressed_fields, 10)
+    packet_descriptor: PacketDescriptor = packet_parser.parse(buffer=partially_reconstructed_buffer)
+
+    decompressed_fields: List[Tuple[str, Buffer]] = [(field.id,field.value) for field in packet_descriptor.fields]
+    decompressed_fields.append((ParserDefinitions.PAYLOAD, packet_descriptor.payload))
+    length_buffer: Buffer = UDPComputeFunctions[UDPFields.LENGTH][0](decompressed_fields, 10)
     assert length_buffer == Buffer(content=b'\x00\x68', length=16)
 
 
 def test_udp_compute_checksum():
     
-    valid_stack_packet: bytes = bytes(
-        b"\x60\x00\x00\x00\x00\x34\x11\x01\x21\x00\x00\x00" \
-        b"\x00\x00\x00\x01\xAB\xCD\x00\x00\x00\x00\x00\x01" \
-        b"\xFD\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00" \
-        b"\x00\x00\x01\x60\x26\x92\x26\x92\x00\x0C\x7E\xD5" \
-        b"\x12\x34\x56\x78"                            
-    )
-    # checksum is 0x7ed5
     
-    packet_parser: PacketParser = factory(stack_id=Stack.IPV6_UDP_COAP)
-    valid_stack_packet: Buffer = Buffer(content=valid_stack_packet, length=len(valid_stack_packet)*8)
-    packet_descriptor: PacketDescriptor = packet_parser.parse(buffer=valid_stack_packet)
-
-    decompressed_fields: List[Tuple[str, Buffer]] = [ (field.id,field.value) for field in packet_descriptor.fields]
-
-    partially_reconstructed_packet: bytes = bytes(
+    partially_reconstructed_content: bytes = bytes(
         b"\x60\x00\x00\x00\x00\x34\x11\x01\x21\x00\x00\x00" \
         b"\x00\x00\x00\x01\xAB\xCD\x00\x00\x00\x00\x00\x01" \
         b"\xFD\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00" \
         b"\x00\x00\x01\x60\x26\x92\x26\x92\x00\x0C\x00\x00" \
         b"\x12\x34\x56\x78"                            
     )
+    # checksum is 0x7ed5
+    expected_checksum: Buffer = Buffer(content=b'\x7e\xd5', length=16)
     
-    partially_reconstructed_packet_buffer: Buffer = Buffer(content=partially_reconstructed_packet, length=len(partially_reconstructed_packet)*8)
-
-    checksum_buffer: Buffer = UDPComputeFunctions[UDPFields.CHECKSUM](partially_reconstructed_packet_buffer, 368, decompressed_fields, 11)
-    assert checksum_buffer == Buffer(content=b'\x7e\xd5', length=16)
+    packet_parser: PacketParser = factory(stack_id=Stack.IPV6_UDP_COAP)
+    partially_reconstructed_packet: Buffer = Buffer(content=partially_reconstructed_content, length=len(partially_reconstructed_content)*8)
+    packet_descriptor: PacketDescriptor = packet_parser.parse(buffer=partially_reconstructed_packet)
+    
+    
+    decompressed_fields: List[Tuple[str, Buffer]] = [ (field.id,field.value) for field in packet_descriptor.fields]
+    checksum_buffer: Buffer = UDPComputeFunctions[UDPFields.CHECKSUM][0](decompressed_fields, 11)
+    assert checksum_buffer == expected_checksum
