@@ -1,13 +1,18 @@
 from typing import List
+
 from microschc.binary.buffer import Buffer, Padding
-from microschc.parser.protocol.coap import CoAPFields
-from microschc.parser.protocol.ipv6 import IPv6Fields
-from microschc.parser.protocol.udp import UDPFields
-from microschc.rfc8724 import MatchMapping, MatchingOperator as MO, RuleDescriptor, RuleNature
+from microschc.compressor.compressor import compress
+from microschc.parser.parser import PacketParser
+from microschc.protocol.coap import CoAPFields
+from microschc.protocol.ipv6 import IPv6Fields
+from microschc.protocol.registry import Stack, factory
+from microschc.protocol.udp import UDPFields
+from microschc.rfc8724 import FieldDescriptor, MatchMapping, MatchingOperator as MO, PacketDescriptor, RuleDescriptor, RuleNature
 from microschc.rfc8724 import CompressionDecompressionAction as CDA
 from microschc.rfc8724 import DirectionIndicator, RuleFieldDescriptor
 
 from microschc.decompressor.decompressor import decompress
+from microschc.rfc8724extras import ParserDefinitions
 
 
 
@@ -110,4 +115,105 @@ def test_no_compression_decompress():
 
     assert decompressed_packet == packet
 
+def test_decompression_compute():
+    valid_stack_packet: bytes = bytes(
+        b"\x60\x04\xbc\x56" \
+        b"\x00\x20" \
+        b"\x11" \
+        b"\x40" \
+        b"\x20\x01\x0d\xb8\x00\x0a\x00\x00\x00\x00\x00\x00\x00\x00\x00\x03" \
+        b"\x20\x01\x0d\xb8\x00\x0a\x00\x00\x00\x00\x00\x00\x00\x00\x00\x20" \
+        b"\xe4\xc1" \
+        b"\x16\x33" \
+        b"\x00\x20" \
+        b"\x78\x04" \
+        b"\x52" \
+        b"\x45" \
+        b"\x54\x15" \
+        b"\xb7\x2e" \
+        b"\x61" \
+        b"\x22" \
+        b"\x62" \
+        b"\x2d\x16" \
+        b"\xff" \
+        b"\xe8\x16\x44\x08\x40\x47\x59\x99\x99\x99\x99\x9a"
+    )
+    valid_stack_buffer: Buffer = Buffer(content=valid_stack_packet, length=8*len(valid_stack_packet))
+    packet_buffer = Buffer(content=valid_stack_packet, length=len(valid_stack_packet)*8)
 
+    packet_parser: PacketParser = factory(stack_id=Stack.IPV6_UDP_COAP)
+    packet_descriptor: PacketDescriptor = packet_parser.parse(buffer=packet_buffer)
+    packet_fields: List[FieldDescriptor] = packet_descriptor.fields
+
+    field_descriptors_1: List[RuleFieldDescriptor] = [
+        RuleFieldDescriptor(
+            id=IPv6Fields.VERSION, length=4, position=0, direction=DirectionIndicator.BIDIRECTIONAL, 
+            target_value=Buffer(content=b'\x06', length=4), matching_operator=MO.EQUAL, compression_decompression_action=CDA.NOT_SENT),
+        RuleFieldDescriptor(
+            id=IPv6Fields.TRAFFIC_CLASS, length=8, position=0, direction=DirectionIndicator.BIDIRECTIONAL, 
+            target_value=Buffer(content=b'\x00', length=8), matching_operator=MO.EQUAL, compression_decompression_action=CDA.NOT_SENT),
+        RuleFieldDescriptor(
+            id=IPv6Fields.FLOW_LABEL, length=20, position=0, direction=DirectionIndicator.UP,
+            target_value=Buffer(content=b'\x04\xbc\x56', length=20), matching_operator=MO.EQUAL, compression_decompression_action=CDA.NOT_SENT),
+        RuleFieldDescriptor(
+            id=IPv6Fields.PAYLOAD_LENGTH, length=16, position=0, direction=DirectionIndicator.BIDIRECTIONAL, 
+            target_value=Buffer(content=b'', length=16), matching_operator=MO.IGNORE, compression_decompression_action=CDA.COMPUTE),
+        RuleFieldDescriptor(
+            id=IPv6Fields.NEXT_HEADER, length=8, position=0, direction=DirectionIndicator.BIDIRECTIONAL,
+            target_value=Buffer(content=b'\x11', length=8), matching_operator=MO.EQUAL, compression_decompression_action=CDA.NOT_SENT),
+        RuleFieldDescriptor(
+            id=IPv6Fields.HOP_LIMIT, length=8, position=0, direction=DirectionIndicator.BIDIRECTIONAL,
+            target_value=Buffer(content=b'\x40', length=8), matching_operator=MO.EQUAL, compression_decompression_action=CDA.NOT_SENT),
+        RuleFieldDescriptor(
+            id=IPv6Fields.SRC_ADDRESS, length=128, position=0, direction=DirectionIndicator.UP,
+            target_value=Buffer(content=b'\x20\x01\x0d\xb8\x00\x0a\x00\x00\x00\x00\x00\x00\x00\x00\x00', length=120), 
+            matching_operator=MO.MSB, compression_decompression_action=CDA.LSB),
+        RuleFieldDescriptor(id=IPv6Fields.DST_ADDRESS, length=128, position=0, direction=DirectionIndicator.BIDIRECTIONAL,
+            target_value=MatchMapping(forward_mapping={
+                Buffer(content=b"\x20\x01\x0d\xb8\x00\x0a\x00\x00\x00\x00\x00\x00\x00\x00\x00\x20", length=128):Buffer(content=b'\x00', length=2)
+            }), 
+            matching_operator=MO.MATCH_MAPPING, compression_decompression_action=CDA.MAPPING_SENT),
+
+        RuleFieldDescriptor(id=UDPFields.SOURCE_PORT, length=16, position=0, direction=DirectionIndicator.UP,
+            target_value=Buffer(content=b'\xe4\xc1', length=16), matching_operator=MO.EQUAL, compression_decompression_action=CDA.NOT_SENT),
+        RuleFieldDescriptor(id=UDPFields.DESTINATION_PORT, length=16, position=0, direction=DirectionIndicator.UP,
+            target_value=Buffer(content=b'\x16\x33', length=16), matching_operator=MO.EQUAL, compression_decompression_action=CDA.NOT_SENT),
+        RuleFieldDescriptor(id=UDPFields.LENGTH, length=16, position=0, direction=DirectionIndicator.BIDIRECTIONAL,
+            target_value=Buffer(content=b'', length=0), matching_operator=MO.IGNORE, compression_decompression_action=CDA.COMPUTE),
+        RuleFieldDescriptor(id=UDPFields.CHECKSUM, length=16, position=0, direction=DirectionIndicator.BIDIRECTIONAL,
+            target_value=Buffer(content=b'', length=0), matching_operator=MO.IGNORE, compression_decompression_action=CDA.COMPUTE),
+
+        RuleFieldDescriptor(id=CoAPFields.VERSION, length=2, position=0, direction=DirectionIndicator.BIDIRECTIONAL,
+            target_value=Buffer(content=b'\x01', length=2), matching_operator=MO.EQUAL, compression_decompression_action=CDA.NOT_SENT),
+        RuleFieldDescriptor(id=CoAPFields.TYPE, length=2, position=0, direction=DirectionIndicator.BIDIRECTIONAL,
+            target_value=Buffer(content=b'\x01', length=2), matching_operator=MO.EQUAL, compression_decompression_action=CDA.NOT_SENT),
+        RuleFieldDescriptor(id=CoAPFields.TOKEN_LENGTH, length=4, position=0, direction=DirectionIndicator.BIDIRECTIONAL,
+            target_value=Buffer(content=b'', length=0), matching_operator=MO.IGNORE, compression_decompression_action=CDA.VALUE_SENT),
+        RuleFieldDescriptor(id=CoAPFields.CODE, length=8, position=0, direction=DirectionIndicator.BIDIRECTIONAL,
+            target_value=Buffer(content=b'', length=0), matching_operator=MO.IGNORE, compression_decompression_action=CDA.VALUE_SENT),
+        RuleFieldDescriptor(id=CoAPFields.MESSAGE_ID, length=16, position=0, direction=DirectionIndicator.BIDIRECTIONAL,
+            target_value=Buffer(content=b'', length=0), matching_operator=MO.IGNORE, compression_decompression_action=CDA.VALUE_SENT),
+        RuleFieldDescriptor(id=CoAPFields.TOKEN, length=0, position=0, direction=DirectionIndicator.BIDIRECTIONAL,
+            target_value=Buffer(content=b'', length=0), matching_operator=MO.IGNORE, compression_decompression_action=CDA.VALUE_SENT),
+        RuleFieldDescriptor(id=CoAPFields.OPTION_DELTA, length=4, position=0, direction=DirectionIndicator.UP,
+            target_value=Buffer(content=b'\x06', length=4), matching_operator=MO.EQUAL, compression_decompression_action=CDA.NOT_SENT),
+        RuleFieldDescriptor(id=CoAPFields.OPTION_LENGTH, length=4, position=0, direction=DirectionIndicator.UP,
+            target_value=Buffer(content=b'', length=0), matching_operator=MO.IGNORE, compression_decompression_action=CDA.VALUE_SENT),
+        RuleFieldDescriptor(id=CoAPFields.OPTION_VALUE, length=0, position=0, direction=DirectionIndicator.UP,
+            target_value=Buffer(content=b'', length=0), matching_operator=MO.IGNORE, compression_decompression_action=CDA.VALUE_SENT),
+        RuleFieldDescriptor(id=CoAPFields.OPTION_DELTA, length=4, position=0, direction=DirectionIndicator.UP,
+            target_value=Buffer(content=b'\x06', length=4), matching_operator=MO.EQUAL, compression_decompression_action=CDA.NOT_SENT),
+        RuleFieldDescriptor(id=CoAPFields.OPTION_LENGTH, length=4, position=0, direction=DirectionIndicator.UP,
+            target_value=Buffer(content=b'', length=0), matching_operator=MO.IGNORE, compression_decompression_action=CDA.VALUE_SENT),
+        RuleFieldDescriptor(id=CoAPFields.OPTION_VALUE, length=0, position=0, direction=DirectionIndicator.UP,
+            target_value=Buffer(content=b'', length=0), matching_operator=MO.IGNORE, compression_decompression_action=CDA.VALUE_SENT),
+        RuleFieldDescriptor(id=CoAPFields.PAYLOAD_MARKER, length=8, position=0, direction=DirectionIndicator.UP,
+            target_value=Buffer(content=b'\xff', length=8), matching_operator=MO.EQUAL, compression_decompression_action=CDA.NOT_SENT)
+    ]
+    rule_descriptor_1: RuleDescriptor = RuleDescriptor(id=Buffer(content=b'\x03', length=2), field_descriptors=field_descriptors_1)
+
+    schc_packet = compress(packet_descriptor=packet_descriptor, rule_descriptor=rule_descriptor_1)
+    
+    decompressed_packet = decompress(schc_packet=schc_packet, rule_descriptor=rule_descriptor_1)
+        
+    assert decompressed_packet == valid_stack_buffer

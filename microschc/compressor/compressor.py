@@ -28,7 +28,7 @@ def compress(packet_descriptor: PacketDescriptor, rule_descriptor: RuleDescripto
 
         for pf, rf in zip(packet_fields, rule_descriptor.field_descriptors):
             field_residue: Buffer
-            if rf.compression_decompression_action == CDA.NOT_SENT:
+            if rf.compression_decompression_action in {CDA.NOT_SENT, CDA.COMPUTE}:
                 continue
             elif rf.compression_decompression_action == CDA.LSB:
                 assert isinstance(rf.target_value, Buffer)

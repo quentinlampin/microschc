@@ -6,7 +6,7 @@ from microschc.compressor import compress
 from microschc.decompressor import decompress
 from microschc.manager import ContextManager
 from microschc.parser import PacketParser, ParserError
-from microschc.parser.protocol.registry import STACKS, factory
+from microschc.protocol.registry import STACKS, factory
 from microschc.rfc8724 import PacketDescriptor, RuleDescriptor
 from microschc.rfc8724extras import Context
 from microschc.ruler import Ruler, RuleDescriptorMatchError, RuleIDMatchError

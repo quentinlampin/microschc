@@ -1,4 +1,4 @@
-from microschc.parser.protocol.ipv4 import IPv4Parser, IPv4Fields
+from microschc.protocol.ipv4 import IPv4Parser, IPv4Fields
 from microschc.parser.parser import HeaderDescriptor
 from microschc.rfc8724 import FieldDescriptor
 from microschc.binary.buffer import Buffer

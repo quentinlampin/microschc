@@ -12,9 +12,12 @@ Note 3: Authentication and Encapsulating Security payload parsing is not impleme
 """
 
 from enum import Enum
-from microschc.binary.buffer import Buffer
+from functools import reduce
+from typing import Callable, Dict, List, Tuple
+from microschc.binary.buffer import Buffer, Padding
 from microschc.parser import HeaderParser, ParserError
-from microschc.rfc8724 import FieldDescriptor, HeaderDescriptor
+from microschc.protocol.compute import ComputeFunctionDependenciesType, ComputeFunctionType
+from microschc.rfc8724 import FieldDescriptor, HeaderDescriptor, RuleFieldDescriptor
 
 IPv6_HEADER_ID = 'IPv6'
 
@@ -98,3 +101,19 @@ class IPv6Parser(HeaderParser):
             ]
         )
         return header_descriptor
+    
+def _compute_payload_length( decompressed_fields: List[Tuple[str, Buffer]], rule_field_position:int) -> Buffer:
+    fields_ids: List[str] = [field_id for field_id, _ in decompressed_fields]
+    fields_values: List[Buffer] = [field_value for _, field_value in decompressed_fields]
+    payload_fields: List[Buffer] = [field for field in fields_values[rule_field_position+5:]]
+    payload_buffer: Buffer = reduce(lambda x, y: x+y, payload_fields, Buffer(content=b'', length=0))
+
+    payload_length: int = payload_buffer.length // 8 if payload_buffer.length%8 == 0 else payload_buffer.length // 8 + 1
+    buffer: Buffer = Buffer(content=payload_length.to_bytes(2, 'big'), length=16, padding=Padding.LEFT)
+    return buffer
+
+
+IPv6ComputeFunctions: Dict[str, Tuple[ComputeFunctionType, ComputeFunctionDependenciesType]] = {
+    IPv6Fields.PAYLOAD_LENGTH: (_compute_payload_length, {})
+}
+    

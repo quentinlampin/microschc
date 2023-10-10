@@ -65,6 +65,7 @@ class CompressionDecompressionAction(str, Enum):
     LSB = 'least-significant-bits'
     MAPPING_SENT = 'mapping-sent'
     VALUE_SENT = 'value-sent'
+    COMPUTE = 'compute'
 
 class RuleNature(str, Enum):
     COMPRESSION = 'compression'
@@ -198,7 +199,7 @@ class RuleFieldDescriptor:
 
     def __repr__(self) -> str:
         mo_to_short_str: Dict[str,str] = {MO.EQUAL:'eq', MO.IGNORE:'ig', MO.MATCH_MAPPING:'ma', MO.MSB:'ms'}
-        cda_to_short_str: Dict[str,str] = {CDA.NOT_SENT:'ns', CDA.VALUE_SENT:'vs', CDA.MAPPING_SENT:'ma', CDA.LSB:'ls'}
+        cda_to_short_str: Dict[str,str] = {CDA.NOT_SENT:'ns', CDA.VALUE_SENT:'vs', CDA.MAPPING_SENT:'ma', CDA.LSB:'ls', CDA.COMPUTE:'co'}
         repr: str = "{"+f"{self.id}({self.length}):{mo_to_short_str[self.matching_operator]}/{cda_to_short_str[self.compression_decompression_action]}|{self.target_value}"+"}"
         return repr
 

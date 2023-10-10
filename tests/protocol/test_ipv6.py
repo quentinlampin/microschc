@@ -1,7 +1,9 @@
-from microschc.parser.protocol.ipv6 import IPv6Parser, IPv6Fields
+from typing import Dict, List, Tuple
+from microschc.protocol.ipv6 import IPv6ComputeFunctions, IPv6Parser, IPv6Fields
 from microschc.parser.parser import HeaderDescriptor
 from microschc.rfc8724 import FieldDescriptor
 from microschc.binary.buffer import Buffer
+from microschc.rfc8724extras import ParserDefinitions
 
 def test_ipv6_parser_import():
     """test: IPv6 header parser import and instanciation
@@ -87,5 +89,20 @@ def test_ipv6_parser_parse():
     assert destination_address_fd.value == Buffer(content=b'\xfe\x80\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\xa2', length=128)
 
     
+def test_ipv6_compute_length():
 
+    parser:IPv6Parser = IPv6Parser()
+    partially_reconstructed_ipv6_content:bytes = bytes(
+        b"\x60\x00\x00\x00\x00\x00\x11\x40\xfe\x80\x00\x00\x00\x00\x00\x00" # payload length is \x00\x00, should be \x00\x10
+        b"\x00\x00\x00\x00\x00\x00\x00\xa1\xfe\x80\x00\x00\x00\x00\x00\x00"
+        b"\x00\x00\x00\x00\x00\x00\x00\xa2\x23\x29\x23\x2a\x00\x10\x2d\xa1"
+        b"\x64\x65\x61\x64\x62\x65\x65\x66"
+    )
+    partially_reconstructed_ipv6_packet_buffer: Buffer = Buffer(content=partially_reconstructed_ipv6_content, length=len(partially_reconstructed_ipv6_content)*8)
+    ipv6_header_descriptor: HeaderDescriptor = parser.parse(buffer=partially_reconstructed_ipv6_packet_buffer)
+    decompressed_fields: List[Tuple[str, Buffer]] = [ (field.id,field.value) for field in ipv6_header_descriptor.fields]
+    decompressed_fields.append((ParserDefinitions.PAYLOAD, Buffer(content=b"\x23\x29\x23\x2a\x00\x10\x2d\xa1\x64\x65\x61\x64\x62\x65\x65\x66", length=128)))
+   
 
+    payload_length_buffer: Buffer = IPv6ComputeFunctions[IPv6Fields.PAYLOAD_LENGTH][0](decompressed_fields, 3)
+    assert payload_length_buffer == Buffer(content=b'\x00\x10', length=16)

@@ -1,8 +1,8 @@
 from microschc.parser.parser import PacketParser
-from microschc.parser.protocol.registry import Stack, factory
-from microschc.parser.protocol.coap import CoAPFields
-from microschc.parser.protocol.ipv6 import IPv6Fields
-from microschc.parser.protocol.udp import UDPFields
+from microschc.protocol.registry import Stack, factory
+from microschc.protocol.coap import CoAPFields
+from microschc.protocol.ipv6 import IPv6Fields
+from microschc.protocol.udp import UDPFields
 from microschc.rfc8724 import DirectionIndicator, PacketDescriptor
 from microschc.binary.buffer import Buffer
 

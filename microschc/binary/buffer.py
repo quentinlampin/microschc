@@ -14,6 +14,7 @@ using slicing notations.
 
 from enum import Enum
 import json
+from typing import Iterable
 
 class Padding(str, Enum):
     LEFT = 'left'
@@ -172,6 +173,41 @@ class Buffer:
 
     def copy(self):
         return Buffer(content=self.content, length=self.length, padding=self.padding)
+    
+    def value(self, type:str='unsigned int', encoding:str='big-endian'):
+        """
+        returns the content of the buffer, decoded with given parameters.
+        """
+        if 'int' in type:
+            encoding: str = 'big' if encoding == 'big-endian' else 'little'
+            signed: bool = False if 'unsigned' in type else True
+            if self.padding is Padding.RIGHT:
+                buffer = self.pad(padding=Padding.LEFT)
+            else:
+                buffer = self
+            value:int = int.from_bytes(buffer.content, encoding, signed=signed)
+        elif 'str' in type:
+            value:str = self.content.decode(encoding=encoding)
+        else:
+            raise ValueError('unknown type/decoding requirements')
+        return value
+    
+    def chunks(self, length: int, padding: bool = False) -> Iterable['Buffer']:
+        chunks_count = self.length // length if self.length % length == 0 else self.length//length + 1
+        cursor = 0 
+        for chunk in range(chunks_count-1):
+            chunk = self[cursor:cursor+length]
+            yield chunk
+            cursor += length
+        chunk = self[cursor:cursor+length]
+        if padding is True and chunk.length < 16:
+            pad_content = bytes(length//8 if length%8==0 else length//8 + 1)
+            pad: Buffer = Buffer(content=pad_content, length=length-chunk.length, padding=Padding.RIGHT)
+            chunk+=pad
+        yield chunk
+
+        
+
 
     def __eq__(self, another: object) -> bool:
         '''
@@ -195,7 +231,11 @@ class Buffer:
         return trimmed_buffer.content.__hash__()
 
     def __add__(self, another):
-        self_copy: Buffer = self.copy()
+
+        if self.padding == Padding.LEFT:
+            self_copy = self.pad(padding=Padding.RIGHT, inplace=False)
+        else:
+            self_copy: Buffer = self.copy()
         another_copy: Buffer = another.copy()
         self_copy_offset = 0
         another_copy_offset = 0
@@ -235,6 +275,68 @@ class Buffer:
         self_copy.length += another.length
         self_copy._update_padding()
         return self_copy
+    
+    def __and__(self, another: 'Buffer'):
+        if self.length != another.length:
+            raise ValueError('buffers must be of the same length')
+        if another.padding != self.padding:
+            another = another.pad(self.padding)
+
+        bitwise_and_content: bytes = b''
+        for (self_chunk, another_chunk) in  zip(iter(self.content), iter(another.content)):
+            bitwise_and_content += (self_chunk & another_chunk).to_bytes(1,'big')
+
+        bitwise_and_buffer: Buffer = Buffer(content=bitwise_and_content, length=self.length, padding=self.padding)
+        return bitwise_and_buffer
+    
+    def __or__(self, another: 'Buffer'):
+        if self.length != another.length:
+            raise ValueError('buffers must be of the same length')
+        if another.padding != self.padding:
+            another = another.pad(self.padding)
+
+        bitwise_or_content: bytes = b''
+        for (self_chunk, another_chunk) in  zip(iter(self.content), iter(another.content)):
+            bitwise_or_content += (self_chunk | another_chunk).to_bytes(1,'big')
+
+        bitwise_or_buffer: Buffer = Buffer(content=bitwise_or_content, length=self.length, padding=self.padding)
+        return bitwise_or_buffer
+    
+    def __xor__(self, another: 'Buffer'):
+        if self.length != another.length:
+            raise ValueError('buffers must be of the same length')
+        if another.padding != self.padding:
+            another = another.pad(self.padding)
+
+        bitwise_xor_content: bytes = b''
+        for (self_chunk, another_chunk) in  zip(iter(self.content), iter(another.content)):
+            bitwise_xor_content += (self_chunk ^ another_chunk).to_bytes(1,'big')
+
+        bitwise_xor_buffer: Buffer = Buffer(content=bitwise_xor_content, length=self.length, padding=self.padding)
+        return bitwise_xor_buffer
+    
+
+    
+    def __setitem__(self,items, values):
+
+        assert isinstance(items, (slice, int))
+        assert isinstance(values, Buffer)
+
+        if isinstance(items, slice):
+            start_bit, stop_bit, _ = items.indices(self.length)
+        else:
+            start_bit = items
+            stop_bit = start_bit + 1
+
+        prefix: Buffer = self[0:start_bit]
+        postfix: Buffer = self[stop_bit:]
+
+        new_buffer: Buffer = prefix + values + postfix
+
+        self.content = new_buffer.content
+        self.length = new_buffer.length
+        self.padding_length = new_buffer.padding_length
+        return self
 
     def __getitem__(self, items):
         

@@ -1,6 +1,6 @@
 from microschc.binary.buffer import Buffer
-from microschc.parser.protocol.registry import Stack
-from microschc.parser.protocol.ipv6 import IPv6Fields
+from microschc.protocol.registry import Stack
+from microschc.protocol.ipv6 import IPv6Fields
 from microschc.rfc8724 import DirectionIndicator, FieldDescriptor, HeaderDescriptor, MatchMapping, PacketDescriptor, RuleDescriptor, RuleFieldDescriptor, RuleNature
 from microschc.rfc8724 import CompressionDecompressionAction as CDA
 from microschc.rfc8724 import MatchingOperator as MO
