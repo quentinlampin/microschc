@@ -74,7 +74,7 @@ class UDPParser(HeaderParser):
         return header_descriptor
         
 
-def _compute_length(decompressed_fields: List[RuleFieldDescriptor], rule_field_position: int) -> Buffer:
+def _compute_length(decompressed_fields:  List[Tuple[str, Buffer]], rule_field_position: int) -> Buffer:
     # retrieve the buffer containing the UDP header and payload
     fields_ids: List[str] = [field_id for field_id, _ in decompressed_fields]
     fields_values: List[Buffer] = [field_value for _, field_value in decompressed_fields]
@@ -177,18 +177,20 @@ def _compute_checksum(decompressed_fields: List[Tuple[str, Buffer]], rule_field_
             # +                      Destination Address                      +
             # |                                                               |
             # +                                                               +
-            # |                                                               |
             # +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
-            # |              length             |         Next Header         |
+            # |                   Upper-Layer Packet Length                   |
+            # +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
+            # |                     zero                      |  Next Header  |
             # +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
 
         ipv6_source_address_offset: int = next((offset for offset, field_id in fields_enumeration_reversed if field_id == IPv6Fields.SRC_ADDRESS))
         ipv6_source_address_position: int = preceding_protocol_last_position - ipv6_source_address_offset
         ipv6_source_address: Buffer = fields_values[ipv6_source_address_position]
         ipv6_destination_address: Buffer = fields_values[ipv6_source_address_position+1]
-        pseudo_header_length: Buffer = Buffer(content=udp_total_length.to_bytes(4, 'big'), length=16)
-        pseudo_header_protocol_id: Buffer = Buffer(content=b'\x00\x11', length=16)
-        pseudo_header: Buffer = ipv6_source_address + ipv6_destination_address + pseudo_header_protocol_id + pseudo_header_length
+        pseudo_header_length: Buffer = Buffer(content=udp_total_length.to_bytes(4, 'big'), length=32)
+        pseudo_header_zero: Buffer = Buffer(content=b'\x00\x00\x00', length=24)
+        pseudo_header_next_header: Buffer = Buffer(content=b'\x11', length=8)
+        pseudo_header: Buffer = ipv6_source_address + ipv6_destination_address + pseudo_header_length + pseudo_header_zero + pseudo_header_next_header
         
     elif IPV4_HEADER_ID in preceding_protocol_last_field:
         # build up the pseudo header containing the Source Address, Destination Address, Protocol ID, UDP header + payload length
@@ -204,11 +206,13 @@ def _compute_checksum(decompressed_fields: List[Tuple[str, Buffer]], rule_field_
         fields_enumeration_reversed: Iterator[Tuple[int, str]] = enumerate(fields_ids[preceding_protocol_last_position:0:-1])
         ipv4_source_address_offset: int = next(offset for offset, field_id in fields_enumeration_reversed if field_id == IPv4Fields.SRC_ADDRESS)
         ipv4_source_address_position: int = preceding_protocol_last_position - ipv4_source_address_offset
+        
         ipv4_source_address: Buffer = fields_values[ipv4_source_address_position]
         ipv4_destination_address: Buffer = fields_values[ipv4_source_address_position+1]
-        pseudo_header_protocol_id: Buffer = Buffer(content=b'\x00\x11', length=16)
+        pseudo_header_zero: Buffer = Buffer(content=b'x\00', length=8)
+        pseudo_header_protocol: Buffer = Buffer(content=b'\x11', length=16)
         pseudo_header_length: Buffer = Buffer(content=udp_total_length.to_bytes(2, 'big'), length=16)
-        pseudo_header: Buffer = ipv4_source_address + ipv4_destination_address  + pseudo_header_protocol_id + pseudo_header_length
+        pseudo_header: Buffer = ipv4_source_address + ipv4_destination_address  + pseudo_header_zero + pseudo_header_protocol + pseudo_header_length
 
     checksum_value: int = 0
     pseudo_header_checksum: int = 0
@@ -241,6 +245,10 @@ def _compute_checksum(decompressed_fields: List[Tuple[str, Buffer]], rule_field_
 
 UDPComputeFunctions: Dict[str, Tuple[ComputeFunctionType, ComputeFunctionDependenciesType]] = {
     UDPFields.LENGTH: (_compute_length, {}),
-    UDPFields.CHECKSUM: (_compute_checksum, {UDPFields.LENGTH, IPv6Fields.SRC_ADDRESS, IPv6Fields.DST_ADDRESS, IPv4Fields.SRC_ADDRESS, IPv4Fields.DST_ADDRESS}),
+    UDPFields.CHECKSUM: (_compute_checksum, { UDPFields.LENGTH,
+                                              IPv6Fields.SRC_ADDRESS,
+                                              IPv6Fields.DST_ADDRESS,
+                                              IPv4Fields.SRC_ADDRESS,
+                                              IPv4Fields.DST_ADDRESS }),
 }
 
