@@ -9,7 +9,8 @@ from .udp import UDPComputeFunctions, UDPFields
 
 ComputeFunctions: Dict[str, Tuple[ComputeFunctionType, ComputeFunctionDependenciesType]] = {
     IPv6Fields.PAYLOAD_LENGTH: IPv6ComputeFunctions[IPv6Fields.PAYLOAD_LENGTH],
-    UDPFields.LENGTH: UDPComputeFunctions[UDPFields.LENGTH]
+    UDPFields.LENGTH: UDPComputeFunctions[UDPFields.LENGTH],
+    UDPFields.CHECKSUM: UDPComputeFunctions[UDPFields.CHECKSUM]
 }
 
 
