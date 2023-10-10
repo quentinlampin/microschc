@@ -11,6 +11,7 @@ from microschc.protocol import ComputeFunctions
 from microschc.protocol.compute import ComputeFunctionType
 from microschc.rfc8724 import RuleFieldDescriptor, MatchMapping, RuleDescriptor
 from microschc.rfc8724 import CompressionDecompressionAction as CDA
+from microschc.rfc8724extras import ParserDefinitions
 
 class ComputeEntry:
     field_position: int
@@ -23,6 +24,9 @@ class ComputeEntry:
         self.field_id = field_id
         self.function = function
         self.dependencies = dependencies
+
+    def __repr__(self) -> str:
+        return f"{self.field_id}: {self.dependencies} "
 
 def compute_function_sort(entry_1: ComputeEntry, entry_2: ComputeEntry) -> int:
     if entry_1.field_id in entry_2.dependencies:
@@ -108,14 +112,14 @@ def decompress(schc_packet: Buffer, rule_descriptor: RuleDescriptor) -> Buffer:
                 field_position=rf_position,
                 field_id=rf.id,
                 function=compute_function,
-                dependencies_set=compute_dependencies
+                dependencies=compute_dependencies
             )
             compute_entries.append(compute_entry)
         
         decompressed_fields.append((rf.id, decompressed_field))
         
         schc_packet = schc_packet[residue_bitlength:]
-
+    decompressed_fields.append((ParserDefinitions.PAYLOAD, schc_packet))
     # sort compute CDA entries according 
     compute_entries.sort(key=cmp_to_key(compute_function_sort))
 
@@ -124,12 +128,10 @@ def decompress(schc_packet: Buffer, rule_descriptor: RuleDescriptor) -> Buffer:
         field_id: str = compute_entry.field_id
         field_position: int = compute_entry.field_position
         compute_function: ComputeFunctionType = compute_entry.function        
-        decompressed_fields[field_position] = compute_function(decompressed_fields, field_position)
+        decompressed_fields[field_position] = (field_id, compute_function(decompressed_fields, field_position))
 
     # concatenate decompressed fields
     decompressed_field_values = [field_value for field_id, field_value in decompressed_fields]
     decompressed: Buffer = reduce(lambda x, y: x+y, decompressed_field_values, Buffer(content=b'', length=0))
-    # concatenate the rest of the SCHC payload
-    decompressed += schc_packet
 
     return decompressed
