@@ -10,7 +10,13 @@ MIT License, Copyright (c) 2022 Orange, by Quentin Lampin
 
 ## Installing microSCHC
 
-For now, microSCHC is to be built locally using `hatch` and installed using the wheel (.whl) file generated in the `dist/` folder.
+Releases of microSCHC are available on PyPI. To install microSCHC, run
+
+```bash
+pip install microschc
+```
+
+Latest (pre-release) microSCHC versions can be built from source using `hatch` and installed using the wheel (.whl) file generated in the `dist/` folder.
 
 **build**:
 
@@ -51,9 +57,10 @@ Current features:
       - [x] value-sent
       - [x] mapping-sent
       - [x] LSB
+      - [x] compute-* (e.g. UDP-checksum)
       - [ ] devIID
       - [ ] AppIID
-      - [ ] compute-* (e.g. UDP-checksum)
+      
    2. Decompression counteparts
       - [x] not-sent
       - [x] value-sent
