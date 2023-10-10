@@ -102,7 +102,7 @@ class IPv6Parser(HeaderParser):
         )
         return header_descriptor
     
-def _compute_payload_length( decompressed_fields: Dict[str, Dict[str, Buffer]], rule_field_position:int) -> Buffer:
+def _compute_payload_length( decompressed_fields: List[Tuple[str, Buffer]], rule_field_position:int) -> Buffer:
     fields_ids: List[str] = [field_id for field_id, _ in decompressed_fields]
     fields_values: List[Buffer] = [field_value for _, field_value in decompressed_fields]
     payload_fields: List[Buffer] = [field for field in fields_values[rule_field_position+5:]]
