@@ -59,9 +59,14 @@ Current features:
       - [x] value-sent
       - [x] mapping-sent
       - [x] LSB
+      - [-] compute-* (e.g. UDP-checksum)
+         - [x] UDP Checksum
+         - [x] UDP Length
+         - [x] IPv6 Payload Length
+         - [ ] IPv4 Payload Length
       - [ ] devIID
       - [ ] AppIID
-      - [ ] compute-* (e.g. UDP-checksum)
+      
 4. Rules
    - [x] rule data model
    - [x] rule matching algorithm
