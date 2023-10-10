@@ -201,7 +201,7 @@ class Buffer:
             cursor += length
         chunk = self[cursor:cursor+length]
         if padding is True and chunk.length < 16:
-            pad_content = bytes(length/8 if length%8==0 else length//8 + 1)
+            pad_content = bytes(length//8 if length%8==0 else length//8 + 1)
             pad: Buffer = Buffer(content=pad_content, length=length-chunk.length, padding=Padding.RIGHT)
             chunk+=pad
         yield chunk
