@@ -30,9 +30,9 @@ class PacketParser:
         self.parsers = parsers
             
     def parse(self, buffer: Buffer) -> PacketDescriptor:
+        raw: Buffer = buffer.copy()
         header_descriptors: List[HeaderDescriptor] = []
 
-        packet_length: int = buffer.length
         for parser in self.parsers:
             header_descriptor = parser.parse(buffer=buffer)
             header_descriptors.append(header_descriptor)
@@ -50,7 +50,7 @@ class PacketParser:
             direction=DirectionIndicator.DOWN, # default value
             fields=packet_fields,
             payload=buffer,
-            length=packet_length
+            raw=raw,
         )
         
         return packet_descriptor

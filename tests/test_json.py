@@ -93,16 +93,15 @@ def test_packet_descriptor_to_json():
             FieldDescriptor(id='fd2', value=Buffer(content=b'\x00\x02', length=16), position=0)
         ],
         payload=Buffer(content=b'\x00\x01\x02', length=24),
-        length=100
     )
     json_str = packet_descriptor.json()
-    assert json_str == '{"direction": "Up", "fields": [{"id": "fd1", "value": {"content": "0001", "length": 16, "padding": "left"}, "position": 0}, {"id": "fd2", "value": {"content": "0002", "length": 16, "padding": "left"}, "position": 0}], "payload": {"content": "000102", "length": 24, "padding": "left"}, "length": 100}'
+    assert json_str == '{"direction": "Up", "fields": [{"id": "fd1", "value": {"content": "0001", "length": 16, "padding": "left"}, "position": 0}, {"id": "fd2", "value": {"content": "0002", "length": 16, "padding": "left"}, "position": 0}], "payload": {"content": "000102", "length": 24, "padding": "left"}, "raw": {"content": "00010002000102", "length": 56, "padding": "right"}, "length": 56}'
 
 def test_packet_descriptor_from_json():
     """
     test JSON deserialization of PacketDescriptor objects
     """
-    json_str = '{"direction": "Up", "fields": [{"id": "fd1", "value": {"content": "0001", "length": 16, "padding": "left"}, "position": 0}, {"id": "fd2", "value": {"content": "0002", "length": 16, "padding": "left"}, "position": 0}], "payload": {"content": "000102", "length": 24, "padding": "left"}, "length": 100}'
+    json_str = '{"direction": "Up", "fields": [{"id": "fd1", "value": {"content": "0001", "length": 16, "padding": "left"}, "position": 0}, {"id": "fd2", "value": {"content": "0002", "length": 16, "padding": "left"}, "position": 0}], "payload": {"content": "000102", "length": 24, "padding": "left"}, "raw": {"content": "00010002000102", "length": 56, "padding": "right"}, "length": 56}'
     packet_descriptor: PacketDescriptor = PacketDescriptor.from_json(json_str=json_str)
     assert packet_descriptor.direction == DirectionIndicator.UP
     assert packet_descriptor.fields == [
@@ -110,7 +109,7 @@ def test_packet_descriptor_from_json():
             FieldDescriptor(id='fd2', value=Buffer(content=b'\x00\x02', length=16), position=0)
     ]
     assert packet_descriptor.payload == Buffer(content=b'\x00\x01\x02', length=24)
-    assert packet_descriptor.length == 100
+    assert packet_descriptor.length == 56
 
 def test_rule_field_descriptor_to_json():
     """
