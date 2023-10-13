@@ -92,6 +92,21 @@ class FieldDescriptor:
     
     def __repr__(self) -> str:
         return f"[{self.id}|{self.value}]"
+    
+    def __eq__(self, other: object) -> bool:
+        if not isinstance(other, FieldDescriptor):
+            return False
+        
+        if self.id != other.id:
+            return False
+        
+        if self.value != other.value:
+            return False
+        
+        if self.position != other.position:
+            return False
+        
+        return True
 
     def json(self, indent=None, separators=None):
         return json.dumps(self.__json__(), indent=indent, separators=separators)
@@ -141,18 +156,43 @@ class PacketDescriptor:
     direction: DirectionIndicator
     fields: List[FieldDescriptor]
     payload: Buffer
+    raw: Buffer
     length: int
+
+    def __init__(self, direction: DirectionIndicator, fields: List[FieldDescriptor], payload: Buffer, raw: Buffer = None):
+        self.direction = direction
+        self.fields = fields
+        self.payload = payload
+        if raw is None:
+            self.raw = Buffer(content=b'', length=0)
+            for field in fields:
+                self.raw += field.value
+            self.raw += payload
+        else:
+            self.raw = raw
+        self.length = self.raw.length
 
     def __repr__(self):
         fields_str: str = ','.join([str(field) for field in self.fields])
         repr: str = f"[{self.direction}|{fields_str}]"
         return repr
+    
+    def __eq__(self, other: object) -> bool:
+        if not isinstance(other, PacketDescriptor):
+            return False
+        if len(self.fields) != len(other.fields):
+            return False
+        return self.raw == other.raw
+    
+    def __hash__(self) -> int:
+        return self.raw.__hash__()
 
     def __json__(self) -> dict:
         jsonisable: dict = {
             'direction': self.direction,
             'fields': [ field.__json__() for field in self.fields],
             'payload': self.payload.__json__(),
+            'raw': self.raw.__json__(),
             'length': self.length
         }
         return jsonisable
@@ -165,7 +205,7 @@ class PacketDescriptor:
             direction=json_object['direction'],
             fields=[FieldDescriptor.__from_json_object__(fd_json) for fd_json in json_object['fields']],
             payload=Buffer.__from_json_object__(json_object['payload']),
-            length=json_object['length']
+            raw=Buffer.__from_json_object__(json_object['raw']),
         )
 
     def from_json(json_str: str):
