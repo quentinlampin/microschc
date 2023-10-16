@@ -61,7 +61,7 @@ Current features:
       - [ ] devIID
       - [ ] AppIID
       
-   2. Decompression counteparts
+   2. Decompression counterparts
       - [x] not-sent
       - [x] value-sent
       - [x] mapping-sent
