@@ -409,6 +409,7 @@ class Buffer:
             # ^---------------^---------------^
             #    start_byte       stop_byte
             subset: Buffer = Buffer(content=subset_content, length=subset_bit_length, padding=self.padding)
+            subset.trim(inplace=True)
 
             return subset
         
