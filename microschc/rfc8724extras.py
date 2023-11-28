@@ -25,7 +25,7 @@ class Context:
     ruleset: List[RuleDescriptor]
 
     def __repr__(self) -> str:
-        content_repr:str = f"id:{self.id} description:{self.description} interface_id: {self.interface_id} parser_id: {self.parser_id} rules: {len(self.rules)}"
+        content_repr:str = f"id:{self.id} description:{self.description} interface_id: {self.interface_id} parser_id: {self.parser_id} rules: {len(self.ruleset)}"
         return content_repr
 
     def __json__(self) -> dict:
