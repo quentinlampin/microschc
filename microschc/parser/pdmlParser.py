@@ -40,8 +40,9 @@ class PdmlLayerParser():
         fd:FieldDescriptor
         size:int = 0
         payload:Buffer = None
+        payloadId:str = self.LayerName +'.'+PDML_FIELD_PAYLOAD_ID
         for fd in listFieldDescriptor:
-            if fd.id == PDML_FIELD_PAYLOAD_ID:
+            if fd.id == payloadId:
                 listFieldDescriptor.remove(fd)
                 payload = fd.value
             else:
@@ -79,7 +80,7 @@ class PdmlLayerParser():
             value:bytes = self._binary_value(field.attrib['value'])
             showname = field.attrib['showname']
             if ' = ' in showname :
-                resultats = ''.join(re.findall(r'(0|1)', showname.split('=')[0]))
+                resultats = ''.join(re.findall(r'(0|1)', showname.split(' = ')[0]))
                 size = len(resultats)
                 value = int(resultats, 2).to_bytes((len(resultats) + 7) // 8, byteorder='big')
             else:
