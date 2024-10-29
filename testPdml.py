@@ -18,3 +18,5 @@ parser = PdmlParser(pdmlFileName,dictLayerParser=PDML_SPECIFIC_PARSER,debug=debu
 listOfPacketDeciptor:list[PacketDescriptor] = parser.parse()
 
 print(f'*** number of PacketDescriptor parsed={len(listOfPacketDeciptor)} ***')
+# pos:int = 3
+# print(f' listOfPacketDeciptor[{pos} = {listOfPacketDeciptor[pos]}]')
