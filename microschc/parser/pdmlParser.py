@@ -184,6 +184,8 @@ class PdmlParser():
         """        
         parser = etree.XMLParser(recover=True, encoding='utf-8')
         xml_pdml:etree._ElementTree = objectify.fromstring(xml=xmlStr,parser=parser)
+        if xml_pdml.tag != PDML_ROOT_TAG:
+            raise PyPdmlParserError(inspect.stack()[0].function,f"Not a XML PDML root tag: str{xml_pdml.tag}!= pdml{PDML_ROOT_TAG}")
         return self._parseXmlPdml(xml_pdml=xml_pdml)
 
     def parseFromFile(self,pdmlFileName:str) -> list[PacketDescriptor]:

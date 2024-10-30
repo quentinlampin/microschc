@@ -23,7 +23,6 @@ print(f'*** number of PacketDescriptor parsed={len(listOfPacketDeciptor)} ***')
 # print(f' listOfPacketDeciptor[{pos} = {listOfPacketDeciptor[pos]}]')
 
 pdmlTxt:str ="""
-<!-- You can find pdml2html.xsl in /Applications/Wireshark.app/Contents/Resources/share/wireshark or at https://gitlab.com/wireshark/wireshark/-/tree/master/resources/share/doc/wireshark/pdml2html.xsl. -->
 <pdml version="0" creator="wireshark/4.4.1" time="Wed Oct 23 18:55:25 2024" capture_file="/Users/upse6650/dev/microschc-main/NGAP_capture.pcap">
 <packet>
   <proto name="eth" showname="Ethernet II, Src: 00:00:00_00:00:00 (00:00:00:00:00:00), Dst: 00:00:00_00:00:00 (00:00:00:00:00:00)" size="14" pos="0">
