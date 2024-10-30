@@ -14,7 +14,17 @@ PDML_FIELD_PAYLOAD_ID = 'payload'
 DEFAULT_LAYER_TO_IGNORE = ["geninfo","frame"]
 
 class PdmlLayerParser():
+
     def __init__(self,depth:int=1,ShowHide:bool=False,listFieldToNotParse:list[str]=[],listFieldToParse:list[str]=[],debug:bool=False):
+        """ Generic Layer Parser 
+
+        Args:
+            depth (int, optional): the field child depth max . Defaults to 1 (just mange the field not her childs)
+            ShowHide (bool, optional): Define if we parse the field with hide attribue set to 'yes'. Defaults to False.
+            listFieldToNotParse (list[str], optional): List of field name (without layer name) to ignore. Defaults to [].
+            listFieldToParse (list[str], optional): lits of field we only parse. Defaults to [] = all the field are parsed.
+            debug (bool, optional): set if we log debug informations. Defaults to False.
+        """        
         self.depth:int = depth
         self.ShowHide:bool = ShowHide
         self.listFieldToNotParse = listFieldToNotParse
@@ -22,6 +32,18 @@ class PdmlLayerParser():
         self.debug:bool = debug
 
     def parse(self,layer:objectify.ObjectifiedElement) -> tuple[HeaderDescriptor,Buffer]:
+        """ Parser a pdml Layer ( proto in xml )
+
+        Args:
+            layer (objectify.ObjectifiedElement): the elements who contain the layer
+
+        Raises:
+            PyPdmlParserError: on error parsing
+            lxml.etree.XMLSyntaxError: invalid xml file
+
+        Returns:
+            tuple[HeaderDescriptor,Buffer]: return the HeaderDescriptor computed and payload:Buffer if present in layer
+        """        
         # Check if we have a pdml layer object
         if layer.tag != PDML_LAYER_TAG:
             raise PyPdmlParserError('PdmlLayerParser.parse()',f"Not a LAYER PDML object: object.tag={layer.tag} =! PDML Layer={PDML_LAYER_TAG}")
@@ -58,7 +80,17 @@ class PdmlLayerParser():
 
         return header_descriptor,payload
     
-    def packetFieldParse(self,field:objectify.ObjectifiedElement,depth,showHide) -> list[FieldDescriptor]:
+    def packetFieldParse(self,field:objectify.ObjectifiedElement,depth:int,showHide:bool) -> list[FieldDescriptor]:
+        """ Parse field and his childs
+
+        Args:
+            field (objectify.ObjectifiedElement): element who contain a field
+            depth (int): the depth the we manage, if 1 we only manage the field, if > 1 we manage the childs of this field
+            showHide (bool): manage the field who have hide attribute set at 'yes'
+
+        Returns:
+            list[FieldDescriptor]: list of FieldDescriptor associated to all the field we have decoded
+        """        
         longName:str = field.attrib['name']
         name:str = longName.removeprefix(self.LayerName+'.')
         size:int = int(field.attrib['size'])
@@ -95,29 +127,80 @@ class PdmlLayerParser():
         return listFieldDescriptor
 
     def _binary_value(self,str_raw_value:str) -> bytes:
+        """convert str raw value to bytes 
+
+        Args:
+            str_raw_value (str): the str raw value to convert
+
+        Returns:
+            bytes: the bytes convertion
+        """        
         if len(str_raw_value) % 2 == 1:
             str_raw_value = '0' + str_raw_value
 
         return binascii.unhexlify(str_raw_value)
     
     def _log(self,msg:str):
+        """log method if debug aneble
+
+        Args:
+            msg (str): message to log
+        """  
         if self.debug :
             print(msg)
 
 class PdmlParser():
-    def __init__(self,pdmlFileName:str,direction:DirectionIndicator=DirectionIndicator.DOWN,dictLayerParser:dict[str:PdmlLayerParser]={},listIgnoreLayer:list[str]=DEFAULT_LAYER_TO_IGNORE,debug:bool=False):
-        """ Create a Pdml Parser associted to a pdml file name
+    def __init__(self,direction:DirectionIndicator=DirectionIndicator.DOWN,dictLayerParser:dict[str:PdmlLayerParser]={},listIgnoreLayer:list[str]=DEFAULT_LAYER_TO_IGNORE,debug:bool=False):
+        """ Create a Pdml Parser with option to decode 
 
         Args:
-            pdmlFileName (str): The file name of pdml file.
             direction (DirectionIndicator, optional): the direction of packet. Default DirectionIndicator.DOWN
             dictLayerParser (dict, optional): dict name layer:PdmlLayerParser. If not defined for a layer, we use default PdmlLayerParser. Defaults to {}.
-            listIgnoreLayer (list, optional): List of layer to ignore. Defaults to DEFAULT_LAYER_TO_IGNORE.
+            listIgnoreLayer (list, optional): List of layer to ignore. Defaults to DEFAULT_LAYER_TO_IGNORE.          
+        """            
+        
+        # set direction
+        self.direction = direction
+        # Specific Layer Parser
+        self.dictLayerParser:dict[str:PdmlLayerParser] = dictLayerParser
+        # list of layer to ignore
+        self.listIgnoreLayer:list[str] = listIgnoreLayer
+        # a default layer parser if none defined in dictLayerParser for the layer
+        self.defautLayerParser:PdmlLayerParser = PdmlLayerParser(debug=debug)
+        self.debug:bool = debug
+        
+    def parseFromString(self,xmlStr:str) -> list[PacketDescriptor]:
+        """Parse pdml string
+
+        Args:
+            xmlStr (str): the string contain pdml 
 
         Raises:
+            PyPdmlParserError: Error on PDML 
+            lxml.etree.XMLSyntaxError: invalid xml file
+
+        Returns:
+            list[PacketDescriptor]: _description_
+        """        
+        parser = etree.XMLParser(recover=True, encoding='utf-8')
+        xml_pdml:etree._ElementTree = objectify.fromstring(xml=xmlStr,parser=parser)
+        return self._parseXmlPdml(xml_pdml=xml_pdml)
+
+    def parseFromFile(self,pdmlFileName:str) -> list[PacketDescriptor]:
+        """Parse the XML file
+
+        Args:
+            pdmlFileName (str): the filename string of pdml file
+        Raises:
             FileNotFoundError: File Not found error, or pdmlFileName is a directory
-            PermissionError: We don’t have enough privilige to read pdmlFileName 
-        """            
+            PermissionError: We don’t have enough privilige to read pdmlFileName
+            PyPdmlParserError: Error on PDML File
+            lxml.etree.XMLSyntaxError: invalid xml file
+
+        Returns:
+            PacketDescriptor: The List of PacketDescriptor parsed from PDML XML File
+            
+        """
         self.input_filepath = pathlib.Path(pdmlFileName)
         # Check fileName
         if not self.input_filepath.exists():
@@ -129,24 +212,6 @@ class PdmlParser():
                 pass
         except PermissionError:
             raise PermissionError(f"Permission denied for file {self.input_filepath}")
-        
-        # Specific Layer Parser
-        self.dictLayerParser:dict[str:PdmlLayerParser] = dictLayerParser
-        # list of layer to ignore
-        self.listIgnoreLayer:list[str] = listIgnoreLayer
-        # a default layer parser if none defined in dictLayerParser for the layer
-        self.defautLayerParser:PdmlLayerParser = PdmlLayerParser(debug=debug)
-        self.debug:bool = debug
-    
-    def parse(self) -> list[PacketDescriptor]:
-        """Parse the XML file
-
-        Raises:
-            PyPdmlParserError: Error on PDML File
-
-        Returns:
-            PacketDescriptor: The List of PacketDescriptor parsed from PDML XML File
-        """
 
         xml_pdml:etree._ElementTree = objectify.parse(self.input_filepath)
         # Check if we have a pdml file
@@ -154,6 +219,20 @@ class PdmlParser():
             raise PyPdmlParserError(inspect.stack()[0].function,f"Not a XML PDML file: {self.input_filepath}")
         self._log('Pdml file')
         
+        return self._parseXmlPdml(xml_pdml=xml_pdml)
+    
+    def _parseXmlPdml(self,xml_pdml:etree._ElementTree) -> list[PacketDescriptor]:
+        """parse xml etree._ElementTree 
+
+        Args:
+            xml_pdml (etree._ElementTree): element created by objectify from pdml
+
+        Raises:
+            PyPdmlParserError: Error on PDML 
+            lxml.etree.XMLSyntaxError: invalid xml file
+        Returns:
+            list[PacketDescriptor]: list of all PacketDescriptor created from pdml
+        """        
         packet:objectify.ObjectifiedElement
         listOfPacketDeciptor:list[PacketDescriptor]=[]
         # parse all packet of file
@@ -164,12 +243,15 @@ class PdmlParser():
 
     def _packetParse(self,packet:objectify.ObjectifiedElement) -> PacketDescriptor:
         """ Parse padml packet element
-
         Args:
             packet (objectify.ObjectifiedElement): the packet element
 
         Raises:
             IOError: if not a good pdml packet element
+            PyPdmlParserError: Error on PDML 
+            lxml.etree.XMLSyntaxError: invalid xml file
+        Returns:
+            PacketDescriptor: the PacketDescriptor created from a pdml packet
         """        
         layer:objectify.ObjectifiedElement
         if packet.tag != PDML_PACKET_TAG:
@@ -195,7 +277,7 @@ class PdmlParser():
             buffer = Buffer(content=b'', length=0)
         
         packet_descriptor: PacketDescriptor = PacketDescriptor(
-            direction=DirectionIndicator.DOWN, # default value
+            direction=self.direction,
             fields=packet_fields,
             payload=buffer,
         )
@@ -223,6 +305,11 @@ class PdmlParser():
             
 
     def _log(self,msg:str):
+        """log method if debug aneble
+
+        Args:
+            msg (str): message to log
+        """        
         if self.debug :
             print(msg)
 
