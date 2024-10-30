@@ -8,6 +8,8 @@ from microschc.parser import PacketParser,PdmlLayerParser
 from enum import Enum
 
 PDML_SPECIFIC_PARSER = {
+    'ip' : PdmlLayerParser(listFieldToNotParse=['flags']),
+    'tcp' : PdmlLayerParser(listFieldToNotParse=['len','hdr_len','window_size_value','window_size_scalefactor']),
     'lwm2mtlv' : PdmlLayerParser(depth=3,listFieldToNotParse=['value.integer','value.integer','value.double','value.timestamp','value.unsigned_integer']),
     'sctp' : PdmlLayerParser(depth=2,listFieldToNotParse=['data_tsn_raw'])
 }

@@ -97,20 +97,29 @@ class PdmlLayerParser():
         hide:bool = False
         if not showHide and 'hide' in field.attrib :
             hide = True if field.attrib['hide'] == "yes" else False
-
+        # create the return list
         listFieldDescriptor:list[FieldDescriptor] = []
         
+        # if we have child and depth > 1 , ignore this Field and parse the child
         childs = field.getchildren()
         if depth > 1 and len(childs) > 0:
             # self._log((f'     {name} childs={childs}')
             for child in childs:
                 listFieldDescriptor = listFieldDescriptor + self.packetFieldParse(child,depth-1,showHide)
+        
+        # if the Field aren't in listFieldToParse and listFieldToParse not empty: ignore the field
         elif len(self.listFieldToParse) > 0 and name not in self.listFieldToParse:
             pass
+        
+        # parse the field if attribute are correct field the layer param                
         elif size > 0 and not hide and name not in self.listFieldToNotParse:
             resultats:str = field.attrib['value']
-            value:bytes = self._binary_value(field.attrib['value'])
-            showname = field.attrib['showname']
+            value:bytes = self._binary_value(resultats)
+
+            showname:str = ''
+            if 'showname' in field.attrib.keys() :
+                showname = field.attrib['showname']
+            # if showname contain the representation of value, decode them to get the correct size and value
             if ' = ' in showname :
                 resultats = ''.join(re.findall(r'(0|1)', showname.split(' = ')[0]))
                 size = len(resultats)
@@ -183,9 +192,8 @@ class PdmlParser():
             list[PacketDescriptor]: _description_
         """        
         parser = etree.XMLParser(recover=True, encoding='utf-8')
-        xml_pdml:etree._ElementTree = objectify.fromstring(xml=xmlStr,parser=parser)
-        if xml_pdml.tag != PDML_ROOT_TAG:
-            raise PyPdmlParserError(inspect.stack()[0].function,f"Not a XML PDML root tag: str{xml_pdml.tag}!= pdml{PDML_ROOT_TAG}")
+        xml_pdml:etree._Element = objectify.fromstring(xml=xmlStr,parser=parser)
+        self._log(f'*** Pdml str ***')
         return self._parseXmlPdml(xml_pdml=xml_pdml)
 
     def parseFromFile(self,pdmlFileName:str) -> list[PacketDescriptor]:
@@ -217,14 +225,13 @@ class PdmlParser():
 
         xml_pdml:etree._ElementTree = objectify.parse(self.input_filepath)
         # Check if we have a pdml file
-        if xml_pdml.getroot().tag != PDML_ROOT_TAG:
-            raise PyPdmlParserError(inspect.stack()[0].function,f"Not a XML PDML file: {self.input_filepath}")
-        self._log('Pdml file')
-        
-        return self._parseXmlPdml(xml_pdml=xml_pdml)
+        self._log(f'*** Pdml file ***')
+
+        # send the root etree._Element contained in etree._ElementTree
+        return self._parseXmlPdml(xml_pdml=xml_pdml.getroot())
     
-    def _parseXmlPdml(self,xml_pdml:etree._ElementTree) -> list[PacketDescriptor]:
-        """parse xml etree._ElementTree 
+    def _parseXmlPdml(self,xml_pdml:etree._Element) -> list[PacketDescriptor]:
+        """Parse pdml xml etree._ElementTree 
 
         Args:
             xml_pdml (etree._ElementTree): element created by objectify from pdml
@@ -235,6 +242,8 @@ class PdmlParser():
         Returns:
             list[PacketDescriptor]: list of all PacketDescriptor created from pdml
         """        
+        if xml_pdml.tag != PDML_ROOT_TAG:
+            raise PyPdmlParserError(inspect.stack()[0].function,f"Not a XML PDML file: {self.input_filepath}")
         packet:objectify.ObjectifiedElement
         listOfPacketDeciptor:list[PacketDescriptor]=[]
         # parse all packet of file

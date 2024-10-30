@@ -10,6 +10,8 @@ debug:bool = True
 # pdmlFileName='testpdml.pdml'
 # pdmlFileName='ngcap_short.pdml'
 pdmlFileName='ngcap_empty.pdml'
+pdmlFileName='cubic.pdml'
+# pdmlFileName='https://wiki.wireshark.org/uploads/__moin_import__/attachments/PDML/cubic.pdml'
 
 # set debug mode to the parser
 for la in list(PDML_SPECIFIC_PARSER.values()):
@@ -18,7 +20,7 @@ for la in list(PDML_SPECIFIC_PARSER.values()):
 parser = PdmlParser(dictLayerParser=PDML_SPECIFIC_PARSER,debug=debug)
 listOfPacketDeciptor:list[PacketDescriptor] = parser.parseFromFile(pdmlFileName)
 
-print(f'*** number of PacketDescriptor parsed={len(listOfPacketDeciptor)} ***')
+print(f'-> number of PacketDescriptor parsed={len(listOfPacketDeciptor)}')
 # pos:int = 3
 # print(f' listOfPacketDeciptor[{pos} = {listOfPacketDeciptor[pos]}]')
 
