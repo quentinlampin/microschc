@@ -7,10 +7,9 @@ from microschc.rfc8724 import PacketDescriptor
 # set the debug mode
 debug:bool = True
 # file to test
-# pdmlFileName='testpdml.pdml'
+pdmlFileName='testpdml.pdml'
 # pdmlFileName='ngcap_short.pdml'
-pdmlFileName='ngcap_empty.pdml'
-pdmlFileName='cubic.pdml'
+# pdmlFileName='ngcap_empty.pdml'
 # pdmlFileName='https://wiki.wireshark.org/uploads/__moin_import__/attachments/PDML/cubic.pdml'
 
 # set debug mode to the parser
@@ -21,6 +20,7 @@ parser = PdmlParser(dictLayerParser=PDML_SPECIFIC_PARSER,debug=debug)
 listOfPacketDeciptor:list[PacketDescriptor] = parser.parseFromFile(pdmlFileName)
 
 print(f'-> number of PacketDescriptor parsed={len(listOfPacketDeciptor)}')
+
 # pos:int = 3
 # print(f' listOfPacketDeciptor[{pos} = {listOfPacketDeciptor[pos]}]')
 
@@ -38,4 +38,4 @@ pdmlTxt:str ="""
 </packet>
 </pdml>
 """
-listOfPacketDeciptor:list[PacketDescriptor] = parser.parseFromString(xmlStr=pdmlTxt)
+# listOfPacketDeciptor:list[PacketDescriptor] = parser.parseFromString(xmlStr=pdmlTxt)

@@ -11,6 +11,7 @@ PDML_PACKET_TAG: str = 'packet'
 PDML_LAYER_TAG = 'proto'
 PDML_FIELD_PAYLOAD_ID = 'payload'
 
+
 DEFAULT_LAYER_TO_IGNORE = ["geninfo","frame"]
 
 class PdmlLayerParser():
@@ -49,7 +50,11 @@ class PdmlLayerParser():
             raise PyPdmlParserError('PdmlLayerParser.parse()',f"Not a LAYER PDML object: object.tag={layer.tag} =! PDML Layer={PDML_LAYER_TAG}")
         
         self.LayerName:str = layer.attrib['name']
-        self._log(f" - {layer.tag} {self.LayerName}")
+        try:
+            self.layerSize:int = int(layer.attrib['size']) * 8
+        except KeyError as e:
+            raise PyPdmlParserError('PdmlLayerParser.parse()',f'Error in PDML, proto[{self.LayerName}] must have attribue {e}  at line {layer.sourceline}')
+        self._log(f" - {layer.tag} {self.LayerName} size={self.layerSize}")
 
         field:objectify.ObjectifiedElement
         listFieldDescriptor:List[FieldDescriptor] = []
@@ -57,20 +62,22 @@ class PdmlLayerParser():
         for field in layer.getchildren():
             listFieldDescriptor += self.packetFieldParse(field,self.depth,self.ShowHide)
         
-        
         # compute the length and remove payload if present
         fd:FieldDescriptor
         size:int = 0
         payload:Buffer = None
-        payloadId:str = self.LayerName +'.'+PDML_FIELD_PAYLOAD_ID
+        listFieldDescriptor,payload = self.specificListFieldDescriptorAction(listFieldDescriptor)
         for fd in listFieldDescriptor:
-            if fd.id == payloadId:
-                listFieldDescriptor.remove(fd)
-                payload = fd.value
-            else:
-                value:Buffer = fd.value
-                size = size + value.length
+            value:Buffer = fd.value
+            size = size + value.length
 
+        # [TODO] to be checked
+        # check the size of layer and the parsed size, sometime the layer size contain the payload !
+        if size != self.layerSize and payload and size + payload.length != self.layerSize:
+            raise PyPdmlParserError('PdmlLayerParser.parse()',f'Error in PDML, proto[{self.LayerName}] line={layer.sourceline} \n\
+                                    the parsed size={size} not conform with layer size={self.layerSize}\n\
+                                    listFieldDescriptor={listFieldDescriptor}')
+        
         header_descriptor:HeaderDescriptor = HeaderDescriptor(
             id=self.LayerName,
             length=size,
@@ -80,7 +87,7 @@ class PdmlLayerParser():
 
         return header_descriptor,payload
     
-    def packetFieldParse(self,field:objectify.ObjectifiedElement,depth:int,showHide:bool) -> list[FieldDescriptor]:
+    def packetFieldParse(self,field:objectify.ObjectifiedElement,depth:int,showHide:bool) -> List[FieldDescriptor]:
         """ Parse field and his childs
 
         Args:
@@ -98,7 +105,7 @@ class PdmlLayerParser():
         if not showHide and 'hide' in field.attrib :
             hide = True if field.attrib['hide'] == "yes" else False
         # create the return list
-        listFieldDescriptor:list[FieldDescriptor] = []
+        listFieldDescriptor:List[FieldDescriptor] = []
         
         # if we have child and depth > 1 , ignore this Field and parse the child
         childs = field.getchildren()
@@ -134,6 +141,15 @@ class PdmlLayerParser():
             listFieldDescriptor.append(fd)
 
         return listFieldDescriptor
+
+    def specificListFieldDescriptorAction(self,listFieldDescriptor:List[FieldDescriptor]) -> tuple[List[FieldDescriptor],Buffer]:
+        payloadId:str = self.LayerName +'.'+PDML_FIELD_PAYLOAD_ID
+        payload:Buffer = None
+        for fd in listFieldDescriptor:
+            if fd.id == payloadId:
+                listFieldDescriptor.remove(fd)
+                payload = fd.value
+        return listFieldDescriptor,payload
 
     def _binary_value(self,str_raw_value:str) -> bytes:
         """convert str raw value to bytes 

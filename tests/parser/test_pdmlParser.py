@@ -16,4 +16,3 @@ def test_pdmlParser_file_open():
         assert False
     except PyPdmlParserError:
         assert True
-    
