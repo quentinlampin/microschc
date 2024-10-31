@@ -7,10 +7,11 @@ from microschc.rfc8724 import PacketDescriptor
 # set the debug mode
 debug:bool = True
 # file to test
-pdmlFileName='testpdml.pdml'
+# pdmlFileName='testpdml.pdml'
+# pdmlFileName='ngcap.pdml'
 # pdmlFileName='ngcap_short.pdml'
 # pdmlFileName='ngcap_empty.pdml'
-# pdmlFileName='https://wiki.wireshark.org/uploads/__moin_import__/attachments/PDML/cubic.pdml'
+pdmlFileName='cubic.pdml'
 
 # set debug mode to the parser
 for la in list(PDML_SPECIFIC_PARSER.values()):
