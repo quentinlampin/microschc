@@ -20,7 +20,6 @@ class TcpPdmlLayerParser(PdmlLayerParser):
     def specificListFieldDescriptorAction(self, listFieldDescriptor) -> tuple[List[FieldDescriptor],Buffer]:
         payload:Buffer 
         segmentDataId:str = self.LayerName +'.'+PDML_FIELD_SEGMENT_DATA_ID
-        print(f' ++++++++ {segmentDataId} ++++++++++')
         listFieldDescriptor,payload = super().specificListFieldDescriptorAction(listFieldDescriptor)
         for fd in listFieldDescriptor:
             if fd.id == segmentDataId:
