@@ -8,10 +8,10 @@ from microschc.rfc8724 import PacketDescriptor
 debug:bool = True
 # file to test
 # pdmlFileName='testpdml.pdml'
-# pdmlFileName='ngcap.pdml'
+pdmlFileName='ngcap.pdml'
 # pdmlFileName='ngcap_short.pdml'
 # pdmlFileName='ngcap_empty.pdml'
-pdmlFileName='cubic.pdml'
+# pdmlFileName='cubic.pdml'
 
 # set debug mode to the parser
 for la in list(PDML_SPECIFIC_PARSER.values()):

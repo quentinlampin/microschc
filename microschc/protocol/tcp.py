@@ -21,6 +21,8 @@ class TcpPdmlLayerParser(PdmlLayerParser):
         payload:Buffer 
         segmentDataId:str = self.LayerName +'.'+PDML_FIELD_SEGMENT_DATA_ID
         listFieldDescriptor,payload = super().specificListFieldDescriptorAction(listFieldDescriptor)
+        # [TODO] to be verified
+        # In tcp, you could have PDML_FIELD_SEGMENT_DATA_ID field, if payload present it was contained in payload, otherwise we set it has payload
         for fd in listFieldDescriptor:
             if fd.id == segmentDataId:
                 listFieldDescriptor.remove(fd)
