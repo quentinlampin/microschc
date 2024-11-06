@@ -41,6 +41,7 @@ packages = ["microschc"]
 [tool.hatch.envs.test]
 
 dependencies = [
-  "pytest"
+  "pytest",
+  "lxml"
 ]
 

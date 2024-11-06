@@ -136,3 +136,6 @@ dmypy.json
 
 # dist files
 dist/
+
+# pdml file
+*.pdml
