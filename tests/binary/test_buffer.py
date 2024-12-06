@@ -16,33 +16,31 @@ def test_shift():
     assert len(shifted_buffer.content) == 3
     assert shifted_buffer.content  == bytes(b'\x00\xb4\00')
     assert shifted_buffer.length == 17
-
-    # left shift is smaller than padding
-    #                  10 bits left shift
-    #                 |    < < v      |               |
-    #  7 6 5 4 3 2 1 0|7 6 5 4 3 2 1 0|7 6 5 4 3 2 1 0|  (|) byte delimiter
-    # |- - - - - - - -|- - - - 1 0 0 0|0 0 1 0 1 1 0 1|  (-) existing padding 
-    # |- - - - - - - -|- - 1 0 0 0 0 0|1 0 1 1 0 1 0 0|  (+) extra bits required
-    buffer: Buffer = Buffer(content=bytes(b'\x00\x08\x2d'), length=12, padding=Padding.LEFT)
+    # [----1000 00101101](12)
+    buffer: Buffer = Buffer(content=bytes(b'\x08\x2d'), length=12, padding=Padding.LEFT)
     shift_value = -2
 
     shifted_buffer = buffer.shift(shift=shift_value, inplace=False)
 
-    assert len(shifted_buffer.content) == 3
-    assert shifted_buffer.content == bytes(b'\x00\x20\xb4')
+    assert len(shifted_buffer.content) == 2
+    # [--10 0000 1011 0100](14)
+    assert shifted_buffer.content == bytes(b'\x20\xb4')
 
     #                                   left shift, right padding
     #                                       2 bits left shift
     #      |            < <|v              |               |               |
     #      |7 6 5 4 3 2 1 0|7 6 5 4 3 2 1 0|7 6 5 4 3 2 1 0|7 6 5 4 3 2 1 0|  (|) byte delimiter
-    #                      |0 0 0 0 1 0 0 0|0 0 1 0 1 - - -|- - - - - - - -|  (-) existing padding 
+    #                      |0 0 0 0 1 0 0 0|0 0 1 0 1 - - -|- - - - - - - -|  (-) existing padding  --> 1 + 4 + 256 = 261 
     #                      |0 0 0 0 1 0 0 0|0 0 1 0 1 0 0 -|- - - - - - - -|  (+) extra bits required
+    
+    # [0000 1000 0010 1---](13)
     buffer: Buffer = Buffer(content=bytes(b'\x08\x28\x00'), length=13, padding=Padding.RIGHT)
     shift_value: int = -2
 
+    # [0000 1000 0010 100-](15)
     shifted_buffer = buffer.shift(shift=shift_value, inplace=False)
-    assert len(shifted_buffer.content) == 3
-    assert shifted_buffer.content == bytes(b'\x08\x28\x00')
+    assert len(shifted_buffer.content) == 2
+    assert shifted_buffer.content == bytes(b'\x08\x28')
     assert shifted_buffer.length == 15
 
     # right shift, left padding
@@ -54,8 +52,8 @@ def test_shift():
     buffer: Buffer = Buffer(content=bytes(b'\x00\x08\x2d'), length=12, padding=Padding.LEFT)
     shift_value = 3
     shifted_buffer = buffer.shift(shift=shift_value, inplace=False)
-    assert len(shifted_buffer.content) == 3
-    assert shifted_buffer.content == bytes(b'\x00\x01\x05')
+    assert len(shifted_buffer.content) == 2
+    assert shifted_buffer.content == bytes(b'\x01\x05')
     assert shifted_buffer.length == 9
 
     # right shift, left padding
@@ -67,21 +65,9 @@ def test_shift():
     buffer: Buffer = Buffer(content=bytes(b'\x00\x08\x2d'), length=12, padding=Padding.LEFT)
     shift_value = 6
     shifted_buffer = buffer.shift(shift=shift_value, inplace=False)
-    assert len(shifted_buffer.content) == 3
-    assert shifted_buffer.content == bytes(b'\x00\x00\x20')
+    assert len(shifted_buffer.content) == 1
+    assert shifted_buffer.content == bytes(b'\x20')
     assert shifted_buffer.length == 6
-
-def test_trim_padding():
-    # right padding trimming
-    #                      |7 6 5 4 3 2 1 0|7 6 5 4 3 2 1 0|7 6 5 4 3 2 1 0|  (|) byte delimiter
-    #                      |0 0 0 0 1 0 0 0|0 0 1 0 1 - - -|- - - - - - - -|  (-) existing padding 
-    #                      |0 0 0 0 1 0 0 0|0 0 1 0 1 - - -|                  (-) expected result
-    buffer: Buffer = Buffer(content=bytes(b'\x08\x28\x00'), length=13, padding=Padding.RIGHT)
-    
-    expected_buffer: Buffer = Buffer(content=bytes(b'\x08\x28'), length=13, padding=Padding.RIGHT)
-
-    assert buffer.trim(inplace=False) == expected_buffer
-
 
 def test_repr():
     # 11 bits padding on the right
@@ -89,14 +75,14 @@ def test_repr():
     buffer: Buffer = Buffer(content=bytes(b'\x08\x28\x00'), length=13, padding=Padding.RIGHT)
     repr: str = buffer.__repr__()
 
-    assert repr == '[00001000 00101--- --------](13)'
+    assert repr == '[00001000 00101---](13)'
 
     # 11 bits padding on the left
     # |- - - - - - - -|- - - 0 1 0 0 0|0 0 1 0 1 0 0 0|  (-) padding 
     buffer: Buffer = Buffer(content=bytes(b'\x00\x08\x28'), length=13, padding=Padding.LEFT)
     repr: str = buffer.__repr__()
 
-    assert repr == '[-------- ---01000 00101000](13)'
+    assert repr == '[---01000 00101000](13)'
 
     # 3 bits padding on the right
     # |0 0 0 0 1 0 0 0|0 0 1 0 1 - - -|  (-)  padding 
@@ -126,7 +112,7 @@ def test_pad():
     buffer: Buffer = Buffer(content=bytes(b'\x08\x28\x00'), length=13, padding=Padding.RIGHT)
 
     padded: Buffer = buffer.pad(padding=Padding.LEFT, inplace=False)
-    expected: Buffer = Buffer(content=b'\x00\x01\x05', length=buffer.length, padding=Padding.LEFT)
+    expected: Buffer = Buffer(content=b'\x01\x05', length=buffer.length, padding=Padding.LEFT)
     
     assert padded == expected
 
@@ -137,23 +123,25 @@ def test_pad():
 def test_get():
     # retrieve bits 1 to 10 
     # 
-    #       0x00              0x01            0x0d
-    # |- - - - - - - -| - - - 0 0 0 0 1|0 0 0 0 1 1 0 1|  (-) padding (11 bits padding on the left)
-    #                           + + + + + + + + +         (+) bits to output
-    #   -->            |- - - - - - 0 0|0 0 1 0 0 0 0 1|
-    #                          0x00          0x41
-    buffer: Buffer = Buffer(content=bytes(b'\x00\x01\x0d'), length=13, padding=Padding.LEFT)
+    #                          0x01            0x0d
+    #                  |- - - 0 0 0 0 1|0 0 0 0 1 1 0 1|  (-) padding (3 bits padding on the left)
+    #                  |0 0 0 0 1 0 0 0|0 1 1 0 1 - - -|  (-) padding (3 bits padding on the right)
+    #                     + + + + + + + + +               (+) bits to output
+    #                  |0 0 0 1 0 0 0 0|1 - - - - - -|  (-) padding (7 bits padding on the right)
+    #   -->            |- - - - - - - 0|0 0 1 0 0 0 0 1|
+    #                          0x00          0x21
+    buffer: Buffer = Buffer(content=bytes(b'\x01\x0d'), length=13, padding=Padding.LEFT)
     expected: Buffer = Buffer(content=bytes(b'\x00\x21'), length=9, padding=Padding.LEFT)
     buffer_subset: Buffer = buffer[1:10]
     assert buffer_subset == expected
     assert buffer_subset.padding == Padding.LEFT
 
     # retrieve bits 1 to 14  --> retrieve 1 to 13
-    # 
-    #       0x00              0x01            0x0d
-    # |- - - - - - - -| - - - 0 0 0 0 1|0 0 0 0 1 1 0 1|  (-) padding (11 bits padding on the left)
-    #                           + + + + + + + + + + + +   (+) bits to output
-    #   -->           | - - - - 0 0 0 1|0 0 0 0 1 1 0 1|
+    #
+    #         0x01            0x0d
+    # | - - - 0 0 0 0 1|0 0 0 0 1 1 0 1|  (-) padding (11 bits padding on the left)
+    #           + + + + + + + + + + + +   (+) bits to output
+    # | - - - - 0 0 0 1|0 0 0 0 1 1 0 1|
     #                          0x01           0x0d
     
     buffer_subset: Buffer = buffer[1:13]
@@ -162,13 +150,13 @@ def test_get():
     assert buffer_subset.padding == Padding.LEFT
 
     # retrieve bits 0 to 13 
-    # 
-    #       0x00              0x01            0x0d
-    # |- - - - - - - -| - - - 0 0 0 0 1|0 0 0 0 1 1 0 1|  (-) padding (11 bits padding on the left)
-    #                         + + + + + + + + + + + + +   (+) bits to output
-    #   -->            |- - - 0 0 0 0 1|0 0 0 0 1 1 0 1|
+    #  
+    #          0x01            0x0d
+    #  | - - - 0 0 0 0 1|0 0 0 0 1 1 0 1|  (-) padding (11 bits padding on the left)
+    #          + + + + + + + + + + + + +   (+) bits to output
+    #  | - - - 0 0 0 0 1|0 0 0 0 1 1 0 1|
     #                          0x01          0x41
-    buffer: Buffer = Buffer(content=bytes(b'\x00\x01\x0d'), length=13, padding=Padding.LEFT)
+    buffer: Buffer = Buffer(content=bytes(b'\x01\x0d'), length=13, padding=Padding.LEFT)
     expected: Buffer = Buffer(content=bytes(b'\x01\x0d'), length=13, padding=Padding.LEFT)
     buffer_subset: Buffer = buffer[0:13]
     assert buffer_subset == expected
@@ -176,12 +164,12 @@ def test_get():
 
     # retrieve last 4 bits (9 to 13)
     # 
-    #       0x00              0x01            0x0d
-    # |- - - - - - - -| - - - 0 0 0 0 1|0 0 0 0 1 1 0 1|  (-) padding (11 bits padding on the left)
-    #                                           + + + +   (+) bits to output
-    #   -->                            |- - - - 1 1 0 1|
+    #         0x01            0x0d
+    # | - - - 0 0 0 0 1|0 0 0 0 1 1 0 1|  (-) padding (11 bits padding on the left)
+    #                           + + + +   (+) bits to output
+    #                  |- - - - 1 1 0 1|
     #                                          0x01
-    buffer: Buffer = Buffer(content=bytes(b'\x00\x01\x0d'), length=13, padding=Padding.LEFT)
+    buffer: Buffer = Buffer(content=bytes(b'\x01\x0d'), length=13, padding=Padding.LEFT)
     expected: Buffer = Buffer(content=bytes(b'\x0d'), length=4, padding=Padding.LEFT)
     buffer_subset: Buffer = buffer[-4:]
     assert buffer_subset == expected
@@ -190,9 +178,9 @@ def test_get():
 
     # retrieve bits 1 to 10 
     # 
-    #              0x08          0x68              0x00
-    #       |0 0 0 0 1 0 0 0|0 1 1 0 1 - - -|- - - - - - - -|  (-) padding (11 bits padding on the right)
-    #          + + + + + + + + +                               (+) bits to output
+    #              0x08          0x68        
+    #       |0 0 0 0 1 0 0 0|0 1 1 0 1 - - -| (-) padding (11 bits padding on the right)
+    #          + + + + + + + + +              (+) bits to output
     #  -->  |0 0 0 1 0 0 0 0|1 - - - - - - -|
     #              0x10           0x80
     buffer: Buffer = Buffer(content=bytes(b'\x08\x68'), length=13, padding=Padding.RIGHT)
@@ -227,10 +215,24 @@ def test_get():
     buffer_subset: Buffer = buffer[-4:]
     assert buffer_subset == expected
     assert buffer_subset.padding == Padding.RIGHT
+    
+    buffer: Buffer = Buffer(content=bytes(b'\xc0'), length=8, padding=Padding.LEFT)
+    expected: Buffer = Buffer(content=bytes(b'\x03'), length=2, padding=Padding.LEFT)
+    buffer_subset: Buffer = buffer[0:2]
+    assert buffer_subset == expected
+    
+    buffer: Buffer = Buffer(content=bytes(b'\x68'), length=8, padding=Padding.LEFT)
+    buffer_02: Buffer = buffer[0:2]
+    buffer_24: Buffer = buffer[2:4]
+    
+    assert buffer_02 == Buffer(content=bytes(b'\x01'), length=2, padding=Padding.LEFT)
+    assert buffer_24 == Buffer(content=bytes(b'\x02'), length=2, padding=Padding.LEFT)
+    
+    
 
 def test_set():
-    buffer: Buffer = Buffer(content=bytes(b'\x00\x01\x0d'), length=24, padding=Padding.LEFT)
-    expected: Buffer = Buffer(content=bytes(b'\x0f\x01\x0d'), length=24, padding=Padding.LEFT)
+    buffer: Buffer = Buffer(content=bytes(b'\xf0\x01\x0d'), length=24, padding=Padding.LEFT)
+    expected: Buffer = Buffer(content=bytes(b'\xff\x01\x0d'), length=24, padding=Padding.LEFT)
     buffer[4:8] = Buffer(content=b'\x0f', length=4, padding=Padding.LEFT)
 
     assert buffer == expected
@@ -282,6 +284,20 @@ def test_add():
     right: Buffer = Buffer(content=b'\xf0', length=4, padding=Padding.RIGHT)
     left_right = left + right
     expected: Buffer = Buffer(content=b'\xff', length=8, padding=Padding.LEFT)
+    assert left_right == expected
+    
+    left:Buffer = Buffer(content=b'\xc0', length=2, padding=Padding.RIGHT)
+    right: Buffer = Buffer(content=b'\x01', length=8, padding=Padding.LEFT)
+    left_right: Buffer = left + right 
+    
+    expected: Buffer = Buffer(content=b'\xc0\x40', length=10, padding=Padding.RIGHT)
+    assert left_right == expected
+    
+    left:Buffer = Buffer(content=b'', length=0, padding=Padding.LEFT)
+    right: Buffer = Buffer(content=b'\x06', length=4, padding=Padding.LEFT)
+    left_right: Buffer = left + right 
+    
+    expected: Buffer = Buffer(content=b'\x06', length=4, padding=Padding.LEFT)
     assert left_right == expected
 
 def test_or():
@@ -367,6 +383,9 @@ def test_value():
     buffer: Buffer = Buffer(content=b'Hello, World! \xe9', length=120)
     value: str = buffer.value('str', encoding='iso-8859-1')
     assert value == 'Hello, World! é'
+    
+    buffer: Buffer = Buffer(content=b'\x80', length=1, padding=Padding.LEFT)
+    assert buffer.value(type='unsigned int') == 0
 
 def test_iter():
     #              0x08          0x68              0x00
@@ -398,22 +417,20 @@ def test_chunks():
     chunks_padded: List[Buffer] = [c for c in buffer.chunks(2, padding=True)]
     assert chunks_padded[6] == Buffer(content=b'\x80', length=2, padding=Padding.RIGHT)
 
-
-
 def test_json_str():
     """
     test JSON serialization of buffer objects
     """
     buffer: Buffer = Buffer(content=b"\xaa\xf0", length=12)
     json_str: str = buffer.json()
-    assert json_str == '{"content": "aaf0", "length": 12, "padding": "left"}'
+    assert json_str == '{"content": "0af0", "length": 12, "padding": "left"}'
 
 def test_from_json():
     """
     test JSON serialized to object instance
     """
-    json_str = '{"content": "aaf0", "length": 12, "padding": "left"}'
+    json_str = '{"content": "0af0", "length": 12, "padding": "left"}'
     buffer: Buffer = Buffer.from_json(json_str=json_str)
-    assert buffer.content == b"\xaa\xf0"
+    assert buffer.content == b"\x0a\xf0"
     assert buffer.length == 12
     assert buffer.padding == Padding.LEFT

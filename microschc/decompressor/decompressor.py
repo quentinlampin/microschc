@@ -132,6 +132,8 @@ def decompress(schc_packet: Buffer, rule_descriptor: RuleDescriptor) -> Buffer:
 
     # concatenate decompressed fields
     decompressed_field_values = [field_value for field_id, field_value in decompressed_fields]
-    decompressed: Buffer = reduce(lambda x, y: x+y, decompressed_field_values, Buffer(content=b'', length=0))
+    
+    decompressed_buffer = Buffer(content=b'', length=0, padding=Padding.RIGHT)
+    decompressed: Buffer = reduce(lambda x, y: x+y, decompressed_field_values, decompressed_buffer)
 
     return decompressed
