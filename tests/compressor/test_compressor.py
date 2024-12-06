@@ -95,8 +95,7 @@ def test_compress():
     rule_descriptor_1: RuleDescriptor = RuleDescriptor(id=Buffer(content=b'\x03', length=2), field_descriptors=field_descriptors_1)
 
     schc_packet = compress(packet_descriptor=packet_descriptor, rule_descriptor=rule_descriptor_1)
-    
-    assert schc_packet == Buffer(content= b'\xc0\x1a\x00\x80\x06\x85\xc2\x18\x45\x22\xf6\xf4' \
+    expected: Buffer = Buffer(content= b'\xc0\x1a\x00\x80\x06\x85\xc2\x18\x45\x22\xf6\xf4' \
                                           b'\x0b\x83\x00\xef\xee\x66\x29\x12\x21\x86\xe5\xb7' \
                                           b'\xb2\x26\x26\xe2\x23\xa2\x22\xf3\x62\xf2\x22\xc2' \
                                           b'\x26\xe2\x23\xa2\x23\x02\xf3\x02\x22\xc2\x27\x62' \
@@ -106,6 +105,7 @@ def test_compress():
                                           b'\xf3\x52\x22\xc2\x27\x62\x23\xa3\x13\x63\x63\x63' \
                                           b'\x23\x63\x33\x33\x33\x97\xd5\xd0',
                                  length=828, padding=Padding.RIGHT)
+    assert schc_packet == expected
 
 
 def test_encode_length():

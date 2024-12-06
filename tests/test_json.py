@@ -1,4 +1,4 @@
-from microschc.binary.buffer import Buffer
+from microschc.binary.buffer import Buffer, Padding
 from microschc.protocol.registry import Stack
 from microschc.protocol.ipv6 import IPv6Fields
 from microschc.rfc8724 import DirectionIndicator, FieldDescriptor, HeaderDescriptor, MatchMapping, PacketDescriptor, RuleDescriptor, RuleFieldDescriptor, RuleNature
@@ -95,7 +95,7 @@ def test_packet_descriptor_to_json():
         payload=Buffer(content=b'\x00\x01\x02', length=24),
     )
     json_str = packet_descriptor.json()
-    assert json_str == '{"direction": "Up", "fields": [{"id": "fd1", "value": {"content": "0001", "length": 16, "padding": "left"}, "position": 0}, {"id": "fd2", "value": {"content": "0002", "length": 16, "padding": "left"}, "position": 0}], "payload": {"content": "000102", "length": 24, "padding": "left"}, "raw": {"content": "00010002000102", "length": 56, "padding": "right"}, "length": 56}'
+    assert json_str == '{"direction": "Up", "fields": [{"id": "fd1", "value": {"content": "0001", "length": 16, "padding": "left"}, "position": 0}, {"id": "fd2", "value": {"content": "0002", "length": 16, "padding": "left"}, "position": 0}], "payload": {"content": "000102", "length": 24, "padding": "left"}, "raw": {"content": "00010002000102", "length": 56, "padding": "left"}, "length": 56}'
 
 def test_packet_descriptor_from_json():
     """
@@ -117,23 +117,23 @@ def test_rule_field_descriptor_to_json():
     """
     rule_field_descriptor: RuleFieldDescriptor = RuleFieldDescriptor(
             id=IPv6Fields.PAYLOAD_LENGTH, length=16, position=0, direction=DirectionIndicator.BIDIRECTIONAL, 
-            target_value=Buffer(content=b'', length=16), matching_operator=MO.IGNORE, compression_decompression_action=CDA.VALUE_SENT)
+            target_value=Buffer(content=b'', length=0), matching_operator=MO.IGNORE, compression_decompression_action=CDA.VALUE_SENT)
 
     json_str = rule_field_descriptor.json()
-    assert json_str == '{"id": "IPv6:Payload Length", "length": 16, "position": 0, "direction": "Bi", "target_value": {"content": "", "length": 16, "padding": "left"}, "matching_operator": "ignore", "compression_decompression_action": "value-sent"}'
+    assert json_str == '{"id": "IPv6:Payload Length", "length": 16, "position": 0, "direction": "Bi", "target_value": {"content": "", "length": 0, "padding": "left"}, "matching_operator": "ignore", "compression_decompression_action": "value-sent"}'
 
 def test_rule_field_descriptor_from_json():
     """
     test JSON deserialization of RuleFieldDescriptor objects
     """
-    json_str = '{"id": "IPv6:Payload Length", "length": 16, "position": 0, "direction": "Bi", "target_value": {"content": "", "length": 16, "padding": "left"}, "matching_operator": "ignore", "compression_decompression_action": "value-sent"}'
+    json_str = '{"id": "IPv6:Payload Length", "length": 16, "position": 0, "direction": "Bi", "target_value": {"content": "", "length": 0, "padding": "left"}, "matching_operator": "ignore", "compression_decompression_action": "value-sent"}'
 
     rule_field_descriptor: RuleFieldDescriptor = RuleFieldDescriptor.from_json(json_str=json_str)
     assert rule_field_descriptor.id == IPv6Fields.PAYLOAD_LENGTH
     assert rule_field_descriptor.length == 16
     assert rule_field_descriptor.position == 0
     assert rule_field_descriptor.direction == DirectionIndicator.BIDIRECTIONAL
-    assert rule_field_descriptor.target_value == Buffer(content=b'', length=16)
+    assert rule_field_descriptor.target_value == Buffer(content=b'', length=0)
     assert rule_field_descriptor.matching_operator == MO.IGNORE
     assert rule_field_descriptor.compression_decompression_action == CDA.VALUE_SENT
 
