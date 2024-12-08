@@ -11,7 +11,7 @@ def test_sctp_parser_import():
     parser = SCTPParser()
     assert( isinstance(parser, SCTPParser) )
 
-def test_sctp_parser_parse():
+def test_sctp_parser_parse_data():
     """test: SCTP header parser parses SCTP Header
 
     The packet is made of a SCTP header with the following fields:
@@ -130,3 +130,142 @@ def test_sctp_parser_parse():
     assert chunk_padding_fd.id == SCTPFields.CHUNK_PADDING
     assert chunk_padding_fd.position == 0
     assert chunk_padding_fd.value == Buffer(content=b'\x00\x00\x00', length=24)
+    
+    
+def test_sctp_parser_parse_init():
+    """test: SCTP header parser parses SCTP Header
+
+    The packet is made of a SCTP header with the following fields:
+        - id='Source Port Number'                  length=16   position=0  value=b'\x00\x07'
+        - id='Destination Port Number'             length=16   position=0  value=b'\x00\x07'
+        - id='Verification Tag'                    length=32   position=0  value=b'\x00\x00\x00\x00'
+        - id='Checksum'                            length=32   position=0  value=b'\x37\x61\xa7\x46'
+        - id='Chunk Type'                          length=8    position=0  value=b'\x01'
+        - id='Chunk Flags'                         length=8    position=0  value=b'\x00'
+        - id='Chunk Length'                        length=16   position=0  value=b'\x00\x20'
+        - id='Initiate Tag                         length=32   position=0  value=b'\x43\x23\x25\x44'
+        - id='Advertised Receiver Window Credit'   length=32   position=0  value=b'\x00\x00\xff\xff'
+        - id='Number of Outbound Streams'          length=16   position=0  value=b'\x00\x11'
+        - id='Number of Inbound Streams'           length=16   position=0  value=b'\x00\x11'
+        - id='Initial TSN                          length=32   position=0  value=b'\x5c\xfe\x37\x9f'
+        - id='Parameter Type'                      length=16   position=0  value=b'\xc0\x00'
+        - id='Parameter Length'                    length=16   position=0  value=b'\x00\x04'
+        - id='Parameter Type'                      length=16   position=0  value=b'\x00\x0c'
+        - id='Parameter Length'                    length=16   position=0  value=b'\x00\x06'
+        - id='Parameter Value'                     length=16   position=0  value=b'\x00\x05'
+        - id='Parameter Padding'                   length=16   position=0  value=b'\x00\x00'
+
+    """
+
+    valid_sctp_packet:bytes = bytes(b'\x00\x07\x00\x07\x00\x00\x00\x00\x37\x61\xa7\x46\x01\x00\x00\x20'
+                                    b'\x43\x23\x25\x44\x00\x00\xff\xff\x00\x11\x00\x11\x5c\xfe\x37\x9f'
+                                    b'\xc0\x00\x00\x04\x00\x0c\x00\x06\x00\x05\x00\x00'
+    )
+    valid_sctp_packet_buffer: Buffer = Buffer(content=valid_sctp_packet, length=len(valid_sctp_packet)*8)
+    parser:SCTPParser = SCTPParser()
+    
+    sctp_header_descriptor: HeaderDescriptor = parser.parse(buffer=valid_sctp_packet_buffer)
+
+    # test sctp_header_descriptor type
+    assert isinstance(sctp_header_descriptor, HeaderDescriptor)
+
+    # test for sctp_header_descriptor.fields length
+    assert len(sctp_header_descriptor.fields) == 18
+
+    # test for sctp_header_descriptor.fields types
+    for field in sctp_header_descriptor.fields:
+        assert isinstance(field, FieldDescriptor)
+
+    # assert field descriptors match SCTP header content
+    # - common header fields
+    source_port_fd:FieldDescriptor = sctp_header_descriptor.fields[0]
+    assert source_port_fd.id == SCTPFields.SOURCE_PORT
+    assert source_port_fd.position == 0
+    assert source_port_fd.value == Buffer(content=b'\x00\x07', length=16)
+    
+    destination_port_fd:FieldDescriptor = sctp_header_descriptor.fields[1]
+    assert destination_port_fd.id == SCTPFields.DESTINATION_PORT
+    assert destination_port_fd.position == 0
+    assert destination_port_fd.value == Buffer(content=b'\x00\x07', length=16)
+    
+    verification_tag_fd:FieldDescriptor = sctp_header_descriptor.fields[2]
+    assert verification_tag_fd.id == SCTPFields.VERIFICATION_TAG
+    assert verification_tag_fd.position == 0
+    assert verification_tag_fd.value == Buffer(content=b'\x00\x00\x00\x00', length=32)
+        
+    checksum_fd:FieldDescriptor = sctp_header_descriptor.fields[3]
+    assert checksum_fd.id == SCTPFields.CHECKSUM
+    assert checksum_fd.position == 0
+    assert checksum_fd.value == Buffer(content=b'\x37\x61\xa7\x46', length=32)
+
+
+    # - chunk common header fields
+    chunk_type_fd:FieldDescriptor = sctp_header_descriptor.fields[4]
+    assert chunk_type_fd.id == SCTPFields.CHUNK_TYPE
+    assert chunk_type_fd.position == 0
+    assert chunk_type_fd.value == Buffer(content=b'\x01', length=8)
+    
+    chunk_flags_fd:FieldDescriptor = sctp_header_descriptor.fields[5]
+    assert chunk_flags_fd.id == SCTPFields.CHUNK_FLAGS
+    assert chunk_flags_fd.position == 0
+    assert chunk_flags_fd.value == Buffer(content=b'\x00', length=8)
+    
+    chunk_length_fd:FieldDescriptor = sctp_header_descriptor.fields[6]
+    assert chunk_length_fd.id == SCTPFields.CHUNK_LENGTH
+    assert chunk_length_fd.position == 0
+    assert chunk_length_fd.value == Buffer(content=b'\x00\x20', length=16)
+    
+    initiate_tag_fd:FieldDescriptor = sctp_header_descriptor.fields[7]
+    assert initiate_tag_fd.id == SCTPFields.CHUNK_INIT_INITIATE_TAG
+    assert initiate_tag_fd.position == 0
+    assert initiate_tag_fd.value == Buffer(content=b'\x43\x23\x25\x44', length=32)
+    
+    advertised_receiver_window_credit_fd:FieldDescriptor = sctp_header_descriptor.fields[8]
+    assert advertised_receiver_window_credit_fd.id == SCTPFields.CHUNK_INIT_ADVERTISED_RECEIVER_WINDOW_CREDIT
+    assert advertised_receiver_window_credit_fd.position == 0
+    assert advertised_receiver_window_credit_fd.value == Buffer(content=b'\x00\x00\xff\xff', length=32)
+    
+    number_outbound_streams_fd:FieldDescriptor = sctp_header_descriptor.fields[9]
+    assert number_outbound_streams_fd.id == SCTPFields.CHUNK_INIT_NUMBER_OF_OUTBOUND_STREAMS
+    assert number_outbound_streams_fd.position == 0
+    assert number_outbound_streams_fd.value == Buffer(content=b'\x00\x11', length=16)
+    
+    number_inbound_streams_fd:FieldDescriptor = sctp_header_descriptor.fields[10]
+    assert number_inbound_streams_fd.id == SCTPFields.CHUNK_INIT_NUMBER_OF_INBOUND_STREAMS
+    assert number_inbound_streams_fd.position == 0
+    assert number_inbound_streams_fd.value == Buffer(content=b'\x00\x11', length=16)
+    
+    initial_tsn_fd:FieldDescriptor = sctp_header_descriptor.fields[11]
+    assert initial_tsn_fd.id == SCTPFields.CHUNK_INIT_INITIAL_TSN
+    assert initial_tsn_fd.position == 0
+    assert initial_tsn_fd.value == Buffer(content=b'\x5c\xfe\x37\x9f', length=32)
+    
+    parameter_type_fd:FieldDescriptor = sctp_header_descriptor.fields[12]
+    assert parameter_type_fd.id == SCTPFields.PARAMETER_TYPE
+    assert parameter_type_fd.position == 0
+    assert parameter_type_fd.value == Buffer(content=b'\xc0\x00', length=16)
+
+    parameter_length_fd:FieldDescriptor = sctp_header_descriptor.fields[13]
+    assert parameter_length_fd.id == SCTPFields.PARAMETER_LENGTH
+    assert parameter_length_fd.position == 0
+    assert parameter_length_fd.value == Buffer(content=b'\x00\x04', length=16)
+
+    parameter_type_fd:FieldDescriptor = sctp_header_descriptor.fields[14]
+    assert parameter_type_fd.id == SCTPFields.PARAMETER_TYPE
+    assert parameter_type_fd.position == 0
+    assert parameter_type_fd.value == Buffer(content=b'\x00\x0c', length=16)
+
+    parameter_length_fd:FieldDescriptor = sctp_header_descriptor.fields[15]
+    assert parameter_length_fd.id == SCTPFields.PARAMETER_LENGTH
+    assert parameter_length_fd.position == 0
+    assert parameter_length_fd.value == Buffer(content=b'\x00\x06', length=16)
+
+    parameter_value_fd:FieldDescriptor = sctp_header_descriptor.fields[16]
+    assert parameter_value_fd.id == SCTPFields.PARAMETER_VALUE
+    assert parameter_value_fd.position == 0
+    assert parameter_value_fd.value == Buffer(content=b'\x00\x05', length=16)
+
+    parameter_padding_fd:FieldDescriptor = sctp_header_descriptor.fields[17]
+    assert parameter_padding_fd.id == SCTPFields.PARAMETER_PADDING
+    assert parameter_padding_fd.position == 0
+    assert parameter_padding_fd.value == Buffer(content=b'\x00\x00', length=16)
