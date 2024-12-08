@@ -11,41 +11,6 @@ from enum import Enum
 
 SCTP_HEADER_ID = 'SCTP'
 
-class SCTPFields(str, Enum):
-    SOURCE_PORT_NUMBER                      = f'{SCTP_HEADER_ID}:Source Port Number'
-    DESTINATION_PORT_NUMBER                 = f'{SCTP_HEADER_ID}:Destination Port Number'
-    VERIFICATION_TAG                        = f'{SCTP_HEADER_ID}:Verification Tag'
-    CHECKSUM                                = f'{SCTP_HEADER_ID}:Checksum'
-    CHUNK_TYPE                              = f'{SCTP_HEADER_ID}:Chunk Type'
-    CHUNK_FLAGS                             = f'{SCTP_HEADER_ID}:Chunk Flags'
-    CHUNK_LENGTH                            = f'{SCTP_HEADER_ID}:Chunk Length'
-    DATA_RES                                = f'{SCTP_HEADER_ID}:Data Res'
-    DATA_I                                  = f'{SCTP_HEADER_ID}:Data I'
-    DATA_U                                  = f'{SCTP_HEADER_ID}:Data U'
-    DATA_B                                  = f'{SCTP_HEADER_ID}:Data B'
-    DATA_E                                  = f'{SCTP_HEADER_ID}:Data E'
-    DATA_LENGTH                             = f'{SCTP_HEADER_ID}:Data Length'
-    DATA_TSN                                = f'{SCTP_HEADER_ID}:Data TSN'
-    DATA_STREAM_IDENTIFIER                  = f'{SCTP_HEADER_ID}:Data Stream Identifier S'
-    DATA_STREAM_SEQUENCE_NUMBER             = f'{SCTP_HEADER_ID}:Data Stream Sequence Number n'
-    DATA_PAYLOAD_PROTOCOL_IDENTIFIER        = f'{SCTP_HEADER_ID}:Data Payload Protocol Identifier'
-    INIT_CHUNK_FLAGS                        = f'{SCTP_HEADER_ID}:Chunk Flags'
-    INIT_CHUNK_LENGTH                       = f'{SCTP_HEADER_ID}:Chunk Length'
-    INIT_INITIATE_TAG                       = f'{SCTP_HEADER_ID}:Initiate Tag'
-    INIT_ADVERTISED_RECEIVER_WINDOW_CREDIT  = f'{SCTP_HEADER_ID}:Advertised Receiver Window Credit'
-    INIT_NUMBER_OF_OUTBOUND_STREAMS         = f'{SCTP_HEADER_ID}:Number of Outbound Streams'
-    INIT_NUMBER_OF_INBOUND_STREAMS          = f'{SCTP_HEADER_ID}:Number of Inbound Streams'
-    INIT_INITIAL_TSN                        = f'{SCTP_HEADER_ID}:Initial TSN'
-
-    INIT_ACK_CHUNK_FLAGS                        = f'{SCTP_HEADER_ID}:Chunk Flags'
-    INIT_ACK_CHUNK_LENGTH                       = f'{SCTP_HEADER_ID}:Chunk Length'
-    INIT_ACK_INITIATE_TAG                       = f'{SCTP_HEADER_ID}:Initiate Tag'
-    INIT_ACK_ADVERTISED_RECEIVER_WINDOW_CREDIT  = f'{SCTP_HEADER_ID}:Advertised Receiver Window Credit'
-    INIT_ACK_NUMBER_OF_OUTBOUND_STREAMS         = f'{SCTP_HEADER_ID}:Number of Outbound Streams'
-    INIT_ACK_NUMBER_OF_INBOUND_STREAMS          = f'{SCTP_HEADER_ID}:Number of Inbound Streams'
-    INIT_ACK_INITIAL_TSN                        = f'{SCTP_HEADER_ID}:Initial TSN'
-
-
 from enum import Enum
 from typing import Dict, List, Tuple
 from microschc.binary.buffer import Buffer
