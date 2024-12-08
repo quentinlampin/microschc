@@ -182,7 +182,7 @@ class SCTPParser(HeaderParser):
         return header_descriptor
     
 
-    def _parse_chunk(self, buffer: Buffer) -> tuple[List[FieldDescriptor], int]:
+    def _parse_chunk(self, buffer: Buffer) -> Tuple[List[FieldDescriptor], int]:
         fields: List[FieldDescriptor] = []    
 
         # Chunk Type: 8 bits
