@@ -55,6 +55,10 @@ class SCTPFields(str, Enum):
     CHUNK_SACK_GAP_ACK_BLOCK_START                          = f'{SCTP_HEADER_ID}:Selective Ack Gap Ack BLock Start'
     CHUNK_SACK_GAP_ACK_BLOCK_END                            = f'{SCTP_HEADER_ID}:Selective Ack Gap Ack BLock End'
     CHUNK_SACK_DUPLICATE_TSN                                = f'{SCTP_HEADER_ID}:Selective Ack Duplicate TSN'
+    
+    CHUNK_SHUTDOWN_CUMULATIVE_TSN_ACK                       = f'{SCTP_HEADER_ID}:Shutdown Cumulative TSN'
+    
+    CHUNK_COOKIE_ECHO_COOKIE                                = f'{SCTP_HEADER_ID}:Cookie Echo Cookie'
 
     PARAMETER_TYPE                                          = f'{SCTP_HEADER_ID}:Parameter Type'
     PARAMETER_LENGTH                                        = f'{SCTP_HEADER_ID}:Parameter Length'
@@ -204,6 +208,20 @@ class SCTPParser(HeaderParser):
                 chunk_fields: List[FieldDescriptor] = self._parse_chunk_heartbeat(chunk_value)
             elif chunk_type_value == SCTPChunkTypes.HEARTBEAT_ACK:
                 chunk_fields: List[FieldDescriptor] = self._parse_chunk_heartbeat_ack(chunk_value)
+            elif chunk_type_value == SCTPChunkTypes.ABORT:
+                chunk_fields: List[FieldDescriptor] = self._parse_chunk_abort(chunk_value)
+            elif chunk_type_value == SCTPChunkTypes.SHUTDOWN:
+                chunk_fields: List[FieldDescriptor] = self._parse_chunk_shutdown(chunk_value)
+            elif chunk_type_value == SCTPChunkTypes.SHUTDOWN_ACK:
+                chunk_fields: List[FieldDescriptor] = self._parse_chunk_shutdown_ack(chunk_value)
+            elif chunk_type_value == SCTPChunkTypes.ERROR:
+                chunk_fields: List[FieldDescriptor] = self._parse_chunk_error(chunk_value)
+            elif chunk_type_value == SCTPChunkTypes.COOKIE_ECHO:
+                chunk_fields: List[FieldDescriptor] = self._parse_chunk_cookie_echo(chunk_value)
+            elif chunk_type_value == SCTPChunkTypes.COOKIE_ACK:
+                chunk_fields: List[FieldDescriptor] = self._parse_chunk_cookie_ack(chunk_value)
+            elif chunk_type_value == SCTPChunkTypes.SHUTDOWN_COMPLETE:
+                chunk_fields: List[FieldDescriptor] = self._parse_chunk_shutdown_complete(chunk_value)
             else:    
                 chunk_fields: List[FieldDescriptor] = [FieldDescriptor(id=SCTPFields.CHUNK_VALUE, position=0, value=chunk_value)]
             fields.extend(chunk_fields)
@@ -451,6 +469,119 @@ class SCTPParser(HeaderParser):
             fields.extend(parameter_fields)
             parameters = parameters[bits_consumed:]
             
+        return fields
+    
+    def _parse_chunk_abort(self, buffer: Buffer) -> List[FieldDescriptor]:
+        """
+        0                   1                   2                   3
+        0 1 2 3 4 5 6 7 8 9 0 1 2 3 4 5 6 7 8 9 0 1 2 3 4 5 6 7 8 9 0 1
+        +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
+        |   Type = 6    |  Reserved   |T|            Length             |
+        +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
+        \                                                               \
+        /                   zero or more Error Causes                   /
+        \                                                               \
+        +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
+        """
+        fields: List[FieldDescriptor] = []
+        
+        parameters = buffer
+        while parameters.length > 0:
+            parameter_fields, bits_consumed = self._parse_parameter(parameters)
+            fields.extend(parameter_fields)
+            parameters = parameters[bits_consumed:]
+            
+        return fields
+    
+    def _parse_chunk_shutdown(self, buffer: Buffer) -> List[FieldDescriptor]:
+        """
+        0                   1                   2                   3
+        0 1 2 3 4 5 6 7 8 9 0 1 2 3 4 5 6 7 8 9 0 1 2 3 4 5 6 7 8 9 0 1
+        +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
+        |   Type = 7    |  Chunk Flags  |          Length = 8           |
+        +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
+        |                      Cumulative TSN Ack                       |
+        +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
+        """
+        fields: List[FieldDescriptor] = []
+        
+        fields: List[FieldDescriptor] = []
+        cumulative_tsn_ack: Buffer = buffer[0:32]
+        fields.append(FieldDescriptor(id=SCTPFields.CHUNK_SHUTDOWN_CUMULATIVE_TSN_ACK, value=cumulative_tsn_ack, position=0))
+            
+        return fields
+    
+    def _parse_chunk_shutdown_ack(self, buffer: Buffer) -> List[FieldDescriptor]:
+        """
+        0                   1                   2                   3
+        0 1 2 3 4 5 6 7 8 9 0 1 2 3 4 5 6 7 8 9 0 1 2 3 4 5 6 7 8 9 0 1
+        +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
+        |   Type = 8    |  Chunk Flags  |          Length = 4           |
+        +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
+        """
+        fields: List[FieldDescriptor] = []    
+        return fields
+    
+    def _parse_chunk_error(self, buffer: Buffer) -> List[FieldDescriptor]:
+        """
+        0                   1                   2                   3
+        0 1 2 3 4 5 6 7 8 9 0 1 2 3 4 5 6 7 8 9 0 1 2 3 4 5 6 7 8 9 0 1
+        +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
+        |   Type = 9    |  Chunk Flags  |            Length             |
+        +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
+        \                                                               \
+        /                   one or more Error Causes                    /
+        \                                                               \
+        +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
+        """
+        fields: List[FieldDescriptor] = []
+        
+        parameters = buffer
+        while parameters.length > 0:
+            parameter_fields, bits_consumed = self._parse_parameter(parameters)
+            fields.extend(parameter_fields)
+            parameters = parameters[bits_consumed:]
+            
+        return fields
+    
+    def _parse_chunk_cookie_echo(self, buffer: Buffer) -> List[FieldDescriptor]:
+        """
+         0                   1                   2                   3
+         0 1 2 3 4 5 6 7 8 9 0 1 2 3 4 5 6 7 8 9 0 1 2 3 4 5 6 7 8 9 0 1
+        +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
+        |   Type = 10   |  Chunk Flags  |            Length             |
+        +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
+        /                            Cookie                             /
+        \                                                               \
+        +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
+        """
+        fields: List[FieldDescriptor] = []
+        
+        cookie: Buffer = buffer
+        fields.append(FieldDescriptor(id=SCTPFields.CHUNK_COOKIE_ECHO_COOKIE, value=cookie, position=0))
+            
+        return fields
+    
+    def _parse_chunk_cookie_ack(self, buffer: Buffer) -> List[FieldDescriptor]:
+        """
+        0                   1                   2                   3
+        0 1 2 3 4 5 6 7 8 9 0 1 2 3 4 5 6 7 8 9 0 1 2 3 4 5 6 7 8 9 0 1
+        +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
+        |   Type = 11   |  Chunk Flags  |          Length = 4           |
+        +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
+        """
+        fields: List[FieldDescriptor] = []    
+        return fields
+    
+    def _parse_chunk_shutdown_complete(self, buffer: Buffer) -> List[FieldDescriptor]:
+        """
+        0                   1                   2                   3
+        0 1 2 3 4 5 6 7 8 9 0 1 2 3 4 5 6 7 8 9 0 1 2 3 4 5 6 7 8 9 0 1
+        +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
+        |   Type = 14   |  Chunk Flags  |          Length = 4           |
+        +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
+        """
+        fields: List[FieldDescriptor] = []    
         return fields
         
     def _parse_parameter(self, buffer: Buffer) -> Tuple[List[FieldDescriptor], int]:

@@ -700,4 +700,408 @@ def test_sctp_parser_parse_heartbeat_ack():
     parameter_value_fd:FieldDescriptor = sctp_header_descriptor.fields[9]
     assert parameter_value_fd.id == SCTPFields.PARAMETER_VALUE
     assert parameter_value_fd.position == 0
-    assert parameter_value_fd.value == Buffer(content=b'\x40\xe4\x4b\x92\x0a\x1c\x06\x2c\x1b\x66\xaf\x7e\x00\x00\x00\x00', length=128)
+    
+    
+def test_sctp_parser_parse_abort():
+    # TODO: find PCPAP with abort chunk
+    pass
+
+def test_sctp_parser_parse_shutdown():
+    """test: SCTP header parser parses SCTP Header with a SHUTDOWN chunk
+
+    The packet is made of a SCTP header with the following fields:
+        - id='Source Port Number'                  length=16   position=0  value=b'\x80\x45'
+        - id='Destination Port Number'             length=16   position=0  value=b'\x00\x50'
+        - id='Verification Tag'                    length=32   position=0  value=b'\x13\x89\x60\x07'
+        - id='Checksum'                            length=32   position=0  value=b'\x75\x58\xd7\xdb'
+        - id='Chunk Type'                          length=8    position=0  value=b'\x07'
+        - id='Chunk Flags'                         length=8    position=0  value=b'\x00'
+        - id='Chunk Length'                        length=16   position=0  value=b'\x00\x08'
+        - id='Cumulative TSN Ack'                  length=32   position=0  value=b'\xaa\x86\x96\x09'
+    """
+    
+    valid_sctp_packet:bytes = bytes(b'\x80\x45\x00\x50\x13\x89\x60\x07\x75\x58\xd7\xdb\x07\x00\x00\x08'
+                                    b'\xaa\x86\x96\x09')
+    
+    valid_sctp_packet_buffer: Buffer = Buffer(content=valid_sctp_packet, length=len(valid_sctp_packet)*8)
+    parser:SCTPParser = SCTPParser()
+    
+    sctp_header_descriptor: HeaderDescriptor = parser.parse(buffer=valid_sctp_packet_buffer)
+
+    # test sctp_header_descriptor type
+    assert isinstance(sctp_header_descriptor, HeaderDescriptor)
+
+    # test for sctp_header_descriptor.fields length
+    assert len(sctp_header_descriptor.fields) == 8
+
+    # test for sctp_header_descriptor.fields types
+    for field in sctp_header_descriptor.fields:
+        assert isinstance(field, FieldDescriptor)
+
+    # assert field descriptors match SCTP header content
+    # - common header fields
+    source_port_fd:FieldDescriptor = sctp_header_descriptor.fields[0]
+    assert source_port_fd.id == SCTPFields.SOURCE_PORT
+    assert source_port_fd.position == 0
+    assert source_port_fd.value == Buffer(content=b'\x80\x45', length=16)
+    
+    destination_port_fd:FieldDescriptor = sctp_header_descriptor.fields[1]
+    assert destination_port_fd.id == SCTPFields.DESTINATION_PORT
+    assert destination_port_fd.position == 0
+    assert destination_port_fd.value == Buffer(content=b'\x00\x50', length=16)
+    
+    verification_tag_fd:FieldDescriptor = sctp_header_descriptor.fields[2]
+    assert verification_tag_fd.id == SCTPFields.VERIFICATION_TAG
+    assert verification_tag_fd.position == 0
+    assert verification_tag_fd.value == Buffer(content=b'\x13\x89\x60\x07', length=32)
+        
+    checksum_fd:FieldDescriptor = sctp_header_descriptor.fields[3]
+    assert checksum_fd.id == SCTPFields.CHECKSUM
+    assert checksum_fd.position == 0
+    assert checksum_fd.value == Buffer(content=b'\x75\x58\xd7\xdb', length=32)
+
+
+    # - chunk common header fields
+    chunk_type_fd:FieldDescriptor = sctp_header_descriptor.fields[4]
+    assert chunk_type_fd.id == SCTPFields.CHUNK_TYPE
+    assert chunk_type_fd.position == 0
+    assert chunk_type_fd.value == Buffer(content=b'\x07', length=8)
+    
+    chunk_flags_fd:FieldDescriptor = sctp_header_descriptor.fields[5]
+    assert chunk_flags_fd.id == SCTPFields.CHUNK_FLAGS
+    assert chunk_flags_fd.position == 0
+    assert chunk_flags_fd.value == Buffer(content=b'\x00', length=8)
+    
+    chunk_length_fd:FieldDescriptor = sctp_header_descriptor.fields[6]
+    assert chunk_length_fd.id == SCTPFields.CHUNK_LENGTH
+    assert chunk_length_fd.position == 0
+    assert chunk_length_fd.value == Buffer(content=b'\x00\x08', length=16)
+
+    cumulative_tsn_ack_fd:FieldDescriptor = sctp_header_descriptor.fields[7]
+    assert cumulative_tsn_ack_fd.id == SCTPFields.CHUNK_SHUTDOWN_CUMULATIVE_TSN_ACK
+    assert cumulative_tsn_ack_fd.position == 0
+    assert cumulative_tsn_ack_fd.value == Buffer(content=b'\xaa\x86\x96\x09', length=32)
+    
+def test_sctp_parser_parse_shutdown_ack():
+    """test: SCTP header parser parses SCTP Header with a SHUTDOWN ACK chunk
+
+    The packet is made of a SCTP header with the following fields:
+        - id='Source Port Number'                  length=16   position=0  value=b'\x00\x50'
+        - id='Destination Port Number'             length=16   position=0  value=b'\x80\x45'
+        - id='Verification Tag'                    length=32   position=0  value=b'\xe9\xb7\x3b\xc3'
+        - id='Checksum'                            length=32   position=0  value=b'\xc7\x4e\x59\xcd'
+        - id='Chunk Type'                          length=8    position=0  value=b'\x08'
+        - id='Chunk Flags'                         length=8    position=0  value=b'\x00'
+        - id='Chunk Length'                        length=16   position=0  value=b'\x00\x04'
+    """
+    
+    valid_sctp_packet:bytes = bytes(b'\x00\x50\x80\x45\xe9\xb7\x3b\xc3\xc7\x4e\x59\xcd\x08\x00\x00\x04')
+    
+    valid_sctp_packet_buffer: Buffer = Buffer(content=valid_sctp_packet, length=len(valid_sctp_packet)*8)
+    parser:SCTPParser = SCTPParser()
+    
+    sctp_header_descriptor: HeaderDescriptor = parser.parse(buffer=valid_sctp_packet_buffer)
+
+    # test sctp_header_descriptor type
+    assert isinstance(sctp_header_descriptor, HeaderDescriptor)
+
+    # test for sctp_header_descriptor.fields length
+    assert len(sctp_header_descriptor.fields) == 7
+
+    # test for sctp_header_descriptor.fields types
+    for field in sctp_header_descriptor.fields:
+        assert isinstance(field, FieldDescriptor)
+
+    # assert field descriptors match SCTP header content
+    # - common header fields
+    source_port_fd:FieldDescriptor = sctp_header_descriptor.fields[0]
+    assert source_port_fd.id == SCTPFields.SOURCE_PORT
+    assert source_port_fd.position == 0
+    assert source_port_fd.value == Buffer(content=b'\x00\x50', length=16)
+    
+    destination_port_fd:FieldDescriptor = sctp_header_descriptor.fields[1]
+    assert destination_port_fd.id == SCTPFields.DESTINATION_PORT
+    assert destination_port_fd.position == 0
+    assert destination_port_fd.value == Buffer(content=b'\x80\x45', length=16)
+    
+    verification_tag_fd:FieldDescriptor = sctp_header_descriptor.fields[2]
+    assert verification_tag_fd.id == SCTPFields.VERIFICATION_TAG
+    assert verification_tag_fd.position == 0
+    assert verification_tag_fd.value == Buffer(content=b'\xe9\xb7\x3b\xc3', length=32)
+        
+    checksum_fd:FieldDescriptor = sctp_header_descriptor.fields[3]
+    assert checksum_fd.id == SCTPFields.CHECKSUM
+    assert checksum_fd.position == 0
+    assert checksum_fd.value == Buffer(content=b'\xc7\x4e\x59\xcd', length=32)
+
+
+    # - chunk common header fields
+    chunk_type_fd:FieldDescriptor = sctp_header_descriptor.fields[4]
+    assert chunk_type_fd.id == SCTPFields.CHUNK_TYPE
+    assert chunk_type_fd.position == 0
+    assert chunk_type_fd.value == Buffer(content=b'\x08', length=8)
+    
+    chunk_flags_fd:FieldDescriptor = sctp_header_descriptor.fields[5]
+    assert chunk_flags_fd.id == SCTPFields.CHUNK_FLAGS
+    assert chunk_flags_fd.position == 0
+    assert chunk_flags_fd.value == Buffer(content=b'\x00', length=8)
+    
+    chunk_length_fd:FieldDescriptor = sctp_header_descriptor.fields[6]
+    assert chunk_length_fd.id == SCTPFields.CHUNK_LENGTH
+    assert chunk_length_fd.position == 0
+    assert chunk_length_fd.value == Buffer(content=b'\x00\x04', length=16)
+    
+    
+def test_sctp_parser_parse_shutdown_complete():
+    """test: SCTP header parser parses SCTP Header with a SHUTDOWN COMPLETE chunk
+
+    The packet is made of a SCTP header with the following fields:
+        - id='Source Port Number'                  length=16   position=0  value=b'\x80\x45'
+        - id='Destination Port Number'             length=16   position=0  value=b'\x00\x50'
+        - id='Verification Tag'                    length=32   position=0  value=b'\x13\x89\x60\x07'
+        - id='Checksum'                            length=32   position=0  value=b'\xae\x51\x7e\x10'
+        - id='Chunk Type'                          length=8    position=0  value=b'\x0e'
+        - id='Chunk Flags'                         length=8    position=0  value=b'\x00'
+        - id='Chunk Length'                        length=16   position=0  value=b'\x00\x04'
+    """
+    
+    valid_sctp_packet:bytes = bytes(b'\x80\x45\x00\x50\x13\x89\x60\x07\xae\x51\x7e\x10\x0e\x00\x00\x04')
+    
+    valid_sctp_packet_buffer: Buffer = Buffer(content=valid_sctp_packet, length=len(valid_sctp_packet)*8)
+    parser:SCTPParser = SCTPParser()
+    
+    sctp_header_descriptor: HeaderDescriptor = parser.parse(buffer=valid_sctp_packet_buffer)
+
+    # test sctp_header_descriptor type
+    assert isinstance(sctp_header_descriptor, HeaderDescriptor)
+
+    # test for sctp_header_descriptor.fields length
+    assert len(sctp_header_descriptor.fields) == 7
+
+    # test for sctp_header_descriptor.fields types
+    for field in sctp_header_descriptor.fields:
+        assert isinstance(field, FieldDescriptor)
+
+    # assert field descriptors match SCTP header content
+    # - common header fields
+    source_port_fd:FieldDescriptor = sctp_header_descriptor.fields[0]
+    assert source_port_fd.id == SCTPFields.SOURCE_PORT
+    assert source_port_fd.position == 0
+    assert source_port_fd.value == Buffer(content=b'\x80\x45', length=16)
+    
+    destination_port_fd:FieldDescriptor = sctp_header_descriptor.fields[1]
+    assert destination_port_fd.id == SCTPFields.DESTINATION_PORT
+    assert destination_port_fd.position == 0
+    assert destination_port_fd.value == Buffer(content=b'\x00\x50', length=16)
+    
+    verification_tag_fd:FieldDescriptor = sctp_header_descriptor.fields[2]
+    assert verification_tag_fd.id == SCTPFields.VERIFICATION_TAG
+    assert verification_tag_fd.position == 0
+    assert verification_tag_fd.value == Buffer(content=b'\x13\x89\x60\x07', length=32)
+        
+    checksum_fd:FieldDescriptor = sctp_header_descriptor.fields[3]
+    assert checksum_fd.id == SCTPFields.CHECKSUM
+    assert checksum_fd.position == 0
+    assert checksum_fd.value == Buffer(content=b'\xae\x51\x7e\x10', length=32)
+
+
+    # - chunk common header fields
+    chunk_type_fd:FieldDescriptor = sctp_header_descriptor.fields[4]
+    assert chunk_type_fd.id == SCTPFields.CHUNK_TYPE
+    assert chunk_type_fd.position == 0
+    assert chunk_type_fd.value == Buffer(content=b'\x0e', length=8)
+    
+    chunk_flags_fd:FieldDescriptor = sctp_header_descriptor.fields[5]
+    assert chunk_flags_fd.id == SCTPFields.CHUNK_FLAGS
+    assert chunk_flags_fd.position == 0
+    assert chunk_flags_fd.value == Buffer(content=b'\x00', length=8)
+    
+    chunk_length_fd:FieldDescriptor = sctp_header_descriptor.fields[6]
+    assert chunk_length_fd.id == SCTPFields.CHUNK_LENGTH
+    assert chunk_length_fd.position == 0
+    assert chunk_length_fd.value == Buffer(content=b'\x00\x04', length=16)
+
+def test_sctp_parser_parse_error():
+    # TODO: find PCPAP with error chunk
+    pass
+
+def test_sctp_parser_parse_cookie_echo():
+    """test: SCTP header parser parses SCTP Header with a COOKIE ECHO chunk
+
+    The packet is made of a SCTP header with the following fields:
+        - id='Source Port Number'                  length=16     position=0  value=b'\x80\x44'
+        - id='Destination Port Number'             length=16     position=0  value=b'\x00\x50'
+        - id='Verification Tag'                    length=32     position=0  value=b'\xd2\x6a\xc1\xe5'
+        - id='Checksum'                            length=32     position=0  value=b'\x75\x14\xa4\x9a'
+        - id='Chunk Type'                          length=8      position=0  value=b'\x0a'
+        - id='Chunk Flags'                         length=8      position=0  value=b'\x00'
+        - id='Chunk Length'                        length=16     position=0  value=b'\x00\xc4'
+        - id='Cookie'                              length=1536   position=0  value=b'\xb3\x49\x30\x15\xe1\xc2\x76\x25\xf5\x3a\xb8\x18\x55\x55\xb8\xdb'
+                                                                                   b'\x7a\x0f\x43\xdd\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00'
+                                                                                   b'\xe5\xc1\x6a\xd2\x46\x9c\xb9\x3b\x00\x00\x00\x00\x00\x00\x00\x00'
+                                                                                   b'\xf4\xc5\xc5\x43\x95\x2b\x00\x00\x0a\x00\x0a\x00\x16\x2a\x00\x64'
+                                                                                   b'\x02\x00\x44\x80\x9b\xe6\x18\x9b\x00\x00\x00\x00\x00\x00\x00\x00'
+                                                                                   b'\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x50\x00\x01\x00'
+                                                                                   b'\x00\x00\x00\x00\x00\x00\x00\x00\x01\x00\x00\x3c\x3b\xb9\x9c\x46'
+                                                                                   b'\x00\x01\xa0\x00\x00\x0a\xff\xff\x2b\x2d\x7e\xb2\x00\x05\x00\x08'
+                                                                                   b'\x9b\xe6\x18\x9b\x00\x05\x00\x08\x9b\xe6\x18\x9c\x00\x0c\x00\x06'
+                                                                                   b'\x00\x05\x00\x00\x80\x00\x00\x04\xc0\x00\x00\x04\xc0\x06\x00\x08'
+                                                                                   b'\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00'
+                                                                                   b'\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00'
+        """
+    
+    valid_sctp_packet:bytes = bytes(b'\x80\x44\x00\x50\xd2\x6a\xc1\xe5\x75\x14\xa4\x9a\x0a\x00\x00\xc4'
+                                    b'\xb3\x49\x30\x15\xe1\xc2\x76\x25\xf5\x3a\xb8\x18\x55\x55\xb8\xdb'
+                                    b'\x7a\x0f\x43\xdd\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00'
+                                    b'\xe5\xc1\x6a\xd2\x46\x9c\xb9\x3b\x00\x00\x00\x00\x00\x00\x00\x00'
+                                    b'\xf4\xc5\xc5\x43\x95\x2b\x00\x00\x0a\x00\x0a\x00\x16\x2a\x00\x64'
+                                    b'\x02\x00\x44\x80\x9b\xe6\x18\x9b\x00\x00\x00\x00\x00\x00\x00\x00'
+                                    b'\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x50\x00\x01\x00'
+                                    b'\x00\x00\x00\x00\x00\x00\x00\x00\x01\x00\x00\x3c\x3b\xb9\x9c\x46'
+                                    b'\x00\x01\xa0\x00\x00\x0a\xff\xff\x2b\x2d\x7e\xb2\x00\x05\x00\x08'
+                                    b'\x9b\xe6\x18\x9b\x00\x05\x00\x08\x9b\xe6\x18\x9c\x00\x0c\x00\x06'
+                                    b'\x00\x05\x00\x00\x80\x00\x00\x04\xc0\x00\x00\x04\xc0\x06\x00\x08'
+                                    b'\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00'
+                                    b'\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00'
+
+                                    )
+    
+    valid_sctp_packet_buffer: Buffer = Buffer(content=valid_sctp_packet, length=len(valid_sctp_packet)*8)
+    parser:SCTPParser = SCTPParser()
+    
+    sctp_header_descriptor: HeaderDescriptor = parser.parse(buffer=valid_sctp_packet_buffer)
+
+    # test sctp_header_descriptor type
+    assert isinstance(sctp_header_descriptor, HeaderDescriptor)
+
+    # test for sctp_header_descriptor.fields length
+    assert len(sctp_header_descriptor.fields) == 8
+
+    # test for sctp_header_descriptor.fields types
+    for field in sctp_header_descriptor.fields:
+        assert isinstance(field, FieldDescriptor)
+
+    # assert field descriptors match SCTP header content
+    # - common header fields
+    source_port_fd:FieldDescriptor = sctp_header_descriptor.fields[0]
+    assert source_port_fd.id == SCTPFields.SOURCE_PORT
+    assert source_port_fd.position == 0
+    assert source_port_fd.value == Buffer(content=b'\x80\x44', length=16)
+    
+    destination_port_fd:FieldDescriptor = sctp_header_descriptor.fields[1]
+    assert destination_port_fd.id == SCTPFields.DESTINATION_PORT
+    assert destination_port_fd.position == 0
+    assert destination_port_fd.value == Buffer(content=b'\x00\x50', length=16)
+    
+    verification_tag_fd:FieldDescriptor = sctp_header_descriptor.fields[2]
+    assert verification_tag_fd.id == SCTPFields.VERIFICATION_TAG
+    assert verification_tag_fd.position == 0
+    assert verification_tag_fd.value == Buffer(content=b'\xd2\x6a\xc1\xe5', length=32)
+        
+    checksum_fd:FieldDescriptor = sctp_header_descriptor.fields[3]
+    assert checksum_fd.id == SCTPFields.CHECKSUM
+    assert checksum_fd.position == 0
+    assert checksum_fd.value == Buffer(content=b'\x75\x14\xa4\x9a', length=32)
+
+
+    # - chunk common header fields
+    chunk_type_fd:FieldDescriptor = sctp_header_descriptor.fields[4]
+    assert chunk_type_fd.id == SCTPFields.CHUNK_TYPE
+    assert chunk_type_fd.position == 0
+    assert chunk_type_fd.value == Buffer(content=b'\x0a', length=8)
+    
+    chunk_flags_fd:FieldDescriptor = sctp_header_descriptor.fields[5]
+    assert chunk_flags_fd.id == SCTPFields.CHUNK_FLAGS
+    assert chunk_flags_fd.position == 0
+    assert chunk_flags_fd.value == Buffer(content=b'\x00', length=8)
+    
+    chunk_length_fd:FieldDescriptor = sctp_header_descriptor.fields[6]
+    assert chunk_length_fd.id == SCTPFields.CHUNK_LENGTH
+    assert chunk_length_fd.position == 0
+    assert chunk_length_fd.value == Buffer(content=b'\x00\xc4', length=16)
+
+    cookie_fd:FieldDescriptor = sctp_header_descriptor.fields[7]
+    assert cookie_fd.id == SCTPFields.CHUNK_COOKIE_ECHO_COOKIE
+    assert cookie_fd.position == 0
+    assert cookie_fd.value == Buffer(content=b'\xb3\x49\x30\x15\xe1\xc2\x76\x25\xf5\x3a\xb8\x18\x55\x55\xb8\xdb'
+                                             b'\x7a\x0f\x43\xdd\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00'
+                                             b'\xe5\xc1\x6a\xd2\x46\x9c\xb9\x3b\x00\x00\x00\x00\x00\x00\x00\x00'
+                                             b'\xf4\xc5\xc5\x43\x95\x2b\x00\x00\x0a\x00\x0a\x00\x16\x2a\x00\x64'
+                                             b'\x02\x00\x44\x80\x9b\xe6\x18\x9b\x00\x00\x00\x00\x00\x00\x00\x00'
+                                             b'\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x50\x00\x01\x00'
+                                             b'\x00\x00\x00\x00\x00\x00\x00\x00\x01\x00\x00\x3c\x3b\xb9\x9c\x46'
+                                             b'\x00\x01\xa0\x00\x00\x0a\xff\xff\x2b\x2d\x7e\xb2\x00\x05\x00\x08'
+                                             b'\x9b\xe6\x18\x9b\x00\x05\x00\x08\x9b\xe6\x18\x9c\x00\x0c\x00\x06'
+                                             b'\x00\x05\x00\x00\x80\x00\x00\x04\xc0\x00\x00\x04\xc0\x06\x00\x08'
+                                             b'\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00'
+                                             b'\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00',
+                                     length=1536)
+    
+def test_sctp_parser_parse_cookie_ack():
+    """test: SCTP header parser parses SCTP Header with a COKKIE ACK chunk
+
+    The packet is made of a SCTP header with the following fields:
+        - id='Source Port Number'                  length=16   position=0  value=b'\x00\x50'
+        - id='Destination Port Number'             length=16   position=0  value=b'\x80\x44'
+        - id='Verification Tag'                    length=32   position=0  value=b'\x3b\xb9\x9c\x46'
+        - id='Checksum'                            length=32   position=0  value=b'\x81\xce\xde\x0b'
+        - id='Chunk Type'                          length=8    position=0  value=b'\x0e'
+        - id='Chunk Flags'                         length=8    position=0  value=b'\x00'
+        - id='Chunk Length'                        length=16   position=0  value=b'\x00\x04'
+    """
+    
+    valid_sctp_packet:bytes = bytes(b'\x00\x50\x80\x44\x3b\xb9\x9c\x46\x81\xce\xde\x0b\x0b\x00\x00\x04')
+    
+    valid_sctp_packet_buffer: Buffer = Buffer(content=valid_sctp_packet, length=len(valid_sctp_packet)*8)
+    parser:SCTPParser = SCTPParser()
+    
+    sctp_header_descriptor: HeaderDescriptor = parser.parse(buffer=valid_sctp_packet_buffer)
+
+    # test sctp_header_descriptor type
+    assert isinstance(sctp_header_descriptor, HeaderDescriptor)
+
+    # test for sctp_header_descriptor.fields length
+    assert len(sctp_header_descriptor.fields) == 7
+
+    # test for sctp_header_descriptor.fields types
+    for field in sctp_header_descriptor.fields:
+        assert isinstance(field, FieldDescriptor)
+
+    # assert field descriptors match SCTP header content
+    # - common header fields
+    source_port_fd:FieldDescriptor = sctp_header_descriptor.fields[0]
+    assert source_port_fd.id == SCTPFields.SOURCE_PORT
+    assert source_port_fd.position == 0
+    assert source_port_fd.value == Buffer(content=b'\x00\x50', length=16)
+    
+    destination_port_fd:FieldDescriptor = sctp_header_descriptor.fields[1]
+    assert destination_port_fd.id == SCTPFields.DESTINATION_PORT
+    assert destination_port_fd.position == 0
+    assert destination_port_fd.value == Buffer(content=b'\x80\x44', length=16)
+    
+    verification_tag_fd:FieldDescriptor = sctp_header_descriptor.fields[2]
+    assert verification_tag_fd.id == SCTPFields.VERIFICATION_TAG
+    assert verification_tag_fd.position == 0
+    assert verification_tag_fd.value == Buffer(content=b'\x3b\xb9\x9c\x46', length=32)
+        
+    checksum_fd:FieldDescriptor = sctp_header_descriptor.fields[3]
+    assert checksum_fd.id == SCTPFields.CHECKSUM
+    assert checksum_fd.position == 0
+    assert checksum_fd.value == Buffer(content=b'\x81\xce\xde\x0b', length=32)
+
+
+    # - chunk common header fields
+    chunk_type_fd:FieldDescriptor = sctp_header_descriptor.fields[4]
+    assert chunk_type_fd.id == SCTPFields.CHUNK_TYPE
+    assert chunk_type_fd.position == 0
+    assert chunk_type_fd.value == Buffer(content=b'\x0b', length=8)
+    
+    chunk_flags_fd:FieldDescriptor = sctp_header_descriptor.fields[5]
+    assert chunk_flags_fd.id == SCTPFields.CHUNK_FLAGS
+    assert chunk_flags_fd.position == 0
+    assert chunk_flags_fd.value == Buffer(content=b'\x00', length=8)
+    
+    chunk_length_fd:FieldDescriptor = sctp_header_descriptor.fields[6]
+    assert chunk_length_fd.id == SCTPFields.CHUNK_LENGTH
+    assert chunk_length_fd.position == 0
+    assert chunk_length_fd.value == Buffer(content=b'\x00\x04', length=16)
