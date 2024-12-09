@@ -194,13 +194,14 @@ class SCTPParser(HeaderParser):
             
             if chunk_type_value == SCTPChunkTypes.DATA:
                 chunk_fields: List[FieldDescriptor] = self._parse_chunk_data(chunk_value)
-                
             elif chunk_type_value == SCTPChunkTypes.INIT:
                 chunk_fields: List[FieldDescriptor] = self._parse_chunk_init(chunk_value)
             elif chunk_type_value == SCTPChunkTypes.INIT_ACK:
                 chunk_fields: List[FieldDescriptor] = self._parse_chunk_init_ack(chunk_value)
             elif chunk_type_value == SCTPChunkTypes.SACK:
                 chunk_fields: List[FieldDescriptor] = self._parse_chunk_selective_ack(chunk_value)
+            elif chunk_type_value == SCTPChunkTypes.HEARTBEAT:
+                chunk_fields: List[FieldDescriptor] = self._parse_chunk_heartbeat(chunk_value)
             else:    
                 chunk_fields: List[FieldDescriptor] = [FieldDescriptor(id=SCTPFields.CHUNK_VALUE, position=0, value=chunk_value)]
             fields.extend(chunk_fields)
@@ -405,6 +406,28 @@ class SCTPParser(HeaderParser):
             remainer = remainer[32:]
         
         return fields
+    
+    def _parse_chunk_heartbeat(self, buffer: Buffer) -> List[FieldDescriptor]:
+        """
+        0                   1                   2                   3
+        0 1 2 3 4 5 6 7 8 9 0 1 2 3 4 5 6 7 8 9 0 1 2 3 4 5 6 7 8 9 0 1
+        +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
+        |   Type = 4    |  Chunk Flags  |       Heartbeat Length        |
+        +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
+        \                                                               \
+        /          Heartbeat Information TLV (Variable-Length)          /
+        \                                                               \
+        +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
+        """
+        fields: List[FieldDescriptor] = []
+        
+        parameters = buffer
+        while parameters.length > 0:
+            parameter_fields, bits_consumed = self._parse_parameter(parameters)
+            fields.extend(parameter_fields)
+            parameters = parameters[bits_consumed:]
+            
+        return fields
         
     def _parse_parameter(self, buffer: Buffer) -> Tuple[List[FieldDescriptor], int]:
         """
@@ -440,5 +463,7 @@ class SCTPParser(HeaderParser):
                 FieldDescriptor(id=SCTPFields.PARAMETER_PADDING, value=parameter_padding, position=0)
             )
         return fields, parameter_length_value + parameter_padding_length
+    
+    
                 
         
