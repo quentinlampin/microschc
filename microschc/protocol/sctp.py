@@ -202,6 +202,8 @@ class SCTPParser(HeaderParser):
                 chunk_fields: List[FieldDescriptor] = self._parse_chunk_selective_ack(chunk_value)
             elif chunk_type_value == SCTPChunkTypes.HEARTBEAT:
                 chunk_fields: List[FieldDescriptor] = self._parse_chunk_heartbeat(chunk_value)
+            elif chunk_type_value == SCTPChunkTypes.HEARTBEAT_ACK:
+                chunk_fields: List[FieldDescriptor] = self._parse_chunk_heartbeat_ack(chunk_value)
             else:    
                 chunk_fields: List[FieldDescriptor] = [FieldDescriptor(id=SCTPFields.CHUNK_VALUE, position=0, value=chunk_value)]
             fields.extend(chunk_fields)
@@ -413,6 +415,28 @@ class SCTPParser(HeaderParser):
         0 1 2 3 4 5 6 7 8 9 0 1 2 3 4 5 6 7 8 9 0 1 2 3 4 5 6 7 8 9 0 1
         +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
         |   Type = 4    |  Chunk Flags  |       Heartbeat Length        |
+        +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
+        \                                                               \
+        /          Heartbeat Information TLV (Variable-Length)          /
+        \                                                               \
+        +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
+        """
+        fields: List[FieldDescriptor] = []
+        
+        parameters = buffer
+        while parameters.length > 0:
+            parameter_fields, bits_consumed = self._parse_parameter(parameters)
+            fields.extend(parameter_fields)
+            parameters = parameters[bits_consumed:]
+            
+        return fields
+    
+    def _parse_chunk_heartbeat_ack(self, buffer: Buffer) -> List[FieldDescriptor]:
+        """
+        0                   1                   2                   3
+        0 1 2 3 4 5 6 7 8 9 0 1 2 3 4 5 6 7 8 9 0 1 2 3 4 5 6 7 8 9 0 1
+        +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
+        |   Type = 5    |  Chunk Flags  |       Heartbeat Length        |
         +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
         \                                                               \
         /          Heartbeat Information TLV (Variable-Length)          /
