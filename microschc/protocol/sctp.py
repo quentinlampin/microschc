@@ -47,6 +47,14 @@ class SCTPFields(str, Enum):
     CHUNK_INIT_ACK_NUMBER_OF_OUTBOUND_STREAMS               = f'{SCTP_HEADER_ID}:Init Ack Number of Outbound Streams'
     CHUNK_INIT_ACK_NUMBER_OF_INBOUND_STREAMS                = f'{SCTP_HEADER_ID}:Init Ack Number of Inbound Streams'
     CHUNK_INIT_ACK_INITIAL_TSN                              = f'{SCTP_HEADER_ID}:Init Ack Initial TSN'
+    
+    CHUNK_SACK_CUMULATIVE_TSN_ACK                           = f'{SCTP_HEADER_ID}:Selective Ack Cumulative TSN Ack'
+    CHUNK_SACK_ADVERTISED_RECEIVER_WINDOW_CREDIT            = f'{SCTP_HEADER_ID}:Selective Ack Advertised Receiver Window Credit'
+    CHUNK_SACK_NUMBER_GAP_ACK_BLOCKS                        = f'{SCTP_HEADER_ID}:Selective Ack Number Gap Ack Blocks'
+    CHUNK_SACK_NUMBER_DUPLICATE_TSNS                        = f'{SCTP_HEADER_ID}:Selective Ack Number Duplicate TSNs'
+    CHUNK_SACK_GAP_ACK_BLOCK_START                          = f'{SCTP_HEADER_ID}:Selective Ack Gap Ack BLock Start'
+    CHUNK_SACK_GAP_ACK_BLOCK_END                            = f'{SCTP_HEADER_ID}:Selective Ack Gap Ack BLock End'
+    CHUNK_SACK_DUPLICATE_TSN                                = f'{SCTP_HEADER_ID}:Selective Ack Duplicate TSN'
 
     PARAMETER_TYPE                                          = f'{SCTP_HEADER_ID}:Parameter Type'
     PARAMETER_LENGTH                                        = f'{SCTP_HEADER_ID}:Parameter Length'
@@ -186,16 +194,17 @@ class SCTPParser(HeaderParser):
             
             if chunk_type_value == SCTPChunkTypes.DATA:
                 chunk_fields: List[FieldDescriptor] = self._parse_chunk_data(chunk_value)
-                fields.extend(chunk_fields)
+                
             elif chunk_type_value == SCTPChunkTypes.INIT:
                 chunk_fields: List[FieldDescriptor] = self._parse_chunk_init(chunk_value)
-                fields.extend(chunk_fields)
             elif chunk_type_value == SCTPChunkTypes.INIT_ACK:
                 chunk_fields: List[FieldDescriptor] = self._parse_chunk_init_ack(chunk_value)
-                fields.extend(chunk_fields)
+            elif chunk_type_value == SCTPChunkTypes.SACK:
+                chunk_fields: List[FieldDescriptor] = self._parse_chunk_selective_ack(chunk_value)
             else:    
-                fields.append(FieldDescriptor(id=SCTPFields.CHUNK_VALUE, position=0, value=chunk_value))
-    
+                chunk_fields: List[FieldDescriptor] = [FieldDescriptor(id=SCTPFields.CHUNK_VALUE, position=0, value=chunk_value)]
+            fields.extend(chunk_fields)
+            
         chunk_padding_length: int = (32 - chunk_length_value%32)%32
         if chunk_padding_length > 0:
             chunk_padding: Buffer = buffer[chunk_length_value: chunk_length_value+chunk_padding_length]
@@ -327,6 +336,74 @@ class SCTPParser(HeaderParser):
             fields.extend(parameter_fields)
             parameters = parameters[bits_consumed:]
             
+        return fields
+    
+    
+    def _parse_chunk_selective_ack(self, buffer: Buffer) -> List[FieldDescriptor]:
+        """
+        0                   1                   2                   3
+        0 1 2 3 4 5 6 7 8 9 0 1 2 3 4 5 6 7 8 9 0 1 2 3 4 5 6 7 8 9 0 1
+        +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
+        |   Type = 3    |  Chunk Flags  |         Chunk Length          |
+        +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
+        |                      Cumulative TSN Ack                       |
+        +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
+        |          Advertised Receiver Window Credit (a_rwnd)           |
+        +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
+        | Number of Gap Ack Blocks = N  |  Number of Duplicate TSNs = M |
+        +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
+        |    Gap Ack Block #1 Start     |     Gap Ack Block #1 End      |
+        +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
+        /                                                               /
+        \                              ...                              \
+        /                                                               /
+        +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
+        |    Gap Ack Block #N Start     |     Gap Ack Block #N End      |
+        +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
+        |                        Duplicate TSN 1                        |
+        +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
+        /                                                               /
+        \                              ...                              \
+        /                                                               /
+        +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
+        |                        Duplicate TSN M                        |
+        +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
+        """
+        fields: List[FieldDescriptor] = []
+        cumulative_tsn_ack: Buffer = buffer[0:32]
+        advertised_receiver_window_credit: Buffer = buffer[32:64]
+        number_gap_ack_blocks: Buffer = buffer[64:80]
+        number_duplicate_tsns: Buffer = buffer[80:96]
+        
+        fields.extend([
+            FieldDescriptor(id=SCTPFields.CHUNK_SACK_CUMULATIVE_TSN_ACK, value=cumulative_tsn_ack, position=0),
+            FieldDescriptor(id=SCTPFields.CHUNK_SACK_ADVERTISED_RECEIVER_WINDOW_CREDIT, value=advertised_receiver_window_credit, position=0),
+            FieldDescriptor(id=SCTPFields.CHUNK_SACK_NUMBER_GAP_ACK_BLOCKS, value=number_gap_ack_blocks, position=0),
+            FieldDescriptor(id=SCTPFields.CHUNK_SACK_NUMBER_DUPLICATE_TSNS, value=number_duplicate_tsns, position=0)
+        ])
+        
+        remainer: Buffer = buffer[96:]
+        # Gap ack Blocks
+        number_gap_ack_blocks_value: int = number_gap_ack_blocks.value()
+        
+        for _ in range(number_gap_ack_blocks_value):
+            gap_ack_block_start: Buffer = remainer[0:16]
+            gap_ack_block_end: Buffer = remainer[16:32]
+            fields.extend([
+                FieldDescriptor(id=SCTPFields.CHUNK_SACK_GAP_ACK_BLOCK_START, value=gap_ack_block_start),
+                FieldDescriptor(id=SCTPFields.CHUNK_SACK_GAP_ACK_BLOCK_END, value=gap_ack_block_end)
+            ])
+            remainer = remainer[32:]
+        
+        # Duplicate TSNs
+        number_duplicate_tsns_value: int = number_duplicate_tsns.value()
+        for _ in range(number_duplicate_tsns_value):
+            duplicate_tsn: Buffer = remainer[0:32]
+            fields.extend([
+                FieldDescriptor(id=SCTPFields.CHUNK_SACK_DUPLICATE_TSN, value=duplicate_tsn),
+            ])
+            remainer = remainer[32:]
+        
         return fields
         
     def _parse_parameter(self, buffer: Buffer) -> Tuple[List[FieldDescriptor], int]:

@@ -424,5 +424,100 @@ def test_sctp_parser_parse_init_ack():
     assert parameter_length_fd.id == SCTPFields.PARAMETER_LENGTH
     assert parameter_length_fd.position == 0
     assert parameter_length_fd.value == Buffer(content=b'\x00\x04', length=16)
+    
+    
+def test_sctp_parser_selective_ack():
+    """test: SCTP header parser parses SCTP Header with SACK chunk
+
+    The packet is made of a SCTP header with the following fields:
+        - id='Source Port Number'                  length=16   position=0  value=b'\x00\x07'
+        - id='Destination Port Number'             length=16   position=0  value=b'\x00\x07'
+        - id='Verification Tag'                    length=32   position=0  value=b'\x00\x00\x0e\xb0'
+        - id='Checksum'                            length=32   position=0  value=b'\xba\x04\x32\x58'
+        - id='Chunk Type'                          length=8    position=0  value=b'\x03'
+        - id='Chunk Flags'                         length=8    position=0  value=b'\x00'
+        - id='Chunk Length'                        length=16   position=0  value=b'\x00\x10'
+        - id='Cumulative TSN Ack'                  length=32   position=0  value=b'\x00\x00\x36\x1c'
+        - id='Advertised Receiver Window Credit'   length=32   position=0  value=b'\x00\x00\xff\xff'
+        - id='Number of Gap Ack Blocks'            length=16   position=0  value=b'\x00\x00'
+        - id='Number of Duplicate TSNs'            length=16   position=0  value=b'\x00\x00'
+    """
+    #TODO: Find SACK chunk with Gap Ack Blocks and Duplicate TSNs.
+    
+    valid_sctp_packet:bytes = bytes(b'\x00\x07\x00\x07\x00\x00\x0e\xb0\xba\x04\x32\x58\x03\x00\x00\x10'
+                                    b'\x00\x00\x36\x1c\x00\x00\xff\xff\x00\x00\x00\x00')
+    valid_sctp_packet_buffer: Buffer = Buffer(content=valid_sctp_packet, length=len(valid_sctp_packet)*8)
+    parser:SCTPParser = SCTPParser()
+    
+    sctp_header_descriptor: HeaderDescriptor = parser.parse(buffer=valid_sctp_packet_buffer)
+
+    # test sctp_header_descriptor type
+    assert isinstance(sctp_header_descriptor, HeaderDescriptor)
+
+    # test for sctp_header_descriptor.fields length
+    assert len(sctp_header_descriptor.fields) == 11
+
+    # test for sctp_header_descriptor.fields types
+    for field in sctp_header_descriptor.fields:
+        assert isinstance(field, FieldDescriptor)
+
+    # assert field descriptors match SCTP header content
+    # - common header fields
+    source_port_fd:FieldDescriptor = sctp_header_descriptor.fields[0]
+    assert source_port_fd.id == SCTPFields.SOURCE_PORT
+    assert source_port_fd.position == 0
+    assert source_port_fd.value == Buffer(content=b'\x00\x07', length=16)
+    
+    destination_port_fd:FieldDescriptor = sctp_header_descriptor.fields[1]
+    assert destination_port_fd.id == SCTPFields.DESTINATION_PORT
+    assert destination_port_fd.position == 0
+    assert destination_port_fd.value == Buffer(content=b'\x00\x07', length=16)
+    
+    verification_tag_fd:FieldDescriptor = sctp_header_descriptor.fields[2]
+    assert verification_tag_fd.id == SCTPFields.VERIFICATION_TAG
+    assert verification_tag_fd.position == 0
+    assert verification_tag_fd.value == Buffer(content=b'\x00\x00\x0e\xb0', length=32)
+        
+    checksum_fd:FieldDescriptor = sctp_header_descriptor.fields[3]
+    assert checksum_fd.id == SCTPFields.CHECKSUM
+    assert checksum_fd.position == 0
+    assert checksum_fd.value == Buffer(content=b'\xba\x04\x32\x58', length=32)
+
+
+    # - chunk common header fields
+    chunk_type_fd:FieldDescriptor = sctp_header_descriptor.fields[4]
+    assert chunk_type_fd.id == SCTPFields.CHUNK_TYPE
+    assert chunk_type_fd.position == 0
+    assert chunk_type_fd.value == Buffer(content=b'\x03', length=8)
+    
+    chunk_flags_fd:FieldDescriptor = sctp_header_descriptor.fields[5]
+    assert chunk_flags_fd.id == SCTPFields.CHUNK_FLAGS
+    assert chunk_flags_fd.position == 0
+    assert chunk_flags_fd.value == Buffer(content=b'\x00', length=8)
+    
+    chunk_length_fd:FieldDescriptor = sctp_header_descriptor.fields[6]
+    assert chunk_length_fd.id == SCTPFields.CHUNK_LENGTH
+    assert chunk_length_fd.position == 0
+    assert chunk_length_fd.value == Buffer(content=b'\x00\x10', length=16)
+
+    cumulative_tsn_ack_fd:FieldDescriptor = sctp_header_descriptor.fields[7]
+    assert cumulative_tsn_ack_fd.id == SCTPFields.CHUNK_SACK_CUMULATIVE_TSN_ACK
+    assert cumulative_tsn_ack_fd.position == 0
+    assert cumulative_tsn_ack_fd.value == Buffer(content=b'\x00\x00\x36\x1c', length=32)
+
+    advertised_receiver_window_credit_fd:FieldDescriptor = sctp_header_descriptor.fields[8]
+    assert advertised_receiver_window_credit_fd.id == SCTPFields.CHUNK_SACK_ADVERTISED_RECEIVER_WINDOW_CREDIT
+    assert advertised_receiver_window_credit_fd.position == 0
+    assert advertised_receiver_window_credit_fd.value == Buffer(content=b'\x00\x00\xff\xff', length=32)
+
+    number_gap_ack_blocks_fd:FieldDescriptor = sctp_header_descriptor.fields[9]
+    assert number_gap_ack_blocks_fd.id == SCTPFields.CHUNK_SACK_NUMBER_GAP_ACK_BLOCKS
+    assert number_gap_ack_blocks_fd.position == 0
+    assert number_gap_ack_blocks_fd.value == Buffer(content=b'\x00\x00', length=16)
+
+    number_inbound_streams_fd:FieldDescriptor = sctp_header_descriptor.fields[10]
+    assert number_inbound_streams_fd.id == SCTPFields.CHUNK_SACK_NUMBER_DUPLICATE_TSNS
+    assert number_inbound_streams_fd.position == 0
+    assert number_inbound_streams_fd.value == Buffer(content=b'\x00\x00', length=16)
 
     
