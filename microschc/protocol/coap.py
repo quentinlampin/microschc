@@ -25,6 +25,7 @@ from enum import Enum
 from typing import List, Tuple
 from microschc.binary.buffer import Buffer
 from microschc.parser import HeaderParser, ParserError
+from microschc.protocol.registry import REGISTER_PARSER, ProtocolsIDs
 from microschc.rfc8724 import FieldDescriptor, HeaderDescriptor
 
 
@@ -74,8 +75,9 @@ class CoAPDefinitions(bytes, Enum):
 
 class CoAPParser(HeaderParser):
 
-    def __init__(self, interpret_options=False) -> None:
+    def __init__(self, predict_next=False, interpret_options=False) -> None:
         super().__init__(name=COAP_HEADER_ID)
+        self.predict_next = predict_next
 
     def match(self, buffer: Buffer) -> bool:
         return (buffer.length >= 32)
@@ -232,3 +234,5 @@ def _parse_options(buffer: Buffer) -> Tuple[List[FieldDescriptor], int]:
 
     # return CoAP fields descriptors list
     return (fields, cursor)
+
+REGISTER_PARSER(protocol_id=ProtocolsIDs.COAP, parser_class=CoAPParser)

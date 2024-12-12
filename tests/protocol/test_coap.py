@@ -3,8 +3,8 @@ from microschc.rfc8724 import FieldDescriptor, HeaderDescriptor
 from microschc.binary.buffer import Buffer
 
 def test_coap_parser_import():
-    """test: IPv6 header parser import and instanciation
-    The test instanciate an IPv6 parser and checks for import errors
+    """test: CoAP header parser import and instanciation
+    The test instanciate an CoAP parser and checks for import errors
     """
     parser = CoAPParser()
     assert( isinstance(parser, CoAPParser) )
