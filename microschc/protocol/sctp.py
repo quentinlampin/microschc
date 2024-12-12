@@ -9,10 +9,12 @@ Declarations for the SCTP protocol header as defined in RFC9260 [1].
 
 from enum import Enum
 
+from microschc.protocol.registry import PARSERS, REGISTER_PARSER, ProtocolsIDs
+
 SCTP_HEADER_ID = 'SCTP'
 
 from enum import Enum
-from typing import Dict, List, Tuple
+from typing import Dict, List, Tuple, Type
 from microschc.binary.buffer import Buffer
 from microschc.parser import HeaderParser, ParserError
 from microschc.rfc8724 import FieldDescriptor, HeaderDescriptor
@@ -64,6 +66,10 @@ class SCTPFields(str, Enum):
     PARAMETER_LENGTH                                        = f'{SCTP_HEADER_ID}:Parameter Length'
     PARAMETER_VALUE                                         = f'{SCTP_HEADER_ID}:Parameter Value'
     PARAMETER_PADDING                                       = f'{SCTP_HEADER_ID}:Parameter Padding'
+    
+SCTP_SUPPORTED_PAYLOAD_PROTOCOLS: List[ProtocolsIDs] = [
+    
+]
     
     
     
@@ -260,17 +266,23 @@ class SCTPParser(HeaderParser):
         stream_identifier_s: Buffer = buffer[32:48]
         stream_sequence_number_n: Buffer = buffer[48:64]
         payload_protocol_identifier: Buffer = buffer[64:96]
-        user_data: Buffer = buffer[96:]
-        
-        fields.extend(
-            [
+    
+        fields.extend([
                 FieldDescriptor(id=SCTPFields.CHUNK_DATA_TSN, value=tsn, position=0),
                 FieldDescriptor(id=SCTPFields.CHUNK_DATA_STREAM_IDENTIFIER, value=stream_identifier_s, position=0),
                 FieldDescriptor(id=SCTPFields.CHUNK_DATA_STREAM_SEQUENCE_NUMBER, value=stream_sequence_number_n, position=0),
-                FieldDescriptor(id=SCTPFields.CHUNK_DATA_PAYLOAD_PROTOCOL_IDENTIFIER, value=payload_protocol_identifier, position=0),
-                FieldDescriptor(id=SCTPFields.CHUNK_DATA_PAYLOAD, value=user_data, position=0)
-            ]
-        )
+                FieldDescriptor(id=SCTPFields.CHUNK_DATA_PAYLOAD_PROTOCOL_IDENTIFIER, value=payload_protocol_identifier, position=0)
+        ])
+        payload_protocol_identifier_value: int = payload_protocol_identifier.value()
+        user_data: Buffer = buffer[96:]
+        if self.predict_next is True and payload_protocol_identifier_value in SCTP_SUPPORTED_PAYLOAD_PROTOCOLS:
+            next_parser_class: Type[HeaderParser] = PARSERS[payload_protocol_identifier_value]
+            next_parser: HeaderParser = next_parser_class(predict_next=True)
+            next_header_descriptor: HeaderDescriptor = next_parser.parse(user_data)
+            fields.extend(next_header_descriptor.fields)
+        else:
+            fields.append(FieldDescriptor(id=SCTPFields.CHUNK_DATA_PAYLOAD, value=user_data, position=0))
+        
         return fields
     
     def _parse_chunk_init(self, buffer: Buffer) -> List[FieldDescriptor]:
@@ -619,6 +631,4 @@ class SCTPParser(HeaderParser):
             )
         return fields, parameter_length_value + parameter_padding_length
     
-    
-                
-        
+REGISTER_PARSER(protocol_id=ProtocolsIDs.SCTP, parser_class=SCTPParser)

@@ -13,29 +13,35 @@ Note 3: Authentication and Encapsulating Security payload parsing is not impleme
 
 from enum import Enum
 from functools import reduce
-from typing import Callable, Dict, List, Tuple
+from typing import Callable, Dict, List, Tuple, Type
 from microschc.binary.buffer import Buffer, Padding
 from microschc.parser import HeaderParser, ParserError
 from microschc.protocol.compute import ComputeFunctionDependenciesType, ComputeFunctionType
-from microschc.rfc8724 import FieldDescriptor, HeaderDescriptor, RuleFieldDescriptor
+from microschc.protocol.registry import ProtocolsIDs, REGISTER_PARSER, PARSERS
+from microschc.rfc8724 import FieldDescriptor, HeaderDescriptor
 
-IPv6_HEADER_ID = 'IPv6'
+IPV6_HEADER_ID = 'IPv6'
 
 class IPv6Fields(str, Enum):
-    VERSION         = f'{IPv6_HEADER_ID}:Version'
-    TRAFFIC_CLASS   = f'{IPv6_HEADER_ID}:Traffic Class'
-    FLOW_LABEL      = f'{IPv6_HEADER_ID}:Flow Label'
-    PAYLOAD_LENGTH  = f'{IPv6_HEADER_ID}:Payload Length'
-    NEXT_HEADER     = f'{IPv6_HEADER_ID}:Next Header'
-    HOP_LIMIT       = f'{IPv6_HEADER_ID}:Hop Limit'
-    SRC_ADDRESS     = f'{IPv6_HEADER_ID}:Source Address'
-    DST_ADDRESS     = f'{IPv6_HEADER_ID}:Destination Address'
-
+    VERSION         = f'{IPV6_HEADER_ID}:Version'
+    TRAFFIC_CLASS   = f'{IPV6_HEADER_ID}:Traffic Class'
+    FLOW_LABEL      = f'{IPV6_HEADER_ID}:Flow Label'
+    PAYLOAD_LENGTH  = f'{IPV6_HEADER_ID}:Payload Length'
+    NEXT_HEADER     = f'{IPV6_HEADER_ID}:Next Header'
+    HOP_LIMIT       = f'{IPV6_HEADER_ID}:Hop Limit'
+    SRC_ADDRESS     = f'{IPV6_HEADER_ID}:Source Address'
+    DST_ADDRESS     = f'{IPV6_HEADER_ID}:Destination Address'
+    
+IPV6_SUPPORTED_PAYLOAD_PROTOCOLS: List[ProtocolsIDs] = [
+    ProtocolsIDs.UDP,
+    ProtocolsIDs.SCTP
+]
 
 class IPv6Parser(HeaderParser):
 
-    def __init__(self) -> None:
-        super().__init__(name=IPv6_HEADER_ID)
+    def __init__(self, predict_next:bool=False) -> None:
+        super().__init__(name=IPV6_HEADER_ID, predict_next=predict_next)
+        self.predict_next: bool = predict_next
 
     def parse(self, buffer:Buffer) -> HeaderDescriptor:
         """
@@ -87,7 +93,7 @@ class IPv6Parser(HeaderParser):
         destination_address:Buffer = buffer[192:320]
 
         header_descriptor:HeaderDescriptor = HeaderDescriptor(
-            id=IPv6_HEADER_ID,
+            id=IPV6_HEADER_ID,
             length=320,
             fields=[
                 FieldDescriptor(id=IPv6Fields.VERSION,         position=0, value=version),
@@ -100,6 +106,15 @@ class IPv6Parser(HeaderParser):
                 FieldDescriptor(id=IPv6Fields.DST_ADDRESS,     position=0, value=destination_address)
             ]
         )
+        
+        if self.predict_next is True:
+            next_header_value: int = next_header.value(type='unsigned int')
+            if next_header_value in IPV6_SUPPORTED_PAYLOAD_PROTOCOLS:
+                next_parser_class: Type[HeaderParser] = PARSERS[next_header_value]
+                next_parser: HeaderParser = next_parser_class(predict_next=True)
+                next_header_descriptor: HeaderDescriptor = next_parser.parse(buffer[320:])
+                header_descriptor.fields.extend(next_header_descriptor.fields)
+                header_descriptor.length += next_header_descriptor.length
         return header_descriptor
     
 def _compute_payload_length( decompressed_fields: List[Tuple[str, Buffer]], rule_field_position:int) -> Buffer:
@@ -117,3 +132,4 @@ IPv6ComputeFunctions: Dict[str, Tuple[ComputeFunctionType, ComputeFunctionDepend
     IPv6Fields.PAYLOAD_LENGTH: (_compute_payload_length, {})
 }
     
+REGISTER_PARSER(protocol_id=ProtocolsIDs.IPV6, parser_class=IPv6Parser)

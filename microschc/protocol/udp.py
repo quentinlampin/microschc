@@ -9,13 +9,14 @@ Parser for the UDP protocol header as defined in RFC768 [1].
 
 from enum import Enum
 from functools import reduce
-from typing import Callable, Dict, Iterator, List, Tuple
+from typing import  Dict, Iterator, List, Tuple, Type
 from microschc.parser import HeaderParser, ParserError
 from microschc.protocol.compute import ComputeFunctionDependenciesType, ComputeFunctionType
 from microschc.protocol.ipv4 import IPV4_HEADER_ID, IPv4Fields
-from microschc.rfc8724 import FieldDescriptor, HeaderDescriptor, RuleFieldDescriptor
+from microschc.protocol.registry import PARSERS, REGISTER_PARSER, ProtocolsIDs
+from microschc.rfc8724 import FieldDescriptor, HeaderDescriptor
 from microschc.binary.buffer import Buffer, Padding
-from microschc.protocol.ipv6 import IPv6_HEADER_ID, IPv6Fields
+from microschc.protocol.ipv6 import IPV6_HEADER_ID, IPv6Fields
 
 UDP_HEADER_ID = 'UDP'
 
@@ -24,12 +25,18 @@ class UDPFields(str, Enum):
     DESTINATION_PORT    = f'{UDP_HEADER_ID}:Destination Port'
     LENGTH              = f'{UDP_HEADER_ID}:Length'
     CHECKSUM            = f'{UDP_HEADER_ID}:Checksum'
+    
+UDP_SUPPORTED_PAYLOAD_PROTOCOLS: List[ProtocolsIDs] = [
+    ProtocolsIDs.COAP,
+    ProtocolsIDs.SCTP
+]
 
 
 class UDPParser(HeaderParser):
 
-    def __init__(self) -> None:
+    def __init__(self, predict_next:bool=False) -> None:
         super().__init__(name=UDP_HEADER_ID)
+        self.predict_next = predict_next
 
     def parse(self, buffer:Buffer) -> HeaderDescriptor:
         """
@@ -71,6 +78,16 @@ class UDPParser(HeaderParser):
                 FieldDescriptor(id=UDPFields.CHECKSUM,          position=0, value=checksum),
             ]
         )
+        
+        if self.predict_next is True:
+            destination_port_value: int = destination_port.value(type='unsigned int')
+            if destination_port_value in UDP_SUPPORTED_PAYLOAD_PROTOCOLS:
+                next_parser_class: Type[HeaderParser] = PARSERS[destination_port_value]
+                next_parser: HeaderParser = next_parser_class(predict_next=True)
+                next_header_descriptor: HeaderDescriptor = next_parser.parse(buffer[64:])
+                header_descriptor.fields.extend(next_header_descriptor.fields)
+                header_descriptor.length += next_header_descriptor.length
+                
         return header_descriptor
         
 
@@ -159,7 +176,7 @@ def _compute_checksum(decompressed_fields: List[Tuple[str, Buffer]], rule_field_
     fields_enumeration_reversed: Iterator[Tuple[int, str]] = enumerate(fields_ids[preceding_protocol_last_position:0:-1])
 
     
-    if IPv6_HEADER_ID in preceding_protocol_last_field:
+    if IPV6_HEADER_ID in preceding_protocol_last_field:
         # build up the pseudo header containing the Source Address, Destination Address, Protocol ID, UDP header + payload length
             # 0                                                              31
             # +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
@@ -252,3 +269,4 @@ UDPComputeFunctions: Dict[str, Tuple[ComputeFunctionType, ComputeFunctionDepende
                                               IPv4Fields.DST_ADDRESS }),
 }
 
+REGISTER_PARSER(protocol_id=ProtocolsIDs.UDP, parser_class=UDPParser)

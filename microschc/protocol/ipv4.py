@@ -10,9 +10,10 @@ Note 1: Options parsing is not implemented yet.
 """
 
 from enum import Enum
-from typing import List, Tuple
+from typing import List, Type
 from microschc.binary.buffer import Buffer
 from microschc.parser import HeaderParser, ParserError
+from microschc.protocol.registry import PARSERS, REGISTER_PARSER, ProtocolsIDs
 from microschc.rfc8724 import FieldDescriptor, HeaderDescriptor
 
 IPV4_HEADER_ID = 'IPv4'
@@ -37,6 +38,11 @@ class IPv4Fields(str, Enum):
     # OPTION_LENGTH           = f'{IPV4_HEADER_ID}:Option Length'
     # OPTION_VALUE            = f'{IPV4_HEADER_ID}:Option Value'
     # PADDING                 = f'{IPV4_HEADER_ID}:Padding'
+    
+IPV4_SUPPORTED_PAYLOAD_PROTOCOLS: List[ProtocolsIDs] = [
+    ProtocolsIDs.UDP,
+    ProtocolsIDs.SCTP
+]
 
 class IPv4Parser(HeaderParser):
 
@@ -131,8 +137,16 @@ class IPv4Parser(HeaderParser):
                 FieldDescriptor(id=IPv4Fields.DST_ADDRESS,     position=0, value=destination_address),
             ]
         )
+        if self.predict_next is True:
+            next_header_value: int = protocol.value(type='unsigned int')
+            if next_header_value in IPV4_SUPPORTED_PAYLOAD_PROTOCOLS:
+                next_parser_class: Type[HeaderParser] = PARSERS[next_header_value]
+                next_parser: HeaderParser = next_parser_class(predict_next=True)
+                next_header_descriptor: HeaderDescriptor = next_parser.parse(buffer[160:])
+                header_descriptor.fields.extend(next_header_descriptor.fields)
+                header_descriptor.length += next_header_descriptor.length
         return header_descriptor
-
+        
 # def _parse_options(buffer: bytes) -> Tuple[List[FieldDescriptor], int]:
 #     """
 #       0   1   2   3   4   5   6   7
@@ -194,3 +208,4 @@ class IPv4Parser(HeaderParser):
 #         cursor += option_offset
 
 
+REGISTER_PARSER(protocol_id=ProtocolsIDs.IPV4, parser_class=IPv4Parser)
