@@ -321,13 +321,14 @@ class Buffer:
                         bit_shift: int = abs(right.padding_length - left.padding_length)
                         if right.padding_length > left.padding_length:
                             new_content: bytes = b''
-                            # shift right to the left
+                            # shift right to the right
                             carry: int = 0
-                            for b in right.content[::-1]:
-                                sb:int = (b << bit_shift) & 0xff + carry
-                                new_content = sb.to_bytes(1, 'big') + new_content
-                                carry = b >> (8-bit_shift)
-                            new_content = left.content[0:-1] + (left.content[-1] + new_content[0]).to_bytes(1, 'big') + new_content[1:]
+                            carry_mask: int = (1 << bit_shift) - 1
+                            for b in right.content[::]:
+                                sb:int = (b >> bit_shift) + carry
+                                carry = (b & carry_mask) << (8 - bit_shift)
+                                new_content += sb.to_bytes(1, 'big')
+                            new_content = left.content[0:-1] + (left.content[-1] + new_content[0]).to_bytes(1, 'big') + new_content[1:] + carry.to_bytes(1, 'big')
                         else:
                             # shift right to the left, careful with the carry that will spill over right's left boundary
                             new_content: bytes = b''
