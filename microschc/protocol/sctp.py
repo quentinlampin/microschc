@@ -118,8 +118,8 @@ class SCTPChunkTypes(int, Enum):
 
     
 class SCTPParser(HeaderParser):
-    def __init__(self) -> None:
-        super().__init__(name=SCTP_HEADER_ID)
+    def __init__(self, predict_next:bool=False) -> None:
+        super().__init__(name=SCTP_HEADER_ID, predict_next=predict_next)
         
     def match(self, buffer: Buffer) -> bool:
         return buffer.length >= 12 * 8  # SCTP header is at least 12 bytes

@@ -13,7 +13,7 @@ class HeaderParser:
     """
     def __init__(self, name: str, predict_next: bool = False) -> None:
         self.name: str = name
-        self.predict_next: bool = False
+        self.predict_next: bool = predict_next
 
     def parse(self, buffer: Buffer) -> HeaderDescriptor:
         raise NotImplementedError

@@ -41,7 +41,6 @@ class IPv6Parser(HeaderParser):
 
     def __init__(self, predict_next:bool=False) -> None:
         super().__init__(name=IPV6_HEADER_ID, predict_next=predict_next)
-        self.predict_next: bool = predict_next
 
     def parse(self, buffer:Buffer) -> HeaderDescriptor:
         """

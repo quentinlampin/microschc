@@ -1,11 +1,4 @@
 from typing import List, Type
-# from microschc.protocol.ipv4 import IPV4_HEADER_ID, IPv4Parser
-# from microschc.protocol.ipv6 import IPV6_HEADER_ID, IPv6Parser
-# from microschc.protocol.udp import UDP_HEADER_ID, UDPParser
-# from microschc.protocol.sctp import SCTP_HEADER_ID, SCTPParser
-# from microschc.protocol.coap import COAP_HEADER_ID, CoAPParser
-
-
 from microschc.parser import PacketParser
 
 from enum import Enum
@@ -42,9 +35,21 @@ STACKS = {
     Stack.IPV4_UDP_COAP: [ProtocolsIDs.IPV4, ProtocolsIDs.UDP, ProtocolsIDs.COAP],
 }
 
+PROTOCOLS = {
+    'IPv4': ProtocolsIDs.IPV4,
+    'IPv6': ProtocolsIDs.IPV6,
+    'UDP':  ProtocolsIDs.UDP,
+    'CoAP': ProtocolsIDs.COAP,
+    'SCTP': ProtocolsIDs.SCTP,
+}
 
 def factory(stack_id: str) -> PacketParser:
-    protocol_ids: List[ProtocolsIDs] = STACKS[stack_id]
-    packet_parser: PacketParser = PacketParser(stack_id, [PARSERS[protocol_id]() for protocol_id in protocol_ids])
+    try:
+        protocol_ids: List[ProtocolsIDs] = STACKS[stack_id]
+        parsers_instances: List[HeaderParser] = [PARSERS[protocol_id]() for protocol_id in protocol_ids]
+    except KeyError:
+        protocol_ids: List[ProtocolsIDs] = [PROTOCOLS[stack_id]]
+        parsers_instances: List[HeaderParser] = [PARSERS[protocol_id](predict_next=True) for protocol_id in protocol_ids]
+    packet_parser: PacketParser = PacketParser(stack_id, parsers_instances)
     return packet_parser
     

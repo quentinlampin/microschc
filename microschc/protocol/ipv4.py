@@ -46,8 +46,8 @@ IPV4_SUPPORTED_PAYLOAD_PROTOCOLS: List[ProtocolsIDs] = [
 
 class IPv4Parser(HeaderParser):
 
-    def __init__(self) -> None:
-        super().__init__(name=IPV4_HEADER_ID)
+    def __init__(self, predict_next:bool=False) -> None:
+        super().__init__(name=IPV4_HEADER_ID, predict_next=predict_next)
 
     def match(self, buffer: Buffer) -> bool:
         if buffer.length < 160:

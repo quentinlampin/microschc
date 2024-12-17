@@ -76,8 +76,7 @@ class CoAPDefinitions(bytes, Enum):
 class CoAPParser(HeaderParser):
 
     def __init__(self, predict_next=False, interpret_options=False) -> None:
-        super().__init__(name=COAP_HEADER_ID)
-        self.predict_next = predict_next
+        super().__init__(name=COAP_HEADER_ID, predict_next=predict_next)
 
     def match(self, buffer: Buffer) -> bool:
         return (buffer.length >= 32)
