@@ -235,7 +235,8 @@ class SCTPParser(HeaderParser):
         chunk_padding_length: int = (32 - chunk_length_value%32)%32
         if chunk_padding_length > 0:
             chunk_padding: Buffer = buffer[chunk_length_value: chunk_length_value+chunk_padding_length]
-            fields.append(FieldDescriptor(id=SCTPFields.CHUNK_PADDING, position=0, value=chunk_padding))
+            if chunk_padding.length > 0: # apparently some NG-AP implementations have a liberal interpretation of the specification
+                fields.append(FieldDescriptor(id=SCTPFields.CHUNK_PADDING, position=0, value=chunk_padding))
                 
 
         bits_consumed = chunk_length_value  + chunk_padding_length
