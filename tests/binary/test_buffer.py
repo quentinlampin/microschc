@@ -307,6 +307,13 @@ def test_add():
     expected: Buffer = Buffer(content=b'\xe0\xa0', length=11, padding=Padding.RIGHT)
     assert left_right == expected
     
+    left:Buffer = Buffer(content=b'\xff\xfe', length=15, padding=Padding.RIGHT)
+    right: Buffer = Buffer(content=b'\x3f\xff', length=14, padding=Padding.LEFT)
+    left_right: Buffer = left + right
+    
+    expected: Buffer = Buffer(content=b'\xff\xff\xff\xf8', length=29, padding=Padding.RIGHT)
+    assert left_right == expected
+    
 
 def test_or():
     #              0x08          0x68        
