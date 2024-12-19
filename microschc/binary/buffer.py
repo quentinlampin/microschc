@@ -318,8 +318,8 @@ class Buffer:
                         new_content = left.content[0:-1] + (left.content[-1] + right.content[0]).to_bytes(1, 'big') + right.content[1:]
                     else:
                         # right padding is not aligned with left padding
-                        bit_shift: int = abs(right.padding_length - left.padding_length)
                         if right.padding_length > left.padding_length:
+                            bit_shift: int = 8 - left.padding_length - right.padding_length
                             new_content: bytes = b''
                             # shift right to the right
                             carry: int = 0
@@ -330,6 +330,7 @@ class Buffer:
                                 new_content += sb.to_bytes(1, 'big')
                             new_content = left.content[0:-1] + (left.content[-1] + new_content[0]).to_bytes(1, 'big') + new_content[1:] + carry.to_bytes(1, 'big')
                         else:
+                            bit_shift: int = abs(right.padding_length - left.padding_length)
                             # shift right to the left, careful with the carry that will spill over right's left boundary
                             new_content: bytes = b''
                             carry: int = 0
@@ -445,7 +446,9 @@ class Buffer:
             
             new_content: bytes = ((self.content[start_byte] & first_byte_mask) >> shift_bits).to_bytes(1, 'big')
             carry: int = (self.content[start_byte] & carry_mask) << (8 - shift_bits)
-            for b in self.content[start_byte+1: stop_byte]:
+            for i in range(start_byte+1, stop_byte):
+                b = self.content[i]
+            #for b in self.content[start_byte+1: stop_byte]:
                 sb:int = (b >> shift_bits) + carry
                 carry = (b & carry_mask) << (8 - shift_bits)
                 new_content += sb.to_bytes(1, 'big')
