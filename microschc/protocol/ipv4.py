@@ -10,9 +10,11 @@ Note 1: Options parsing is not implemented yet.
 """
 
 from enum import Enum
-from typing import List, Type
-from microschc.binary.buffer import Buffer
+from functools import reduce
+from typing import Dict, List, Tuple, Type
+from microschc.binary.buffer import Buffer, Padding
 from microschc.parser import HeaderParser, ParserError
+from microschc.protocol.compute import ComputeFunctionDependenciesType, ComputeFunctionType
 from microschc.protocol.registry import PARSERS, REGISTER_PARSER, ProtocolsIDs
 from microschc.rfc8724 import FieldDescriptor, HeaderDescriptor
 
@@ -207,5 +209,61 @@ class IPv4Parser(HeaderParser):
 
 #         cursor += option_offset
 
+def _compute_total_length( decompressed_fields: List[Tuple[str, Buffer]], rule_field_position:int) -> Buffer:
+    fields_values: List[Buffer] = [field_value for _, field_value in decompressed_fields]
+    ipv4_fields: List[Buffer] = [field for field in fields_values[rule_field_position-2:]]
+    ipv4_buffer: Buffer = reduce(lambda x, y: x+y, ipv4_fields, Buffer(content=b'', length=0))
+
+    total_length: int = ipv4_buffer.length // 8 if ipv4_buffer.length%8 == 0 else ipv4_buffer.length // 8 + 1
+    buffer: Buffer = Buffer(content=total_length.to_bytes(2, 'big'), length=16, padding=Padding.LEFT)
+    return buffer
+
+def _compute_checksum(decompressed_fields: List[Tuple[str, Buffer]], rule_field_position: int) -> Buffer:
+    """
+    Checksum is the 16-bit one's complement of the one's complement sum of a
+    IPv4 header.
+
+    If the computed  checksum  is zero,  it is transmitted  as all ones (the
+    equivalent  in one's complement  arithmetic).   An all zero  transmitted
+    checksum  value means that the transmitter  generated  no checksum  (for
+    debugging or for higher level protocols that don't care).
+    """
+
+    # retrieve IPv4 header fields
+    ipv4_header_fields: List[Buffer] = [ field_value for _, field_value in decompressed_fields[rule_field_position-9:rule_field_position+3]]
+    ipv4_header: Buffer = reduce(lambda x, y: x+y, ipv4_header_fields, Buffer(content=b'', length=0))
+    
+    checksum_value: int = 0
+    header_checksum: int = 0
+    # compute the sum of the 2-bytes chunks of the IPv4 header
+    for chunk in ipv4_header.chunks(length=16):
+        header_checksum += chunk.value(type='unsigned int')
+        carry = header_checksum >> 16
+        header_checksum = (header_checksum + carry) & 0xffff 
+    
+    checksum_value = ~header_checksum & 0xffff
+
+    # if checksum is 0x0000 return 0xffff
+    checksum_value = 0xffff if checksum_value == 0x0000 else checksum_value    
+    checksum_buffer: Buffer = Buffer(content=checksum_value.to_bytes(2, 'big'), length=16)
+    return checksum_buffer
+
+
+IPv4ComputeFunctions: Dict[str, Tuple[ComputeFunctionType, ComputeFunctionDependenciesType]] = {
+    IPv4Fields.TOTAL_LENGTH: (_compute_total_length, {}),
+    IPv4Fields.HEADER_CHECKSUM: (_compute_checksum, { 
+                                                        IPv4Fields.VERSION, 
+                                                        IPv4Fields.HEADER_LENGTH,
+                                                        IPv4Fields.TYPE_OF_SERVICE,
+                                                        IPv4Fields.TOTAL_LENGTH, 
+                                                        IPv4Fields.IDENTIFICATION,
+                                                        IPv4Fields.FLAGS,
+                                                        IPv4Fields.FRAGMENT_OFFSET,
+                                                        IPv4Fields.TIME_TO_LIVE,
+                                                        IPv4Fields.PROTOCOL,
+                                                        IPv4Fields.SRC_ADDRESS,
+                                                        IPv4Fields.DST_ADDRESS,
+                                                    }),
+}
 
 REGISTER_PARSER(protocol_id=ProtocolsIDs.IPV4, parser_class=IPv4Parser)
