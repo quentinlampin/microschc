@@ -395,6 +395,21 @@ class Buffer:
         bitwise_xor_buffer: Buffer = Buffer(content=bitwise_xor_content, length=self.length, padding=self.padding)
         return bitwise_xor_buffer
     
+    def __invert__(self):
+        two_complement_content: bytes = b''
+        if self.padding == Padding.LEFT:
+            mask: int = (1 << (8 - self.padding_length)%8) - 1
+            two_complement_content += (~self.content[0] & mask).to_bytes(1, 'big')
+            for b in iter(self.content):
+                two_complement_content += (~b & 0xff).to_bytes(1, 'big')
+        else:
+            mask: int = (0xff << (self.padding_length)) & 0xff
+            for b in iter(self.content[:len(self.content)-1]):
+                two_complement_content += (~b & 0xff).to_bytes(1, 'big')
+            two_complement_content += (~self.content[len(self.content)-1] & mask).to_bytes(1, 'big')
+        
+        two_complement: Buffer = Buffer(content=two_complement_content, length=self.length, padding=self.padding)
+        return two_complement   
 
     
     def __setitem__(self,items, values):
@@ -423,7 +438,7 @@ class Buffer:
         assert isinstance(items, (slice, int))
 
         if isinstance(items, slice):
-            start_bit, stop_bit, _ = items.indices(self.length)
+            start_bit, stop_bit, stride = items.indices(self.length)
 
         else:
             start_bit = items

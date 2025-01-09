@@ -8,15 +8,18 @@ Declarations for the SCTP protocol header as defined in RFC9260 [1].
 
 
 from enum import Enum
+from functools import reduce
 
+from microschc.crypto.crc import CRC32C_TABLE, crc32c
 from microschc.protocol.registry import PARSERS, REGISTER_PARSER, ProtocolsIDs
 
 SCTP_HEADER_ID = 'SCTP'
 
 from enum import Enum
 from typing import Dict, List, Tuple, Type
-from microschc.binary.buffer import Buffer
+from microschc.binary.buffer import Buffer, Padding
 from microschc.parser import HeaderParser, ParserError
+from microschc.protocol.compute import ComputeFunctionDependenciesType, ComputeFunctionType
 from microschc.rfc8724 import FieldDescriptor, HeaderDescriptor
 
 SCTP_HEADER_ID = 'SCTP'
@@ -604,9 +607,9 @@ class SCTPParser(HeaderParser):
         +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
         |        Parameter Type         |       Parameter Length        |
         +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
-        \                                                               \
+        \                                                               \ 
         /                        Parameter Value                        /
-        \                                                               \
+        \                                                               \ 
         +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
         """
         fields: List[FieldDescriptor] = []
@@ -631,5 +634,27 @@ class SCTPParser(HeaderParser):
                 FieldDescriptor(id=SCTPFields.PARAMETER_PADDING, value=parameter_padding, position=0)
             )
         return fields, parameter_length_value + parameter_padding_length
+    
+    
+def _compute_checksum(decompressed_fields: List[Tuple[str, Buffer]], rule_field_position: int) -> Buffer:
+    """
+    Checksum algorithm is the Castagnoli CRC32C Checksum Algorithm (CRC32c).
+    """
+    fields_values: List[Buffer] = [field_value for _, field_value in decompressed_fields]
+    
+    sctp_checksum_position: int = rule_field_position
+    #   - SCTP checksum is the 4th field of UDP
+    sctp_header_and_payload_fields: List[Buffer] = [field for field in fields_values[sctp_checksum_position-3:]]
+    sctp_header_and_payload: Buffer = reduce(lambda x, y: x+y, sctp_header_and_payload_fields)
+    
+    crc_init: int = 0xffffffff    
+    checksum = crc32c(buffer=sctp_header_and_payload, crc_init=crc_init)  
+    checksum = ~checksum
+    checksum_buffer = reduce(lambda x,y : x+y, list(checksum.chunks(length=8))[::-1])
+    return checksum_buffer
+
+SCTPComputeFunctions: Dict[str, Tuple[ComputeFunctionType, ComputeFunctionDependenciesType]] = {
+    SCTPFields.CHECKSUM: (_compute_checksum, { f.value for f in SCTPFields if f is not SCTPFields.CHECKSUM })
+}
     
 REGISTER_PARSER(protocol_id=ProtocolsIDs.SCTP, parser_class=SCTPParser)

@@ -1,5 +1,5 @@
 from typing import Dict, List, Tuple
-from microschc.protocol.sctp import SCTPParser, SCTPFields
+from microschc.protocol.sctp import SCTPParser, SCTPFields, SCTPComputeFunctions
 from microschc.parser.parser import HeaderDescriptor
 from microschc.rfc8724 import FieldDescriptor
 from microschc.binary.buffer import Buffer
@@ -1105,3 +1105,22 @@ def test_sctp_parser_parse_cookie_ack():
     assert chunk_length_fd.id == SCTPFields.CHUNK_LENGTH
     assert chunk_length_fd.position == 0
     assert chunk_length_fd.value == Buffer(content=b'\x00\x04', length=16)
+    
+def test_sctp_compute_checksum():
+        
+    partially_reconstructed_content: bytes = bytes(
+        b'\x00\x07\x00\x07\x00\x00\x00\x00\x00\x00\x00\x00\x01\x00\x00\x20'
+        b'\x43\x23\x25\x44\x00\x00\xff\xff\x00\x11\x00\x11\x5c\xfe\x37\x9f'
+        b'\xc0\x00\x00\x04\x00\x0c\x00\x06\x00\x05\x00\x00'
+
+    )
+    expected_checksum: Buffer = Buffer(content=b'\x37\x61\xa7\x46', length=32)
+    parser:SCTPParser = SCTPParser()
+    
+    partially_reconstructed_packet: Buffer = Buffer(content=partially_reconstructed_content, length=len(partially_reconstructed_content)*8)
+    sctp_header_descriptor: HeaderDescriptor = parser.parse(buffer=partially_reconstructed_packet)
+    
+    
+    decompressed_fields: List[Tuple[str, Buffer]] = [ (field.id,field.value) for field in sctp_header_descriptor.fields]
+    checksum_buffer: Buffer = SCTPComputeFunctions[SCTPFields.CHECKSUM][0](decompressed_fields, 3)
+    assert checksum_buffer == expected_checksum
