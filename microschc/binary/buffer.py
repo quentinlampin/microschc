@@ -273,6 +273,10 @@ class Buffer:
         left:Buffer = self
         right:Buffer = other
         
+        if right.length == 0:
+            new_buffer: Buffer = left.copy()
+            return new_buffer
+        
         # Calculate new length
         new_length: int = left.length + right.length
         
