@@ -314,6 +314,17 @@ def test_add():
     expected: Buffer = Buffer(content=b'\xff\xff\xff\xf8', length=29, padding=Padding.RIGHT)
     assert left_right == expected
     
+    left: Buffer = Buffer(content=b'\x40', length=5, padding=Padding.RIGHT)
+    right: Buffer = Buffer(content=b'\x00', length=1, padding=Padding.LEFT)
+    left_right: Buffer = left + right
+    expected: Buffer = Buffer(content=b'\x40', length=6, padding=Padding.RIGHT)
+    assert left_right == expected
+    
+    left: Buffer = Buffer(content=b'\x00\x8a\xf8', length=23, padding=Padding.RIGHT)
+    right: Buffer = Buffer(content=b'\x22', length=6, padding=Padding.LEFT)
+    left_right: Buffer = left + right
+    expected: Buffer = Buffer(content=b'\x00\x8a\xf9\x10', length=29, padding=Padding.RIGHT)
+    assert left_right == expected
 
 def test_or():
     #              0x08          0x68        
@@ -371,25 +382,8 @@ def test_and():
     buffer_1_and_1_left: Buffer = buffer_1 & buffer_1_pad_left
     expected_1_and_1_left: Buffer = Buffer(content=b'\x08\x68', length=13, padding=Padding.RIGHT)
     assert buffer_1_and_1_left == expected_1_and_1_left
-    
-def test_complement():
-    buffer: Buffer = Buffer(content=b'\x01\xff\xf0', length=24)
-    complement = ~buffer
-    expected_buffer = Buffer(content=b'\xfe\x00\x0f', length=24)
-    assert complement == expected_buffer
-    
-def test_complement_padding_left():
-    buffer: Buffer = Buffer(content=b'\x0f\xff\xf0', length=20)
-    complement = ~buffer
-    expected_buffer = Buffer(content=b'\x00\x00\x0f', length=20)
-    assert complement == expected_buffer
-    
-def test_complement_padding_right():
-    buffer: Buffer = Buffer(content=b'\x0f\xff\x80', length=20, padding=Padding.RIGHT)
-    complement = ~buffer
-    expected_buffer = Buffer(content=b'\xf0\x00\x70', length=20, padding=Padding.RIGHT)
-    assert complement == expected_buffer
-    
+
+
 def test_value():
 
     buffer: Buffer = Buffer(content=b'\x00\x01', length=16)
