@@ -7,6 +7,7 @@ from .ipv4 import IPv4ComputeFunctions, IPv4Fields
 from .ipv6 import IPv6ComputeFunctions, IPv6Fields
 from .udp import UDPComputeFunctions, UDPFields
 from .sctp import SCTPComputeFunctions, SCTPFields
+from .coap import CoAPFields
 
 ComputeFunctions: Dict[str, Tuple[ComputeFunctionType, ComputeFunctionDependenciesType]] = {
     IPv4Fields.TOTAL_LENGTH: IPv4ComputeFunctions[IPv4Fields.TOTAL_LENGTH],
