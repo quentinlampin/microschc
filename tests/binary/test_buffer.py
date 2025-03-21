@@ -342,6 +342,20 @@ def test_add():
     
     left_and_right = left + right
     assert left_and_right == Buffer(b'\xf0', length=4, padding=Padding.RIGHT)
+    
+    left: Buffer = Buffer(content=b'\x60', length=4, padding=Padding.RIGHT)
+    right: Buffer = Buffer(content=b'\xff', length=8, padding=Padding.RIGHT)
+    expected: Buffer = Buffer(content=b'\x6f\xf0', length=12, padding=Padding.RIGHT)
+    
+    left_and_right = left + right
+    assert left_and_right == expected
+    
+    left: Buffer = Buffer(content=b'\x60', length=4, padding=Padding.RIGHT)
+    right: Buffer = Buffer(content=b'\xff\xf0', length=16, padding=Padding.RIGHT)
+    expected: Buffer = Buffer(content=b'\x6f\xff\x00', length=20, padding=Padding.RIGHT)
+    
+    left_and_right = left + right
+    assert left_and_right == expected
 
 def test_or():
     #              0x08          0x68        
