@@ -355,7 +355,11 @@ class Buffer:
                         sb:int = (b >> bit_shift) + carry
                         new_content += sb.to_bytes(1, 'big')
                         carry = (b & carry_mask) << (8 - bit_shift)
-                    new_content = left.content[0:-1] + (left.content[-1] + new_content[0]).to_bytes(1, 'big') + new_content[1:]
+                    new_content =   left.content[0:-1] + \
+                                    (left.content[-1] + new_content[0]).to_bytes(1, 'big') + \
+                                    new_content[1:] + \
+                                    carry.to_bytes(1, 'big')
+                                    
         
         new_buffer: Buffer = Buffer(content=new_content, length=new_length, padding=left.padding)
         return new_buffer
