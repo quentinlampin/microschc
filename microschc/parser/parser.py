@@ -17,13 +17,16 @@ class HeaderParser:
 
     def parse(self, buffer: Buffer) -> HeaderDescriptor:
         raise NotImplementedError
+    
+    def unparse(self, decompressed_fields: List[Tuple[str, Buffer]]) -> List[Tuple[str, Buffer]]:
+        return decompressed_fields
 
 
 class PacketParser:
     """Base Class for packet parsers.
     
-    A packet parser is fed bytearrays and returns a PacketDescriptor.
-    It may call several header parser to parse the bytearray.
+    A packet parser is fed a buffer and returns a PacketDescriptor.
+    It may call several header parser to parse the buffer.
 
     """
     def __init__(self, name: str, parsers: List[HeaderParser]) -> None:
@@ -53,10 +56,23 @@ class PacketParser:
         )
         
         return packet_descriptor
+    
+    def unparse(self, decompressed_fields: List[Tuple[str, Buffer]]) -> List[Tuple[str, Buffer]]:
+        unparsed_fields: List[Tuple[str, Buffer]] = []
+        for parser in self.parsers:
+            parser_fields = [f for f in decompressed_fields if parser.name in f.id]
+            unparsed_fields.extend(parser.unparse(parser_fields))
+        return unparsed_fields
+
 
 class ParserError(Exception):
     def __init__(self, buffer: Buffer, message=None):
         exception_message: str = f"error: {message} while parsing buffer: {buffer}"
+        super().__init__(message=exception_message)
+        
+class UnparserError(Exception):
+    def __init__(self, decompressed_fields: List[Tuple[str, Buffer]], message=None):
+        exception_message: str = f"error: {message} while unparsing fields: {decompressed_fields}"
         super().__init__(message=exception_message)
 
 

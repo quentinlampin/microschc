@@ -7,6 +7,7 @@ Implementation SCHC packet decompression as described in section 7.2 of [1].
 from functools import cmp_to_key, reduce
 from typing import Dict, List, Set, Tuple
 from microschc.binary.buffer import Buffer, Padding
+from microschc.parser.parser import PacketParser
 from microschc.protocol import ComputeFunctions
 from microschc.protocol.compute import ComputeFunctionType
 from microschc.rfc8724 import RuleFieldDescriptor, MatchMapping, RuleDescriptor
@@ -37,14 +38,14 @@ def compute_function_sort(entry_1: ComputeEntry, entry_2: ComputeEntry) -> int:
 
 
 
-def decompress(schc_packet: Buffer, rule_descriptor: RuleDescriptor) -> Buffer:
+def decompress(schc_packet: Buffer, rule_descriptor: RuleDescriptor, unparser: PacketParser=None) -> Buffer:
     """
         Decompress the packet fields following the rule's compression actions.
         See section 7.2 of [1].
     """
     compute_entries: List[ComputeEntry] = []
 
-    decompressed_fields: List[Tuple(str, Buffer)] = []
+    decompressed_fields: List[Tuple[str, Buffer]] = []
 
     # remove rule ID
     schc_packet = schc_packet[rule_descriptor.id.length:]
@@ -129,6 +130,10 @@ def decompress(schc_packet: Buffer, rule_descriptor: RuleDescriptor) -> Buffer:
         field_position: int = compute_entry.field_position
         compute_function: ComputeFunctionType = compute_entry.function        
         decompressed_fields[field_position] = (field_id, compute_function(decompressed_fields, field_position))
+        
+    # feed to unparser if provided
+    if unparser is not None:
+        decompressed_fields = unparser.unparse(decompressed_fields)
 
     # concatenate decompressed fields
     decompressed_field_values = [field_value for field_id, field_value in decompressed_fields]
