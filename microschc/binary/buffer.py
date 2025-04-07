@@ -12,11 +12,11 @@ adjustement out-of-the-box and allows indexing and slicing bit sequences
 using slicing notations.
 """
 
-from enum import Enum
+from microschc.compat import StrEnum
 import json
 from typing import Iterable
 
-class Padding(str, Enum):
+class Padding(StrEnum):
     LEFT = 'left'
     RIGHT = 'right'
 

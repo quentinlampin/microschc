@@ -4,7 +4,7 @@ definitions from RFC 8724 [1] and corresponding data models.
 [1] "SCHC: Generic Framework for Static Context Header Compression and Fragmentation" , A. Minaburo et al.
 """
 
-from enum import Enum
+from microschc.compat import StrEnum
 from dataclasses import dataclass
 import json
 from typing import  Dict, List, Union
@@ -47,27 +47,27 @@ class MatchMapping:
 
 TargetValue = Union[Buffer, MatchMapping]
 
-class DirectionIndicator(str, Enum):
+class DirectionIndicator(StrEnum):
     UP = 'Up'
     DOWN = 'Dw'
     BIDIRECTIONAL = 'Bi'
 
 
-class MatchingOperator(str, Enum):
+class MatchingOperator(StrEnum):
     EQUAL = 'equal'
     IGNORE = 'ignore'
-    MSB = 'MSB'
+    MSB = 'most-significant-bits'
     MATCH_MAPPING = 'match-mapping'
 
 
-class CompressionDecompressionAction(str, Enum):
+class CompressionDecompressionAction(StrEnum):
     NOT_SENT = 'not-sent'
     LSB = 'least-significant-bits'
     MAPPING_SENT = 'mapping-sent'
     VALUE_SENT = 'value-sent'
     COMPUTE = 'compute'
 
-class RuleNature(str, Enum):
+class RuleNature(StrEnum):
     COMPRESSION = 'compression'
     NO_COMPRESSION = 'no-compression'
     FRAGMENTATION = 'fragmentation'

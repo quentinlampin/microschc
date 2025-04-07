@@ -9,7 +9,7 @@ Note 1: Options parsing is not implemented yet.
 [1] "RFC791: Internet Protocol, DARPA Internet Program, Protocol Specification", J. Postel et al.
 """
 
-from enum import Enum
+from microschc.compat import StrEnum
 from functools import reduce
 from typing import Dict, List, Tuple, Type
 from microschc.binary.buffer import Buffer, Padding
@@ -20,7 +20,7 @@ from microschc.rfc8724 import FieldDescriptor, HeaderDescriptor
 
 IPV4_HEADER_ID = 'IPv4'
 
-class IPv4Fields(str, Enum):
+class IPv4Fields(StrEnum):
     VERSION                 = f'{IPV4_HEADER_ID}:Version'
     HEADER_LENGTH           = f'{IPV4_HEADER_ID}:Header Length'
     TYPE_OF_SERVICE         = f'{IPV4_HEADER_ID}:Type of Service'

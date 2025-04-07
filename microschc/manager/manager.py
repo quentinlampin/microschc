@@ -1,4 +1,4 @@
-from enum import Enum
+from microschc.compat import StrEnum
 from typing import Union
 from dataclasses import dataclass
 from microschc.binary import Buffer
@@ -11,7 +11,7 @@ from microschc.rfc8724 import DirectionIndicator, PacketDescriptor, RuleDescript
 from microschc.rfc8724extras import Context
 from microschc.ruler.ruler import Ruler
 
-class MatchStrategy(str, Enum):
+class MatchStrategy(StrEnum):
     FIRST = f'first'
     BEST  = f'best'
 
@@ -21,8 +21,14 @@ class ContextManager:
     parser: PacketParser
     ruler: Ruler
 
-    def __init__(self, context: Context, parser: Union[PacketParser, str, None]=None) -> None:
-        self.context = context
+    def __init__(self, context: Union[Context, str], parser: Union[PacketParser, str, None]=None) -> None:
+        if isinstance(context, Context):
+            self.context = context
+        elif isinstance(context, str):
+            self.context = Context.from_json(context)
+        else:
+            raise AttributeError(f'Wrong type of argument passed for context: {context}')
+        
         if isinstance(parser, PacketParser):
             self.parser = parser
         elif isinstance(parser, str):

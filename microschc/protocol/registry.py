@@ -1,11 +1,12 @@
 from typing import List, Type
 from microschc.parser import PacketParser
 
-from enum import Enum
+from enum import IntEnum
+from microschc.compat import StrEnum
 
 from microschc.parser.parser import HeaderParser
 
-class ProtocolsIDs(int, Enum):
+class ProtocolsIDs(IntEnum):
     IPV4 =    4
     IPV6 =    6
     UDP  =   17
@@ -26,7 +27,7 @@ def REGISTER_PARSER(protocol_id: int, parser_class: Type[HeaderParser]):
 
 
 
-class Stack(str, Enum):
+class Stack(StrEnum):
     IPV6_UDP_COAP = 'IPv6-UDP-CoAP'
     IPV4_UDP_COAP = 'IPv4-UDP-CoAP'
 
