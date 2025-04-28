@@ -29,7 +29,8 @@ Note: The case of CoAP in the context of SCHC is a odd one.
 """
 
 
-from enum import Enum
+from enum import Enum, IntEnum
+from microschc.compat import StrEnum
 import re
 from typing import Dict, List, Tuple
 from microschc.binary.buffer import Buffer, Padding
@@ -42,7 +43,7 @@ from microschc.rfc8724 import FieldDescriptor, HeaderDescriptor
 COAP_HEADER_ID = 'CoAP'
 
 
-class CoAPFields(str, Enum):
+class CoAPFields(StrEnum):
     VERSION                 = f'{COAP_HEADER_ID}:Version'
     TYPE                    = f'{COAP_HEADER_ID}:Type'
     TOKEN_LENGTH            = f'{COAP_HEADER_ID}:Token Length'
@@ -78,7 +79,7 @@ class CoAPFields(str, Enum):
     OPTION_UNKNOWN          = f'{COAP_HEADER_ID}:Option Unknown'
 
 
-class CoAPOptionIDs(int, Enum):
+class CoAPOptionIDs(IntEnum):
     IF_MATCH            = 1
     URI_HOST            = 3
     ETAG                = 4
@@ -126,7 +127,7 @@ class CoAPDefinitions(bytes, Enum):
     OPTION_LENGTH_EXTENDED_16BITS    = b'\x0e'
     PAYLOAD_MARKER_VALUE             = b'\xff'
 
-class CoAPOptionMode(str, Enum):
+class CoAPOptionMode(StrEnum):
     SYNTACTIC   = 'syntactic'
     SEMANTIC    = 'semantic'
 

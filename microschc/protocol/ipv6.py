@@ -11,7 +11,7 @@ Note 3: Authentication and Encapsulating Security payload parsing is not impleme
 [1] "RFC8200: Internet Protocol, Version 6 (IPv6) Specification", S. Deering et al.
 """
 
-from enum import Enum
+from microschc.compat import StrEnum
 from functools import reduce
 from typing import Callable, Dict, List, Tuple, Type
 from microschc.binary.buffer import Buffer, Padding
@@ -22,7 +22,7 @@ from microschc.rfc8724 import FieldDescriptor, HeaderDescriptor
 
 IPV6_HEADER_ID = 'IPv6'
 
-class IPv6Fields(str, Enum):
+class IPv6Fields(StrEnum):
     VERSION         = f'{IPV6_HEADER_ID}:Version'
     TRAFFIC_CLASS   = f'{IPV6_HEADER_ID}:Traffic Class'
     FLOW_LABEL      = f'{IPV6_HEADER_ID}:Flow Label'

@@ -5,14 +5,14 @@ definitions of data models and literals mentioned in RFC 8724 [1] but not specif
 """
 
 from dataclasses import dataclass
-from enum import Enum
+from microschc.compat import StrEnum
 import json
 from typing import List
 
 from microschc.rfc8724 import RuleDescriptor
 
 
-class ParserDefinitions(str, Enum): 
+class ParserDefinitions(StrEnum): 
     PAYLOAD = 'Payload'
 
 

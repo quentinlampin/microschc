@@ -7,7 +7,7 @@ Parser for the UDP protocol header as defined in RFC768 [1].
 [1] "RFC768: User Datagram Protocol", J. Postel
 """
 
-from enum import Enum
+from microschc.compat import StrEnum
 from functools import reduce
 from typing import  Dict, Iterator, List, Tuple, Type
 from microschc.parser import HeaderParser, ParserError
@@ -20,7 +20,7 @@ from microschc.protocol.ipv6 import IPV6_HEADER_ID, IPv6Fields
 
 UDP_HEADER_ID = 'UDP'
 
-class UDPFields(str, Enum):
+class UDPFields(StrEnum):
     SOURCE_PORT         = f'{UDP_HEADER_ID}:Source Port'
     DESTINATION_PORT    = f'{UDP_HEADER_ID}:Destination Port'
     LENGTH              = f'{UDP_HEADER_ID}:Length'

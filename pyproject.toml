@@ -1,15 +1,32 @@
 [project]
 name = "microschc"
-authors = [
-  { name="Quentin Lampin", email="quentin.lampin@orange.com" },
-]
-description = "Implementation in microPython of SCHC as specified in RFC 8724"
+description = "A Python implementation of the Static Context Header Compression (SCHC) protocol"
 readme = "README.md"
-requires-python = ">=3.7"
+requires-python = ">=3.8"
+license = { text = "MIT" }
+keywords = ["schc", "compression", "iot", "lpwan"]
+authors = [
+    { name = "Quentin Lampin", email = "quentin.lampin@orange.com" }
+]
+maintainers = [
+    { name = "Quentin Lampin", email = "quentin.lampin@orange.com" }
+]
 classifiers = [
-    "Programming Language :: Python :: 3",
+    "Development Status :: 3 - Alpha",
+    "Intended Audience :: Developers",
     "License :: OSI Approved :: MIT License",
     "Operating System :: OS Independent",
+    "Programming Language :: Python :: 3",
+    "Programming Language :: Python :: 3.8",
+    "Programming Language :: Python :: 3.9",
+    "Programming Language :: Python :: 3.10",
+    "Programming Language :: Python :: 3.11",
+    "Topic :: Software Development :: Libraries :: Python Modules",
+    "Topic :: Communications",
+]
+dependencies = [
+    "typing-extensions>=4.0.0",
+    "backports.strenum; python_version < '3.11'",
 ]
 dynamic = ["version"]
 

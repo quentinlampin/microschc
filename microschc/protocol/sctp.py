@@ -7,24 +7,22 @@ Declarations for the SCTP protocol header as defined in RFC9260 [1].
 """
 
 
-from enum import Enum
+from enum import Enum, IntEnum
+from microschc.compat import StrEnum
 from functools import reduce
 
 from microschc.crypto.crc import CRC32C_TABLE, crc32c
 from microschc.protocol.registry import PARSERS, REGISTER_PARSER, ProtocolsIDs
-
-SCTP_HEADER_ID = 'SCTP'
-
-from enum import Enum
 from typing import Dict, List, Tuple, Type
 from microschc.binary.buffer import Buffer, Padding
 from microschc.parser import HeaderParser, ParserError
 from microschc.protocol.compute import ComputeFunctionDependenciesType, ComputeFunctionType
 from microschc.rfc8724 import FieldDescriptor, HeaderDescriptor
 
+
 SCTP_HEADER_ID = 'SCTP'
 
-class SCTPFields(str, Enum):
+class SCTPFields(StrEnum):
     SOURCE_PORT                                             = f'{SCTP_HEADER_ID}:Source Port'
     DESTINATION_PORT                                        = f'{SCTP_HEADER_ID}:Destination Port'
     VERIFICATION_TAG                                        = f'{SCTP_HEADER_ID}:Verification Tag'
@@ -76,7 +74,7 @@ SCTP_SUPPORTED_PAYLOAD_PROTOCOLS: List[ProtocolsIDs] = [
     
     
     
-class SCTPChunkTypes(int, Enum):
+class SCTPChunkTypes(IntEnum):
     # ID Value    Chunk Type
     # -----       ----------
     # 0          - Payload Data (DATA)
@@ -248,7 +246,7 @@ class SCTPParser(HeaderParser):
     
     
     def _parse_chunk_data(self, buffer: Buffer) -> List[FieldDescriptor]:
-        """
+        r"""
         0                   1                   2                   3
         0 1 2 3 4 5 6 7 8 9 0 1 2 3 4 5 6 7 8 9 0 1 2 3 4 5 6 7 8 9 0 1
         +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
@@ -290,7 +288,7 @@ class SCTPParser(HeaderParser):
         return fields
     
     def _parse_chunk_init(self, buffer: Buffer) -> List[FieldDescriptor]:
-        """
+        r"""
         0                   1                   2                   3
         0 1 2 3 4 5 6 7 8 9 0 1 2 3 4 5 6 7 8 9 0 1 2 3 4 5 6 7 8 9 0 1
         +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
@@ -333,7 +331,7 @@ class SCTPParser(HeaderParser):
         return fields
     
     def _parse_chunk_init_ack(self, buffer: Buffer) -> List[FieldDescriptor]:
-        """
+        r"""
         0                   1                   2                   3
         0 1 2 3 4 5 6 7 8 9 0 1 2 3 4 5 6 7 8 9 0 1 2 3 4 5 6 7 8 9 0 1
         +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
@@ -377,7 +375,7 @@ class SCTPParser(HeaderParser):
     
     
     def _parse_chunk_selective_ack(self, buffer: Buffer) -> List[FieldDescriptor]:
-        """
+        r"""
         0                   1                   2                   3
         0 1 2 3 4 5 6 7 8 9 0 1 2 3 4 5 6 7 8 9 0 1 2 3 4 5 6 7 8 9 0 1
         +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
@@ -444,7 +442,7 @@ class SCTPParser(HeaderParser):
         return fields
     
     def _parse_chunk_heartbeat(self, buffer: Buffer) -> List[FieldDescriptor]:
-        """
+        r"""
         0                   1                   2                   3
         0 1 2 3 4 5 6 7 8 9 0 1 2 3 4 5 6 7 8 9 0 1 2 3 4 5 6 7 8 9 0 1
         +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
@@ -466,7 +464,7 @@ class SCTPParser(HeaderParser):
         return fields
     
     def _parse_chunk_heartbeat_ack(self, buffer: Buffer) -> List[FieldDescriptor]:
-        """
+        r"""
         0                   1                   2                   3
         0 1 2 3 4 5 6 7 8 9 0 1 2 3 4 5 6 7 8 9 0 1 2 3 4 5 6 7 8 9 0 1
         +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
@@ -488,7 +486,7 @@ class SCTPParser(HeaderParser):
         return fields
     
     def _parse_chunk_abort(self, buffer: Buffer) -> List[FieldDescriptor]:
-        """
+        r"""
         0                   1                   2                   3
         0 1 2 3 4 5 6 7 8 9 0 1 2 3 4 5 6 7 8 9 0 1 2 3 4 5 6 7 8 9 0 1
         +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
@@ -539,7 +537,7 @@ class SCTPParser(HeaderParser):
         return fields
     
     def _parse_chunk_error(self, buffer: Buffer) -> List[FieldDescriptor]:
-        """
+        r"""
         0                   1                   2                   3
         0 1 2 3 4 5 6 7 8 9 0 1 2 3 4 5 6 7 8 9 0 1 2 3 4 5 6 7 8 9 0 1
         +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
@@ -561,7 +559,7 @@ class SCTPParser(HeaderParser):
         return fields
     
     def _parse_chunk_cookie_echo(self, buffer: Buffer) -> List[FieldDescriptor]:
-        """
+        r"""
          0                   1                   2                   3
          0 1 2 3 4 5 6 7 8 9 0 1 2 3 4 5 6 7 8 9 0 1 2 3 4 5 6 7 8 9 0 1
         +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
@@ -601,7 +599,7 @@ class SCTPParser(HeaderParser):
         return fields
         
     def _parse_parameter(self, buffer: Buffer) -> Tuple[List[FieldDescriptor], int]:
-        """
+        r"""
         0                   1                   2                   3
         0 1 2 3 4 5 6 7 8 9 0 1 2 3 4 5 6 7 8 9 0 1 2 3 4 5 6 7 8 9 0 1
         +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
