@@ -2,7 +2,7 @@
 CoAP header parser
 
 Parser for the CoAP protocol header as defined in RFC7252 [1].
-Additional options from RFC 7959 [2] included.
+Additional options from RFC 7959 [2] and RFC 7641 [3] included.
 
 Note: The case of CoAP in the context of SCHC is a odd one.
       Compressing `Option Values` requires **interpreting** CoAP fields,
@@ -26,6 +26,7 @@ Note: The case of CoAP in the context of SCHC is a odd one.
 
 [1] "RFC7252: The Constrained Application Protocol (CoAP)", Z. Shelby et al.
 [2] "RFC7959: Block-Wise Transfers in the Constrained Application Protocol (CoAP), C. Bormann et al."
+[3] "RFC7641: Observing Resources in the Constrained Application Protocol (CoAP), Klaus Hartke"
 """
 
 
@@ -63,6 +64,7 @@ class CoAPFields(StrEnum):
     OPTION_URI_HOST         = f'{COAP_HEADER_ID}:Option Uri-Host'
     OPTION_ETAG             = f'{COAP_HEADER_ID}:Option ETag'
     OPTION_IF_NONE_MATCH    = f'{COAP_HEADER_ID}:Option If-None-Match'
+    OPTION_OBSERVE          = f'{COAP_HEADER_ID}:Option Observe'
     OPTION_URI_PORT         = f'{COAP_HEADER_ID}:Option Uri-Port'
     OPTION_LOCATION_PATH    = f'{COAP_HEADER_ID}:Option Location-Path'
     OPTION_URI_PATH         = f'{COAP_HEADER_ID}:Option Uri-Path'
@@ -84,6 +86,7 @@ class CoAPOptionIDs(IntEnum):
     URI_HOST            = 3
     ETAG                = 4
     IF_NONE_MATCH       = 5
+    OBSERVE             = 6
     URI_PORT            = 7
     LOCATION_PATH       = 8
     URI_PATH            = 11
@@ -103,6 +106,7 @@ COAP_OPTIONS_NUMBER_TO_NAME = {
     CoAPOptionIDs.URI_HOST:         CoAPFields.OPTION_URI_HOST,
     CoAPOptionIDs.ETAG:             CoAPFields.OPTION_ETAG,
     CoAPOptionIDs.IF_NONE_MATCH:    CoAPFields.OPTION_IF_NONE_MATCH,
+    CoAPOptionIDs.OBSERVE:          CoAPFields.OPTION_OBSERVE,
     CoAPOptionIDs.URI_PORT:         CoAPFields.OPTION_URI_PORT,
     CoAPOptionIDs.LOCATION_PATH:    CoAPFields.OPTION_LOCATION_PATH,
     CoAPOptionIDs.URI_PATH:         CoAPFields.OPTION_URI_PATH,
