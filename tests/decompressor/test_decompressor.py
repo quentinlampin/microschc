@@ -143,6 +143,7 @@ def test_decompression_compute():
 
     packet_parser: PacketParser = factory(stack_id=Stack.IPV6_UDP_COAP)
     packet_descriptor: PacketDescriptor = packet_parser.parse(buffer=packet_buffer)
+    packet_descriptor.direction = DirectionIndicator.UP
     packet_fields: List[FieldDescriptor] = packet_descriptor.fields
 
     field_descriptors_1: List[RuleFieldDescriptor] = [
