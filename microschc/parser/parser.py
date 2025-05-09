@@ -58,9 +58,13 @@ class PacketParser:
         return packet_descriptor
     
     def unparse(self, decompressed_fields: List[Tuple[str, Buffer]]) -> List[Tuple[str, Buffer]]:
+        parser_fields: List[Tuple[str, Buffer]]
         unparsed_fields: List[Tuple[str, Buffer]] = []
         for parser in self.parsers:
-            parser_fields = [f for f in decompressed_fields if parser.name in f.id]
+            parser_fields = [
+                (field_name, field_buffer) for (field_name, field_buffer) in decompressed_fields 
+                if parser.name in field_name
+            ]
             unparsed_fields.extend(parser.unparse(parser_fields))
         return unparsed_fields
 
