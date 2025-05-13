@@ -22,8 +22,9 @@ class Padding(StrEnum):
 
 class Buffer:
 
-    def __init__(self, content: bytes, length:int, padding=Padding.LEFT) -> None:
-        
+    def __init__(self, content: bytes, length:int=None, padding=Padding.LEFT) -> None:
+        if length is None:
+            length = len(content) * 8
         padding_length: int = _calculate_padding_length(length=length)
         byte_length: int = length // 8 if padding_length == 0 else length // 8 + 1
         content_length: int = len(content)
