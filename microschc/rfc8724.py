@@ -7,7 +7,7 @@ definitions from RFC 8724 [1] and corresponding data models.
 from microschc.compat import StrEnum
 from dataclasses import dataclass
 import json
-from typing import  Dict, List, Union
+from typing import Dict, List, Union
 
 from microschc.binary.buffer import Buffer
 
@@ -222,6 +222,25 @@ class RuleFieldDescriptor:
     target_value: TargetValue
     matching_operator: MatchingOperator
     compression_decompression_action: CompressionDecompressionAction
+    
+    def __init__(self, 
+        id: str,
+        length: int,
+        position: int = 0,
+        direction: DirectionIndicator = DI.BIDIRECTIONAL,
+        target_value: TargetValue = None,
+        matching_operator: MatchingOperator = MO.IGNORE,
+        compression_decompression_action: CompressionDecompressionAction = CDA.NOT_SENT
+    ) -> None:
+        self.id = id
+        self.length = length
+        self.position = position
+        self.direction = direction
+        self.target_value = target_value
+        self.matching_operator = matching_operator
+        self.compression_decompression_action = compression_decompression_action
+        
+        
 
     def __eq__(self, other: object) -> bool:
         if not isinstance(other, RuleFieldDescriptor):
