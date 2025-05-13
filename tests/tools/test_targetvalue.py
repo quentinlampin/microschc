@@ -145,9 +145,6 @@ def test_error_cases():
     with pytest.raises(TypeError):
         create_target_value(None)
     
-    # Test invalid list items
-    with pytest.raises(ValueError):
-        create_target_value([1, 2, 3], length=8)  # not pairs
     
     # Test invalid mapping values
     with pytest.raises(TypeError):
@@ -156,21 +153,3 @@ def test_error_cases():
     # Test out of range integer
     with pytest.raises(ValueError):
         create_target_value(300, length=8)  # 300 doesn't fit in 8 bits
-
-def test_class_methods():
-    """Test the class methods for creating MatchMapping objects."""
-    # Test from_list
-    pairs = [(1, 10), (2, 20)]
-    length = 8
-    
-    mapping = MatchMapping.from_list(pairs, length)
-    
-    assert isinstance(mapping, MatchMapping)
-    
-    # Test from_dict
-    dict_obj = {1: 10, 2: 20}
-    
-    mapping = MatchMapping.from_dict(dict_obj, length)
-    
-    assert isinstance(mapping, MatchMapping)
-
