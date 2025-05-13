@@ -1,6 +1,7 @@
 
 import pytest
-from microschc.rfc8724 import create_target_value, MatchMapping
+from microschc.rfc8724 import MatchMapping
+from microschc.tools import create_target_value
 from microschc.binary.buffer import Buffer, Padding
 
 
