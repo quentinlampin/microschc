@@ -4,17 +4,18 @@ Implementation SCHC packet compression as described in section 7.2 of [1].
 [1] "SCHC: Generic Framework for Static Context Header Compression and Fragmentation" , A. Minaburo et al.
 '''
 
-from typing import List, Tuple
+from typing import List
 from microschc.actions.compression import least_significant_bits, mapping_sent, value_sent
 from microschc.binary.buffer import Buffer, Padding
-from microschc.rfc8724 import FieldDescriptor, MatchMapping, PacketDescriptor, RuleDescriptor, RuleNature
+from microschc.rfc8724 import FieldDescriptor, MatchMapping, PacketDescriptor, RuleDescriptor, RuleFieldDescriptor, RuleNature
 from microschc.rfc8724 import CompressionDecompressionAction as CDA
+from microschc.rfc8724 import DirectionIndicator as DI
 
 
 def compress(packet_descriptor: PacketDescriptor, rule_descriptor: RuleDescriptor) -> Buffer:
     """
-        Compress the packet fields following the rule's compression actions.
-        See section 7.2 of [1].
+    Compress the packet fields following the rule's compression actions.
+    See section 7.2 of [1].
     """
     schc_packet: Buffer = Buffer(content=b'', length=0, padding=Padding.RIGHT)
 
@@ -25,8 +26,13 @@ def compress(packet_descriptor: PacketDescriptor, rule_descriptor: RuleDescripto
     packet_fields: List[FieldDescriptor] = packet_descriptor.fields
 
     if rule_descriptor.nature is RuleNature.COMPRESSION:
+        # Filter rule fields by direction
+        matching_fields: List[RuleFieldDescriptor] = [
+            rf for rf in rule_descriptor.field_descriptors
+            if rf.direction == packet_descriptor.direction or rf.direction == DI.BIDIRECTIONAL
+        ]
 
-        for pf, rf in zip(packet_fields, rule_descriptor.field_descriptors):
+        for pf, rf in zip(packet_fields, matching_fields):
             field_residue: Buffer
             if rf.compression_decompression_action in {CDA.NOT_SENT, CDA.COMPUTE}:
                 continue
@@ -48,10 +54,7 @@ def compress(packet_descriptor: PacketDescriptor, rule_descriptor: RuleDescripto
         schc_packet += packet_descriptor.payload
 
     elif rule_descriptor.nature is RuleNature.NO_COMPRESSION:
-        for pf in packet_fields:
-            schc_packet += value_sent(field_descriptor=pf)
-
-        schc_packet += packet_descriptor.payload
+        schc_packet += packet_descriptor.raw
 
     return schc_packet
 

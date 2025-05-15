@@ -33,6 +33,8 @@ class Ruler:
         packet_fields: List[FieldDescriptor] = packet_descriptor.fields
         packet_direction: DirectionIndicator = packet_descriptor.direction
 
+        rule_match: bool = False
+
         for rule in self.rules:
             
             if rule.nature is RuleNature.COMPRESSION:
@@ -48,10 +50,15 @@ class Ruler:
                     continue
 
                 # rule matches, return it
+                rule_match = True
                 yield rule
 
             elif rule.nature is RuleNature.NO_COMPRESSION:
+                rule_match = True
                 yield rule
+        
+        if not rule_match:
+            raise RuleDescriptorMatchError(packet_descriptor=packet_descriptor)
         
     
     def match_schc_packet(self, schc_packet: Buffer) -> RuleDescriptor:
