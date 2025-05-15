@@ -141,11 +141,13 @@ def decompress(schc_packet: Buffer, rule_descriptor: RuleDescriptor, direction: 
     if unparser is not None:
         decompressed_fields = unparser.unparse(decompressed_fields)
 
-    # Get payload with correct length
-    schc_packet = _find_payload_length(schc_packet, packet_header_len)
-    
-    # Add right payload
-    decompressed_fields.append((ParserDefinitions.PAYLOAD, schc_packet))
+    # payload is assumed to be byte-aligned, truncate the residue to keep a multiple of 8 bits.
+    padding: int = schc_packet.length%8
+    payload: Buffer = schc_packet[0: schc_packet.length-padding]
+
+    # add payload to decompressed fields
+    decompressed_fields.append((ParserDefinitions.PAYLOAD, payload))
+
     
     # sort compute CDA entries according 
     compute_entries.sort(key=cmp_to_key(compute_function_sort))
