@@ -11,12 +11,13 @@ Note 1: Options parsing is not implemented yet.
 
 from microschc.compat import StrEnum
 from functools import reduce
-from typing import Dict, List, Tuple, Type
+from typing import Dict, List, Tuple, Type, Union
 from microschc.binary.buffer import Buffer, Padding
 from microschc.parser import HeaderParser, ParserError
 from microschc.protocol.compute import ComputeFunctionDependenciesType, ComputeFunctionType
 from microschc.protocol.registry import PARSERS, REGISTER_PARSER, ProtocolsIDs
-from microschc.rfc8724 import FieldDescriptor, HeaderDescriptor
+from microschc.rfc8724 import FieldDescriptor, HeaderDescriptor, RuleFieldDescriptor, DirectionIndicator as DI, MatchingOperator as MO, CompressionDecompressionAction as CDA, TargetValue
+from microschc.tools import create_target_value
 
 IPV4_HEADER_ID = 'IPv4'
 
@@ -33,18 +34,12 @@ class IPv4Fields(StrEnum):
     HEADER_CHECKSUM         = f'{IPV4_HEADER_ID}:Header Checksum'
     SRC_ADDRESS             = f'{IPV4_HEADER_ID}:Source Address'
     DST_ADDRESS             = f'{IPV4_HEADER_ID}:Destination Address'
-    # OPTION_TYPE             = f'{IPV4_HEADER_ID}:Option Type'
-    # OPTION_TYPE_COPIED_FLAG = f'{IPV4_HEADER_ID}:Option Type Copied Flag'
-    # OPTION_TYPE_CLASS       = f'{IPV4_HEADER_ID}:Option Type Class'
-    # OPTION_TYPE_NUMBER      = f'{IPV4_HEADER_ID}:Option Type Number'
-    # OPTION_LENGTH           = f'{IPV4_HEADER_ID}:Option Length'
-    # OPTION_VALUE            = f'{IPV4_HEADER_ID}:Option Value'
-    # PADDING                 = f'{IPV4_HEADER_ID}:Padding'
-    
+
 IPV4_SUPPORTED_PAYLOAD_PROTOCOLS: List[ProtocolsIDs] = [
     ProtocolsIDs.UDP,
     ProtocolsIDs.SCTP
 ]
+
 
 class IPv4Parser(HeaderParser):
 
@@ -267,3 +262,160 @@ IPv4ComputeFunctions: Dict[str, Tuple[ComputeFunctionType, ComputeFunctionDepend
 }
 
 REGISTER_PARSER(protocol_id=ProtocolsIDs.IPV4, parser_class=IPv4Parser)
+
+IPV4_BASE_HEADER_FIELDS: List[RuleFieldDescriptor] = [
+    RuleFieldDescriptor(
+        id=IPv4Fields.VERSION,
+        length=4,
+        position=0,
+        direction=DI.BIDIRECTIONAL,
+        matching_operator=MO.EQUAL,
+        compression_decompression_action=CDA.NOT_SENT,
+        target_value=create_target_value(4, length=4)
+    ),
+    RuleFieldDescriptor(
+        id=IPv4Fields.HEADER_LENGTH,
+        length=4,
+        position=0,
+        direction=DI.BIDIRECTIONAL,
+        matching_operator=MO.EQUAL,
+        compression_decompression_action=CDA.NOT_SENT,
+        target_value=create_target_value(5, length=4)
+    ),
+    RuleFieldDescriptor(
+        id=IPv4Fields.TYPE_OF_SERVICE,
+        length=8,
+        position=0,
+        direction=DI.BIDIRECTIONAL,
+        matching_operator=MO.EQUAL,
+        compression_decompression_action=CDA.NOT_SENT,
+        target_value=create_target_value(0, length=8)
+    ),
+    RuleFieldDescriptor(
+        id=IPv4Fields.TOTAL_LENGTH,
+        length=16,
+        position=0,
+        direction=DI.BIDIRECTIONAL,
+        matching_operator=MO.IGNORE,
+        compression_decompression_action=CDA.COMPUTE,
+        target_value=None
+    ),
+    RuleFieldDescriptor(
+        id=IPv4Fields.IDENTIFICATION,
+        length=16,
+        position=0,
+        direction=DI.BIDIRECTIONAL,
+        matching_operator=MO.EQUAL,
+        compression_decompression_action=CDA.NOT_SENT,
+        target_value=None
+    ),
+    RuleFieldDescriptor(
+        id=IPv4Fields.FLAGS,
+        length=3,
+        position=0,
+        direction=DI.BIDIRECTIONAL,
+        matching_operator=MO.EQUAL,
+        compression_decompression_action=CDA.NOT_SENT,
+        target_value=create_target_value(0, length=3)
+    ),
+    RuleFieldDescriptor(
+        id=IPv4Fields.FRAGMENT_OFFSET,
+        length=13,
+        position=0,
+        direction=DI.BIDIRECTIONAL,
+        matching_operator=MO.EQUAL,
+        compression_decompression_action=CDA.NOT_SENT,
+        target_value=create_target_value(0, length=13)
+    ),
+    RuleFieldDescriptor(
+        id=IPv4Fields.TIME_TO_LIVE,
+        length=8,
+        position=0,
+        direction=DI.BIDIRECTIONAL,
+        matching_operator=MO.EQUAL,
+        compression_decompression_action=CDA.NOT_SENT,
+        target_value=create_target_value(64, length=8)
+    ),
+    RuleFieldDescriptor(
+        id=IPv4Fields.PROTOCOL,
+        length=8,
+        position=0,
+        direction=DI.BIDIRECTIONAL,
+        matching_operator=MO.EQUAL,
+        compression_decompression_action=CDA.NOT_SENT,
+        target_value=create_target_value(ProtocolsIDs.UDP, length=8)
+    ),
+    RuleFieldDescriptor(
+        id=IPv4Fields.HEADER_CHECKSUM,
+        length=16,
+        position=0,
+        direction=DI.BIDIRECTIONAL,
+        matching_operator=MO.IGNORE,
+        compression_decompression_action=CDA.COMPUTE,
+        target_value=None
+    ),
+    RuleFieldDescriptor(
+        id=IPv4Fields.SRC_ADDRESS,
+        length=32,
+        position=0,
+        direction=DI.BIDIRECTIONAL,
+        matching_operator=MO.EQUAL,
+        compression_decompression_action=CDA.NOT_SENT,
+        target_value=None
+    ),
+    RuleFieldDescriptor(
+        id=IPv4Fields.DST_ADDRESS,
+        length=32,
+        position=0,
+        direction=DI.BIDIRECTIONAL,
+        matching_operator=MO.EQUAL,
+        compression_decompression_action=CDA.NOT_SENT,
+        target_value=None
+    )
+]
+
+def ipv4_field_descriptors_template(
+    src_address: Union[bytes, Buffer, int],
+    dst_address: Union[bytes, Buffer, int],
+    protocol: Union[bytes, Buffer, int, None] = ProtocolsIDs.UDP,
+    ttl: Union[bytes, Buffer, int, None] = 64,
+    tos: Union[bytes, Buffer, int, None] = 0,
+    flags: Union[bytes, Buffer, int, None] = 0,
+    fragment_offset: Union[bytes, Buffer, int, None] = 0
+) -> List[RuleFieldDescriptor]:
+    """
+    Rule descriptor template for IPv4 header.
+    """
+    # Create target values for each field
+    target_values = {
+        IPv4Fields.VERSION: create_target_value(4, length=4),
+        IPv4Fields.HEADER_LENGTH: create_target_value(5, length=4),
+        IPv4Fields.TYPE_OF_SERVICE: create_target_value(tos, length=8),
+        IPv4Fields.FLAGS: create_target_value(flags, length=3),
+        IPv4Fields.FRAGMENT_OFFSET: create_target_value(fragment_offset, length=13),
+        IPv4Fields.TIME_TO_LIVE: create_target_value(ttl, length=8),
+        IPv4Fields.PROTOCOL: create_target_value(protocol, length=8),
+        IPv4Fields.SRC_ADDRESS: create_target_value(src_address, length=32),
+        IPv4Fields.DST_ADDRESS: create_target_value(dst_address, length=32)
+    }
+    
+    # Generate rule field descriptors from header fields
+    return [
+        RuleFieldDescriptor(
+            id=field.id,
+            length=field.length,
+            position=field.position,
+            direction=field.direction,
+            matching_operator=(
+                MO.MATCH_MAPPING if isinstance(target_values.get(field.id), MatchMapping)
+                else MO.MSB if isinstance(target_values.get(field.id), Buffer) and target_values.get(field.id).length < field.length
+                else MO.EQUAL
+            ),
+            compression_decompression_action=(
+                CDA.MAPPING_SENT if isinstance(target_values.get(field.id), MatchMapping)
+                else CDA.LSB if isinstance(target_values.get(field.id), Buffer) and target_values.get(field.id).length < field.length
+                else CDA.NOT_SENT
+            ),
+            target_value=target_values.get(field.id)
+        ) for field in IPV4_BASE_HEADER_FIELDS
+    ]

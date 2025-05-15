@@ -1,9 +1,10 @@
 from typing import Dict, List, Tuple
-from microschc.protocol.ipv6 import IPv6ComputeFunctions, IPv6Parser, IPv6Fields
+from microschc.protocol.ipv6 import IPv6ComputeFunctions, IPv6Parser, IPv6Fields, ipv6_base_header_template
 from microschc.parser.parser import HeaderDescriptor
-from microschc.rfc8724 import FieldDescriptor
+from microschc.rfc8724 import CDA, DI, MO, FieldDescriptor
 from microschc.binary.buffer import Buffer
 from microschc.rfc8724extras import ParserDefinitions
+from microschc.tools.targetvalue import create_target_value
 
 def test_ipv6_parser_import():
     """test: IPv6 header parser import and instanciation
@@ -106,3 +107,71 @@ def test_ipv6_compute_length():
 
     payload_length_buffer: Buffer = IPv6ComputeFunctions[IPv6Fields.PAYLOAD_LENGTH][0](decompressed_fields, 3)
     assert payload_length_buffer == Buffer(content=b'\x00\x10', length=16)
+
+def test_ipv6_base_header_template():
+    """Test the IPv6 field descriptors template generation."""
+    # Test with all fields provided
+    field_descriptors = ipv6_base_header_template(
+        src_address=b"\x20\x01\x0d\xb8\x00\x0a\x00\x00\x00\x00\x00\x00\x00\x00\x00\x02",
+        dst_address=b"\x20\x01\x0d\xb8\x00\x0a\x00\x00\x00\x00\x00\x00\x00\x00\x00\x20",
+        traffic_class=0,
+        flow_label=0xef2d,
+        next_header=17,
+        hop_limit=64
+    )
+
+    # Verify the number of fields
+    assert len(field_descriptors) == 8
+
+    # Verify each field's properties
+    for field in field_descriptors:
+        assert field.direction == DI.BIDIRECTIONAL
+        assert field.position == 0
+
+        if field.id == IPv6Fields.VERSION:
+            assert field.length == 4
+            assert field.matching_operator == MO.EQUAL
+            assert field.compression_decompression_action == CDA.NOT_SENT
+            assert field.target_value == create_target_value(6, length=4)  # IPv6 version 6
+
+        elif field.id == IPv6Fields.TRAFFIC_CLASS:
+            assert field.length == 8
+            assert field.matching_operator == MO.EQUAL
+            assert field.compression_decompression_action == CDA.NOT_SENT
+            assert field.target_value == create_target_value(0, length=8)
+
+        elif field.id == IPv6Fields.FLOW_LABEL:
+            assert field.length == 20
+            assert field.matching_operator == MO.EQUAL
+            assert field.compression_decompression_action == CDA.NOT_SENT
+            assert field.target_value == create_target_value(0xef2d, length=20)
+
+        elif field.id == IPv6Fields.PAYLOAD_LENGTH:
+            assert field.length == 16
+            assert field.matching_operator == MO.IGNORE
+            assert field.compression_decompression_action == CDA.COMPUTE
+            assert field.target_value is None
+
+        elif field.id == IPv6Fields.NEXT_HEADER:
+            assert field.length == 8
+            assert field.matching_operator == MO.EQUAL
+            assert field.compression_decompression_action == CDA.NOT_SENT
+            assert field.target_value == create_target_value(17, length=8)
+
+        elif field.id == IPv6Fields.HOP_LIMIT:
+            assert field.length == 8
+            assert field.matching_operator == MO.EQUAL
+            assert field.compression_decompression_action == CDA.NOT_SENT
+            assert field.target_value == create_target_value(64, length=8)
+
+        elif field.id == IPv6Fields.SRC_ADDRESS:
+            assert field.length == 128
+            assert field.matching_operator == MO.EQUAL
+            assert field.compression_decompression_action == CDA.NOT_SENT
+            assert field.target_value == create_target_value(b"\x20\x01\x0d\xb8\x00\x0a\x00\x00\x00\x00\x00\x00\x00\x00\x00\x02", length=128)
+
+        elif field.id == IPv6Fields.DST_ADDRESS:
+            assert field.length == 128
+            assert field.matching_operator == MO.EQUAL
+            assert field.compression_decompression_action == CDA.NOT_SENT
+            assert field.target_value == create_target_value(b"\x20\x01\x0d\xb8\x00\x0a\x00\x00\x00\x00\x00\x00\x00\x00\x00\x20", length=128)

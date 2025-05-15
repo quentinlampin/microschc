@@ -33,12 +33,15 @@ Note: The case of CoAP in the context of SCHC is a odd one.
 from enum import Enum, IntEnum
 from microschc.compat import StrEnum
 import re
-from typing import Dict, List, Tuple
+from typing import Dict, List, Tuple, Type, Union
 from microschc.binary.buffer import Buffer, Padding
 from microschc.parser import HeaderParser, ParserError
 from microschc.parser.parser import UnparserError
 from microschc.protocol.registry import REGISTER_PARSER, ProtocolsIDs
-from microschc.rfc8724 import FieldDescriptor, HeaderDescriptor
+from microschc.rfc8724 import FieldDescriptor, HeaderDescriptor, MatchMapping, RuleFieldDescriptor, DirectionIndicator as DI, MatchingOperator as MO, CompressionDecompressionAction as CDA, TargetValue
+from microschc.tools import create_target_value
+from microschc.tools.mo import select_mo
+from microschc.tools.cda import select_cda
 
 
 COAP_HEADER_ID = 'CoAP'
@@ -396,5 +399,276 @@ def _parse_options(buffer: Buffer, mode:CoAPOptionMode) -> Tuple[List[FieldDescr
 
     # return CoAP fields descriptors list
     return (fields, cursor)
+
+COAP_BASE_HEADER_FIELDS: List[RuleFieldDescriptor] = [
+    RuleFieldDescriptor(
+        id=CoAPFields.VERSION,
+        length=2,
+        position=0,
+        direction=DI.BIDIRECTIONAL,
+        matching_operator=MO.EQUAL,
+        compression_decompression_action=CDA.NOT_SENT,
+        target_value=create_target_value(1, length=2)  # CoAP version 1
+    ),
+    RuleFieldDescriptor(
+        id=CoAPFields.TYPE,
+        length=2,
+        position=0,
+        direction=DI.BIDIRECTIONAL,
+        matching_operator=MO.IGNORE,
+        compression_decompression_action=CDA.VALUE_SENT,
+        target_value=None
+    ),
+    RuleFieldDescriptor(
+        id=CoAPFields.TOKEN_LENGTH,
+        length=4,
+        position=0,
+        direction=DI.BIDIRECTIONAL,
+        matching_operator=MO.IGNORE,
+        compression_decompression_action=CDA.VALUE_SENT,
+        target_value=None
+    ),
+    RuleFieldDescriptor(
+        id=CoAPFields.CODE,
+        length=8,
+        position=0,
+        direction=DI.BIDIRECTIONAL,
+        matching_operator=MO.IGNORE,
+        compression_decompression_action=CDA.VALUE_SENT,
+        target_value=None
+    ),
+    RuleFieldDescriptor(
+        id=CoAPFields.MESSAGE_ID,
+        length=16,
+        position=0,
+        direction=DI.BIDIRECTIONAL,
+        matching_operator=MO.IGNORE,
+        compression_decompression_action=CDA.VALUE_SENT,
+        target_value=None
+    ),
+    RuleFieldDescriptor(
+        id=CoAPFields.TOKEN,
+        length=0,  # Variable length based on TOKEN_LENGTH
+        position=0,
+        direction=DI.BIDIRECTIONAL,
+        matching_operator=MO.EQUAL,
+        compression_decompression_action=CDA.NOT_SENT,
+        target_value=None
+    )
+]
+
+COAP_OPTION_TEMPLATE: List[RuleFieldDescriptor] = [
+    RuleFieldDescriptor(
+        id=CoAPFields.OPTION_DELTA,
+        length=4,
+        position=1,
+        direction=DI.BIDIRECTIONAL,
+        matching_operator=MO.IGNORE,
+        compression_decompression_action=CDA.VALUE_SENT,
+        target_value=None
+    ),
+    RuleFieldDescriptor(
+        id=CoAPFields.OPTION_LENGTH,
+        length=4,
+        position=1,
+        direction=DI.BIDIRECTIONAL,
+        matching_operator=MO.IGNORE,
+        compression_decompression_action=CDA.VALUE_SENT,
+        target_value=None
+    ),
+    RuleFieldDescriptor(
+        id=CoAPFields.OPTION_DELTA_EXTENDED,
+        length=0,  # Variable length based on OPTION_DELTA
+        position=1,
+        direction=DI.BIDIRECTIONAL,
+        matching_operator=MO.IGNORE,
+        compression_decompression_action=CDA.VALUE_SENT,
+        target_value=None
+    ),
+    RuleFieldDescriptor(
+        id=CoAPFields.OPTION_LENGTH_EXTENDED,
+        length=0,  # Variable length based on OPTION_LENGTH
+        position=1,
+        direction=DI.BIDIRECTIONAL,
+        matching_operator=MO.IGNORE,
+        compression_decompression_action=CDA.VALUE_SENT,
+        target_value=None
+    ),
+    RuleFieldDescriptor(
+        id=CoAPFields.OPTION_VALUE,
+        length=0,  # Variable length based on OPTION_LENGTH
+        position=1,
+        direction=DI.BIDIRECTIONAL,
+        matching_operator=MO.IGNORE,
+        compression_decompression_action=CDA.VALUE_SENT,
+        target_value=None
+    )
+]
+
+def coap_base_header_template(
+    type: Union[bytes, Buffer, int],
+    code: Union[bytes, Buffer, int],
+    message_id: Union[bytes, Buffer, int, None] = None,
+    token: Union[bytes, Buffer, int, None] = None,
+) -> List[RuleFieldDescriptor]:
+    """
+    Rule descriptor template for CoAP header.
+    
+    Args:
+        type: The CoAP message type (CON, NON, ACK, RST)
+        code: The CoAP message code (GET, POST, etc.)
+        message_id: The CoAP message ID
+        token: Optional token value. If provided, its length will be used to set TOKEN_LENGTH
+        
+    Returns:
+        List[RuleFieldDescriptor]: List of rule field descriptors for the CoAP header
+        
+    The function generates rule field descriptors for:
+    - VERSION (fixed to 1)
+    - TYPE
+    - TOKEN_LENGTH (computed from token if provided)
+    - CODE
+    - MESSAGE_ID
+    - TOKEN (only included if token is provided)
+    """
+    # Create target values for each field
+    target_values = {
+        CoAPFields.VERSION: create_target_value(1, length=2),  # CoAP version 1
+        CoAPFields.TYPE: create_target_value(type, length=2),
+        CoAPFields.CODE: create_target_value(code, length=8),
+    }
+    # Handle message ID
+    if message_id is not None:
+        target_values[CoAPFields.MESSAGE_ID] = create_target_value(message_id, length=16)
+    # Handle token and token length
+    if token is not None:
+        token_value = create_target_value(token)
+        token_length = token_value.length // 8 if isinstance(token_value, Buffer) else list(token_value.forward.keys())[0].length // 8
+        target_values[CoAPFields.TOKEN_LENGTH] = create_target_value(token_length, length=4)
+        target_values[CoAPFields.TOKEN] = token_value
+    else:
+        target_values[CoAPFields.TOKEN_LENGTH] = create_target_value(0, length=4)
+    
+    # Generate rule field descriptors
+    field_descriptors = []
+    
+    # Add base fields
+    for field in COAP_BASE_HEADER_FIELDS:
+        if field.id == CoAPFields.TOKEN and token is None:
+            continue  # Skip TOKEN field if no token provided
+            
+        target_value = target_values.get(field.id)
+        field_length = field.length
+        if field.id == CoAPFields.TOKEN and token is not None:
+            field_length = token_length * 8
+            
+        field_descriptors.append(
+            RuleFieldDescriptor(
+                id=field.id,
+                length=field_length,
+                position=field.position,
+                direction=field.direction,
+                matching_operator=(
+                    MO.MATCH_MAPPING if isinstance(target_value, MatchMapping)
+                    else MO.MSB if isinstance(target_value, Buffer) and target_value.length < field_length
+                    else MO.EQUAL if isinstance(target_value, Buffer) and target_value.length == field_length
+                    else MO.IGNORE
+                ),
+                compression_decompression_action=(
+                    CDA.MAPPING_SENT if isinstance(target_value, MatchMapping)
+                    else CDA.LSB if isinstance(target_value, Buffer) and target_value.length < field_length
+                    else CDA.NOT_SENT if isinstance(target_value, Buffer) and target_value.length == field_length
+                    else CDA.VALUE_SENT
+                ),
+                target_value=target_value
+            )
+        )
+    
+    return field_descriptors
+
+def coap_option_template(
+    option_delta: Union[bytes, Buffer, int],
+    option_length: Union[bytes, Buffer, int],
+    option_value: Union[bytes, Buffer, int, None] = None,
+    option_delta_extended: Union[bytes, Buffer, int, None] = None,
+    option_length_extended: Union[bytes, Buffer, int, None] = None    
+) -> List[RuleFieldDescriptor]:
+    """
+    Rule descriptor template for CoAP option.
+    
+    Args:
+        option_delta: The option delta value
+        option_length: The option length value
+        option_value: The option value
+        option_delta_extended: Optional extended delta value
+        option_length_extended: Optional extended length value
+        
+    Returns:
+        List[RuleFieldDescriptor]: List of rule field descriptors for the CoAP option
+    """
+    # Create target values for each field
+    target_values = {
+        CoAPFields.OPTION_DELTA: create_target_value(option_delta, length=4),
+        CoAPFields.OPTION_LENGTH: create_target_value(option_length, length=4),
+        CoAPFields.OPTION_VALUE: create_target_value(option_value) if option_value is not None else None,
+    }
+    
+    # Calculate option value length in bits
+    option_value_length = 0
+    option_length_extended_length = None
+    option_delta_extended_length = None
+
+    # Handle extended length
+    if isinstance(target_values[CoAPFields.OPTION_LENGTH], Buffer):
+        if target_values[CoAPFields.OPTION_LENGTH].content == CoAPDefinitions.OPTION_LENGTH_EXTENDED_8BITS:
+            option_value_length = (option_length_extended + 13) * 8
+            target_values[CoAPFields.OPTION_LENGTH_EXTENDED] = create_target_value(option_length_extended, length=8)
+            option_length_extended_length = 8
+        elif target_values[CoAPFields.OPTION_LENGTH].content == CoAPDefinitions.OPTION_LENGTH_EXTENDED_16BITS:
+            option_value_length = (option_length_extended + 269) * 8
+            target_values[CoAPFields.OPTION_LENGTH_EXTENDED] = create_target_value(option_length_extended, length=16)
+            option_length_extended_length = 16
+        else:
+            option_value_length = option_length * 8
+    
+    # Handle extended delta
+    if isinstance(target_values[CoAPFields.OPTION_DELTA], Buffer):
+        if target_values[CoAPFields.OPTION_DELTA].content == CoAPDefinitions.OPTION_DELTA_EXTENDED_8BITS:
+            target_values[CoAPFields.OPTION_DELTA_EXTENDED] = create_target_value(option_delta_extended, length=8)
+            option_delta_extended_length = 8
+        elif target_values[CoAPFields.OPTION_DELTA].content == CoAPDefinitions.OPTION_DELTA_EXTENDED_16BITS:
+            target_values[CoAPFields.OPTION_DELTA_EXTENDED] = create_target_value(option_delta_extended, length=16)
+            option_delta_extended_length = 16
+    
+    # Generate rule field descriptors from option fields
+    field_descriptors = []
+    for field in COAP_OPTION_TEMPLATE:
+        if field.id in target_values:
+            # For OPTION_VALUE, use the calculated length from option_length and option_length_extended
+            field_length = field.length
+            if field.id == CoAPFields.OPTION_VALUE:
+                field_length = option_value_length
+            # for OPTION_DELTA_EXTENDED, use field_length = 8 if OPTION_DELTA is OPTION_DELTA_EXTENDED_8BITS
+            #                            or  field_length = 16 if OPTION_DELTA is OPTION_DELTA_EXTENDED_16BITS
+            elif field.id == CoAPFields.OPTION_DELTA_EXTENDED and option_delta_extended_length is not None:
+                field_length = option_delta_extended_length
+            elif field.id == CoAPFields.OPTION_LENGTH_EXTENDED and option_length_extended_length is not None:
+                field_length = option_length_extended_length
+            
+            matching_operator = select_mo(target_values[field.id], field_length)
+            compression_decompression_action = select_cda(matching_operator)
+            field_descriptors.append(
+                RuleFieldDescriptor(
+                    id=field.id,
+                    length=field_length,
+                    position=field.position,
+                    direction=field.direction,
+                    matching_operator=matching_operator,
+                    compression_decompression_action=compression_decompression_action,
+                    target_value=target_values[field.id]
+                )
+            )
+    
+    return field_descriptors
 
 REGISTER_PARSER(protocol_id=ProtocolsIDs.COAP, parser_class=CoAPParser)

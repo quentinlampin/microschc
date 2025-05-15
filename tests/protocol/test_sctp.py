@@ -1,8 +1,9 @@
 from typing import Dict, List, Tuple
-from microschc.protocol.sctp import SCTPParser, SCTPFields, SCTPComputeFunctions
+from microschc.protocol.sctp import SCTPParser, SCTPFields, SCTPComputeFunctions, sctp_base_header_template
 from microschc.parser.parser import HeaderDescriptor
-from microschc.rfc8724 import FieldDescriptor
+from microschc.rfc8724 import CDA, DI, MO, FieldDescriptor
 from microschc.binary.buffer import Buffer
+from microschc.tools.targetvalue import create_target_value
 
 def test_sctp_parser_import():
     """test: SCTP header parser import and instanciation
@@ -1124,3 +1125,44 @@ def test_sctp_compute_checksum():
     decompressed_fields: List[Tuple[str, Buffer]] = [ (field.id,field.value) for field in sctp_header_descriptor.fields]
     checksum_buffer: Buffer = SCTPComputeFunctions[SCTPFields.CHECKSUM][0](decompressed_fields, 3)
     assert checksum_buffer == expected_checksum
+
+def test_sctp_base_header_template():
+    """Test the SCTP field descriptors template generation."""
+    # Test with all fields provided
+    field_descriptors = sctp_base_header_template(
+        source_port=1234,
+        destination_port=5678,
+        verification_tag=0x12345678
+    )
+
+    # Verify the number of fields
+    assert len(field_descriptors) == 4
+
+    # Verify each field's properties
+    for field in field_descriptors:
+        assert field.direction == DI.BIDIRECTIONAL
+        assert field.position == 0
+
+        if field.id == SCTPFields.SOURCE_PORT:
+            assert field.length == 16
+            assert field.matching_operator == MO.EQUAL
+            assert field.compression_decompression_action == CDA.NOT_SENT
+            assert field.target_value == create_target_value(1234, length=16)
+
+        elif field.id == SCTPFields.DESTINATION_PORT:
+            assert field.length == 16
+            assert field.matching_operator == MO.EQUAL
+            assert field.compression_decompression_action == CDA.NOT_SENT
+            assert field.target_value == create_target_value(5678, length=16)
+
+        elif field.id == SCTPFields.VERIFICATION_TAG:
+            assert field.length == 32
+            assert field.matching_operator == MO.EQUAL
+            assert field.compression_decompression_action == CDA.NOT_SENT
+            assert field.target_value == create_target_value(0x12345678, length=32)
+
+        elif field.id == SCTPFields.CHECKSUM:
+            assert field.length == 32
+            assert field.matching_operator == MO.IGNORE
+            assert field.compression_decompression_action == CDA.COMPUTE
+            assert field.target_value is None

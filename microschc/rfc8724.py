@@ -230,7 +230,7 @@ class RuleFieldDescriptor:
         direction: DirectionIndicator = DI.BIDIRECTIONAL,
         target_value: TargetValue = None,
         matching_operator: MatchingOperator = MO.IGNORE,
-        compression_decompression_action: CompressionDecompressionAction = CDA.NOT_SENT
+        compression_decompression_action: CompressionDecompressionAction = CDA.VALUE_SENT
     ) -> None:
         self.id = id
         self.length = length
