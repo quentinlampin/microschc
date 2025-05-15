@@ -54,10 +54,7 @@ def compress(packet_descriptor: PacketDescriptor, rule_descriptor: RuleDescripto
         schc_packet += packet_descriptor.payload
 
     elif rule_descriptor.nature is RuleNature.NO_COMPRESSION:
-        for pf in packet_fields:
-            schc_packet += value_sent(field_descriptor=pf)
-
-        schc_packet += packet_descriptor.payload
+        schc_packet += packet_descriptor.raw
 
     return schc_packet
 
