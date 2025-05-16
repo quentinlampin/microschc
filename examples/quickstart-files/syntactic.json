@@ -1,0 +1,2501 @@
+{
+    "id": "syntactic-context",
+    "description": "Context for compressing CoAP Options syntactically",
+    "interface_id": "none",
+    "parser_id": "IPv6-UDP-CoAP",
+    "ruleset": [
+        {
+            "id": {
+                "content": "00",
+                "length": 4,
+                "padding": "left"
+            },
+            "nature": "compression",
+            "field_descriptors": [
+                {
+                    "id": "IPv6:Version",
+                    "length": 4,
+                    "position": 0,
+                    "direction": "Bi",
+                    "target_value": {
+                        "content": "06",
+                        "length": 4,
+                        "padding": "left"
+                    },
+                    "matching_operator": "equal",
+                    "compression_decompression_action": "not-sent"
+                },
+                {
+                    "id": "IPv6:Traffic Class",
+                    "length": 8,
+                    "position": 0,
+                    "direction": "Bi",
+                    "target_value": {
+                        "content": "00",
+                        "length": 8,
+                        "padding": "left"
+                    },
+                    "matching_operator": "ignore",
+                    "compression_decompression_action": "not-sent"
+                },
+                {
+                    "id": "IPv6:Flow Label",
+                    "length": 20,
+                    "position": 0,
+                    "direction": "Bi",
+                    "target_value": {
+                        "content": "0ff85f",
+                        "length": 20,
+                        "padding": "left"
+                    },
+                    "matching_operator": "equal",
+                    "compression_decompression_action": "not-sent"
+                },
+                {
+                    "id": "IPv6:Payload Length",
+                    "length": 16,
+                    "position": 0,
+                    "direction": "Bi",
+                    "target_value": {
+                        "content": "",
+                        "length": 0,
+                        "padding": "left"
+                    },
+                    "matching_operator": "ignore",
+                    "compression_decompression_action": "compute"
+                },
+                {
+                    "id": "IPv6:Next Header",
+                    "length": 8,
+                    "position": 0,
+                    "direction": "Bi",
+                    "target_value": {
+                        "content": "11",
+                        "length": 8,
+                        "padding": "left"
+                    },
+                    "matching_operator": "equal",
+                    "compression_decompression_action": "not-sent"
+                },
+                {
+                    "id": "IPv6:Hop Limit",
+                    "length": 8,
+                    "position": 0,
+                    "direction": "Bi",
+                    "target_value": {
+                        "content": "40",
+                        "length": 8,
+                        "padding": "left"
+                    },
+                    "matching_operator": "equal",
+                    "compression_decompression_action": "not-sent"
+                },
+                {
+                    "id": "IPv6:Source Address",
+                    "length": 128,
+                    "position": 0,
+                    "direction": "Up",
+                    "target_value": {
+                        "content": "20010db8000a00000000000000000003",
+                        "length": 128,
+                        "padding": "left"
+                    },
+                    "matching_operator": "equal",
+                    "compression_decompression_action": "not-sent"
+                },
+                {
+                    "id": "IPv6:Destination Address",
+                    "length": 128,
+                    "position": 0,
+                    "direction": "Bi",
+                    "target_value": {
+                        "content": "20010db8000a00000000000000000020",
+                        "length": 128,
+                        "padding": "left"
+                    },
+                    "matching_operator": "equal",
+                    "compression_decompression_action": "not-sent"
+                },
+                {
+                    "id": "UDP:Source Port",
+                    "length": 16,
+                    "position": 0,
+                    "direction": "Bi",
+                    "target_value": {
+                        "content": "90a0",
+                        "length": 16,
+                        "padding": "left"
+                    },
+                    "matching_operator": "equal",
+                    "compression_decompression_action": "not-sent"
+                },
+                {
+                    "id": "UDP:Destination Port",
+                    "length": 16,
+                    "position": 0,
+                    "direction": "Bi",
+                    "target_value": {
+                        "content": "1633",
+                        "length": 16,
+                        "padding": "left"
+                    },
+                    "matching_operator": "equal",
+                    "compression_decompression_action": "not-sent"
+                },
+                {
+                    "id": "UDP:Length",
+                    "length": 16,
+                    "position": 0,
+                    "direction": "Bi",
+                    "target_value": {
+                        "content": "",
+                        "length": 0,
+                        "padding": "left"
+                    },
+                    "matching_operator": "ignore",
+                    "compression_decompression_action": "compute"
+                },
+                {
+                    "id": "UDP:Checksum",
+                    "length": 16,
+                    "position": 0,
+                    "direction": "Bi",
+                    "target_value": {
+                        "content": "",
+                        "length": 0,
+                        "padding": "left"
+                    },
+                    "matching_operator": "ignore",
+                    "compression_decompression_action": "compute"
+                },
+                {
+                    "id": "CoAP:Version",
+                    "length": 2,
+                    "position": 0,
+                    "direction": "Bi",
+                    "target_value": {
+                        "content": "01",
+                        "length": 2,
+                        "padding": "left"
+                    },
+                    "matching_operator": "equal",
+                    "compression_decompression_action": "not-sent"
+                },
+                {
+                    "id": "CoAP:Type",
+                    "length": 2,
+                    "position": 0,
+                    "direction": "Bi",
+                    "target_value": {
+                        "content": "00",
+                        "length": 1,
+                        "padding": "right"
+                    },
+                    "matching_operator": "most-significant-bits",
+                    "compression_decompression_action": "least-significant-bits"
+                },
+                {
+                    "id": "CoAP:Token Length",
+                    "length": 4,
+                    "position": 0,
+                    "direction": "Bi",
+                    "target_value": {
+                        "content": "02",
+                        "length": 4,
+                        "padding": "left"
+                    },
+                    "matching_operator": "equal",
+                    "compression_decompression_action": "not-sent"
+                },
+                {
+                    "id": "CoAP:Code",
+                    "length": 8,
+                    "position": 0,
+                    "direction": "Bi",
+                    "target_value": {
+                        "content": "45",
+                        "length": 8,
+                        "padding": "left"
+                    },
+                    "matching_operator": "equal",
+                    "compression_decompression_action": "not-sent"
+                },
+                {
+                    "id": "CoAP:Message ID",
+                    "length": 16,
+                    "position": 0,
+                    "direction": "Bi",
+                    "target_value": {
+                        "content": "",
+                        "length": 0,
+                        "padding": "left"
+                    },
+                    "matching_operator": "ignore",
+                    "compression_decompression_action": "value-sent"
+                },
+                {
+                    "id": "CoAP:Token",
+                    "length": 16,
+                    "position": 0,
+                    "direction": "Bi",
+                    "target_value": {
+                        "content": "",
+                        "length": 0,
+                        "padding": "left"
+                    },
+                    "matching_operator": "ignore",
+                    "compression_decompression_action": "value-sent"
+                },
+                {
+                    "id": "CoAP:Option Delta",
+                    "length": 4,
+                    "position": 0,
+                    "direction": "Bi",
+                    "target_value": {
+                        "content": "06",
+                        "length": 4,
+                        "padding": "left"
+                    },
+                    "matching_operator": "equal",
+                    "compression_decompression_action": "not-sent"
+                },
+                {
+                    "id": "CoAP:Option Length",
+                    "length": 4,
+                    "position": 0,
+                    "direction": "Bi",
+                    "target_value": {
+                        "content": "00",
+                        "length": 2,
+                        "padding": "right"
+                    },
+                    "matching_operator": "most-significant-bits",
+                    "compression_decompression_action": "least-significant-bits"
+                },
+                {
+                    "id": "CoAP:Option Value",
+                    "length": 0,
+                    "position": 0,
+                    "direction": "Bi",
+                    "target_value": {
+                        "content": "",
+                        "length": 0,
+                        "padding": "left"
+                    },
+                    "matching_operator": "ignore",
+                    "compression_decompression_action": "value-sent"
+                },
+                {
+                    "id": "CoAP:Option Delta",
+                    "length": 4,
+                    "position": 0,
+                    "direction": "Bi",
+                    "target_value": {
+                        "content": "06",
+                        "length": 4,
+                        "padding": "left"
+                    },
+                    "matching_operator": "equal",
+                    "compression_decompression_action": "not-sent"
+                },
+                {
+                    "id": "CoAP:Option Length",
+                    "length": 4,
+                    "position": 0,
+                    "direction": "Bi",
+                    "target_value": {
+                        "content": "02",
+                        "length": 4,
+                        "padding": "left"
+                    },
+                    "matching_operator": "equal",
+                    "compression_decompression_action": "not-sent"
+                },
+                {
+                    "id": "CoAP:Option Value",
+                    "length": 16,
+                    "position": 0,
+                    "direction": "Bi",
+                    "target_value": {
+                        "content": "2d16",
+                        "length": 16,
+                        "padding": "left"
+                    },
+                    "matching_operator": "equal",
+                    "compression_decompression_action": "not-sent"
+                },
+                {
+                    "id": "CoAP:Payload Marker",
+                    "length": 8,
+                    "position": 0,
+                    "direction": "Bi",
+                    "target_value": {
+                        "content": "ff",
+                        "length": 8,
+                        "padding": "left"
+                    },
+                    "matching_operator": "equal",
+                    "compression_decompression_action": "not-sent"
+                }
+            ]
+        },
+        {
+            "id": {
+                "content": "01",
+                "length": 4,
+                "padding": "left"
+            },
+            "nature": "compression",
+            "field_descriptors": [
+                {
+                    "id": "IPv6:Version",
+                    "length": 4,
+                    "position": 0,
+                    "direction": "Bi",
+                    "target_value": {
+                        "content": "06",
+                        "length": 4,
+                        "padding": "left"
+                    },
+                    "matching_operator": "equal",
+                    "compression_decompression_action": "not-sent"
+                },
+                {
+                    "id": "IPv6:Traffic Class",
+                    "length": 8,
+                    "position": 0,
+                    "direction": "Bi",
+                    "target_value": {
+                        "content": "00",
+                        "length": 8,
+                        "padding": "left"
+                    },
+                    "matching_operator": "ignore",
+                    "compression_decompression_action": "not-sent"
+                },
+                {
+                    "id": "IPv6:Flow Label",
+                    "length": 20,
+                    "position": 0,
+                    "direction": "Bi",
+                    "target_value": {
+                        "content": "0ff85f",
+                        "length": 20,
+                        "padding": "left"
+                    },
+                    "matching_operator": "equal",
+                    "compression_decompression_action": "not-sent"
+                },
+                {
+                    "id": "IPv6:Payload Length",
+                    "length": 16,
+                    "position": 0,
+                    "direction": "Bi",
+                    "target_value": {
+                        "content": "",
+                        "length": 0,
+                        "padding": "left"
+                    },
+                    "matching_operator": "ignore",
+                    "compression_decompression_action": "compute"
+                },
+                {
+                    "id": "IPv6:Next Header",
+                    "length": 8,
+                    "position": 0,
+                    "direction": "Bi",
+                    "target_value": {
+                        "content": "11",
+                        "length": 8,
+                        "padding": "left"
+                    },
+                    "matching_operator": "equal",
+                    "compression_decompression_action": "not-sent"
+                },
+                {
+                    "id": "IPv6:Hop Limit",
+                    "length": 8,
+                    "position": 0,
+                    "direction": "Bi",
+                    "target_value": {
+                        "content": "40",
+                        "length": 8,
+                        "padding": "left"
+                    },
+                    "matching_operator": "equal",
+                    "compression_decompression_action": "not-sent"
+                },
+                {
+                    "id": "IPv6:Source Address",
+                    "length": 128,
+                    "position": 0,
+                    "direction": "Up",
+                    "target_value": {
+                        "content": "20010db8000a00000000000000000003",
+                        "length": 128,
+                        "padding": "left"
+                    },
+                    "matching_operator": "equal",
+                    "compression_decompression_action": "not-sent"
+                },
+                {
+                    "id": "IPv6:Destination Address",
+                    "length": 128,
+                    "position": 0,
+                    "direction": "Bi",
+                    "target_value": {
+                        "content": "20010db8000a00000000000000000020",
+                        "length": 128,
+                        "padding": "left"
+                    },
+                    "matching_operator": "equal",
+                    "compression_decompression_action": "not-sent"
+                },
+                {
+                    "id": "UDP:Source Port",
+                    "length": 16,
+                    "position": 0,
+                    "direction": "Bi",
+                    "target_value": {
+                        "content": "90a0",
+                        "length": 16,
+                        "padding": "left"
+                    },
+                    "matching_operator": "equal",
+                    "compression_decompression_action": "not-sent"
+                },
+                {
+                    "id": "UDP:Destination Port",
+                    "length": 16,
+                    "position": 0,
+                    "direction": "Bi",
+                    "target_value": {
+                        "content": "1633",
+                        "length": 16,
+                        "padding": "left"
+                    },
+                    "matching_operator": "equal",
+                    "compression_decompression_action": "not-sent"
+                },
+                {
+                    "id": "UDP:Length",
+                    "length": 16,
+                    "position": 0,
+                    "direction": "Bi",
+                    "target_value": {
+                        "content": "",
+                        "length": 0,
+                        "padding": "left"
+                    },
+                    "matching_operator": "ignore",
+                    "compression_decompression_action": "compute"
+                },
+                {
+                    "id": "UDP:Checksum",
+                    "length": 16,
+                    "position": 0,
+                    "direction": "Bi",
+                    "target_value": {
+                        "content": "",
+                        "length": 0,
+                        "padding": "left"
+                    },
+                    "matching_operator": "ignore",
+                    "compression_decompression_action": "compute"
+                },
+                {
+                    "id": "CoAP:Version",
+                    "length": 2,
+                    "position": 0,
+                    "direction": "Bi",
+                    "target_value": {
+                        "content": "01",
+                        "length": 2,
+                        "padding": "left"
+                    },
+                    "matching_operator": "equal",
+                    "compression_decompression_action": "not-sent"
+                },
+                {
+                    "id": "CoAP:Type",
+                    "length": 2,
+                    "position": 0,
+                    "direction": "Bi",
+                    "target_value": {
+                        "content": "02",
+                        "length": 2,
+                        "padding": "left"
+                    },
+                    "matching_operator": "equal",
+                    "compression_decompression_action": "not-sent"
+                },
+                {
+                    "id": "CoAP:Token Length",
+                    "length": 4,
+                    "position": 0,
+                    "direction": "Bi",
+                    "target_value": {
+                        "content": "02",
+                        "length": 4,
+                        "padding": "left"
+                    },
+                    "matching_operator": "equal",
+                    "compression_decompression_action": "not-sent"
+                },
+                {
+                    "id": "CoAP:Code",
+                    "length": 8,
+                    "position": 0,
+                    "direction": "Bi",
+                    "target_value": {
+                        "content": "44",
+                        "length": 8,
+                        "padding": "left"
+                    },
+                    "matching_operator": "equal",
+                    "compression_decompression_action": "not-sent"
+                },
+                {
+                    "id": "CoAP:Message ID",
+                    "length": 16,
+                    "position": 0,
+                    "direction": "Bi",
+                    "target_value": {
+                        "content": "",
+                        "length": 0,
+                        "padding": "left"
+                    },
+                    "matching_operator": "ignore",
+                    "compression_decompression_action": "value-sent"
+                },
+                {
+                    "id": "CoAP:Token",
+                    "length": 16,
+                    "position": 0,
+                    "direction": "Bi",
+                    "target_value": {
+                        "content": "",
+                        "length": 0,
+                        "padding": "left"
+                    },
+                    "matching_operator": "ignore",
+                    "compression_decompression_action": "value-sent"
+                }
+            ]
+        },
+        {
+            "id": {
+                "content": "02",
+                "length": 4,
+                "padding": "left"
+            },
+            "nature": "compression",
+            "field_descriptors": [
+                {
+                    "id": "IPv6:Version",
+                    "length": 4,
+                    "position": 0,
+                    "direction": "Bi",
+                    "target_value": {
+                        "content": "06",
+                        "length": 4,
+                        "padding": "left"
+                    },
+                    "matching_operator": "equal",
+                    "compression_decompression_action": "not-sent"
+                },
+                {
+                    "id": "IPv6:Traffic Class",
+                    "length": 8,
+                    "position": 0,
+                    "direction": "Bi",
+                    "target_value": {
+                        "content": "00",
+                        "length": 8,
+                        "padding": "left"
+                    },
+                    "matching_operator": "ignore",
+                    "compression_decompression_action": "not-sent"
+                },
+                {
+                    "id": "IPv6:Flow Label",
+                    "length": 20,
+                    "position": 0,
+                    "direction": "Bi",
+                    "target_value": {
+                        "content": "0fdbce",
+                        "length": 20,
+                        "padding": "left"
+                    },
+                    "matching_operator": "equal",
+                    "compression_decompression_action": "not-sent"
+                },
+                {
+                    "id": "IPv6:Payload Length",
+                    "length": 16,
+                    "position": 0,
+                    "direction": "Bi",
+                    "target_value": {
+                        "content": "",
+                        "length": 0,
+                        "padding": "left"
+                    },
+                    "matching_operator": "ignore",
+                    "compression_decompression_action": "compute"
+                },
+                {
+                    "id": "IPv6:Next Header",
+                    "length": 8,
+                    "position": 0,
+                    "direction": "Bi",
+                    "target_value": {
+                        "content": "11",
+                        "length": 8,
+                        "padding": "left"
+                    },
+                    "matching_operator": "equal",
+                    "compression_decompression_action": "not-sent"
+                },
+                {
+                    "id": "IPv6:Hop Limit",
+                    "length": 8,
+                    "position": 0,
+                    "direction": "Bi",
+                    "target_value": {
+                        "content": "40",
+                        "length": 8,
+                        "padding": "left"
+                    },
+                    "matching_operator": "equal",
+                    "compression_decompression_action": "not-sent"
+                },
+                {
+                    "id": "IPv6:Source Address",
+                    "length": 128,
+                    "position": 0,
+                    "direction": "Up",
+                    "target_value": {
+                        "content": "20010db8000a00000000000000000020",
+                        "length": 128,
+                        "padding": "left"
+                    },
+                    "matching_operator": "equal",
+                    "compression_decompression_action": "not-sent"
+                },
+                {
+                    "id": "IPv6:Destination Address",
+                    "length": 128,
+                    "position": 0,
+                    "direction": "Bi",
+                    "target_value": {
+                        "content": "20010db8000a00000000000000000003",
+                        "length": 128,
+                        "padding": "left"
+                    },
+                    "matching_operator": "equal",
+                    "compression_decompression_action": "not-sent"
+                },
+                {
+                    "id": "UDP:Source Port",
+                    "length": 16,
+                    "position": 0,
+                    "direction": "Bi",
+                    "target_value": {
+                        "content": "1633",
+                        "length": 16,
+                        "padding": "left"
+                    },
+                    "matching_operator": "equal",
+                    "compression_decompression_action": "not-sent"
+                },
+                {
+                    "id": "UDP:Destination Port",
+                    "length": 16,
+                    "position": 0,
+                    "direction": "Bi",
+                    "target_value": {
+                        "content": "90a0",
+                        "length": 16,
+                        "padding": "left"
+                    },
+                    "matching_operator": "equal",
+                    "compression_decompression_action": "not-sent"
+                },
+                {
+                    "id": "UDP:Length",
+                    "length": 16,
+                    "position": 0,
+                    "direction": "Bi",
+                    "target_value": {
+                        "content": "",
+                        "length": 0,
+                        "padding": "left"
+                    },
+                    "matching_operator": "ignore",
+                    "compression_decompression_action": "compute"
+                },
+                {
+                    "id": "UDP:Checksum",
+                    "length": 16,
+                    "position": 0,
+                    "direction": "Bi",
+                    "target_value": {
+                        "content": "",
+                        "length": 0,
+                        "padding": "left"
+                    },
+                    "matching_operator": "ignore",
+                    "compression_decompression_action": "compute"
+                },
+                {
+                    "id": "CoAP:Version",
+                    "length": 2,
+                    "position": 0,
+                    "direction": "Bi",
+                    "target_value": {
+                        "content": "01",
+                        "length": 2,
+                        "padding": "left"
+                    },
+                    "matching_operator": "equal",
+                    "compression_decompression_action": "not-sent"
+                },
+                {
+                    "id": "CoAP:Type",
+                    "length": 2,
+                    "position": 0,
+                    "direction": "Bi",
+                    "target_value": {
+                        "content": "02",
+                        "length": 2,
+                        "padding": "left"
+                    },
+                    "matching_operator": "equal",
+                    "compression_decompression_action": "not-sent"
+                },
+                {
+                    "id": "CoAP:Token Length",
+                    "length": 4,
+                    "position": 0,
+                    "direction": "Bi",
+                    "target_value": {
+                        "content": "02",
+                        "length": 4,
+                        "padding": "left"
+                    },
+                    "matching_operator": "equal",
+                    "compression_decompression_action": "not-sent"
+                },
+                {
+                    "id": "CoAP:Code",
+                    "length": 8,
+                    "position": 0,
+                    "direction": "Bi",
+                    "target_value": {
+                        "content": "44",
+                        "length": 8,
+                        "padding": "left"
+                    },
+                    "matching_operator": "equal",
+                    "compression_decompression_action": "not-sent"
+                },
+                {
+                    "id": "CoAP:Message ID",
+                    "length": 16,
+                    "position": 0,
+                    "direction": "Bi",
+                    "target_value": {
+                        "content": "",
+                        "length": 0,
+                        "padding": "left"
+                    },
+                    "matching_operator": "ignore",
+                    "compression_decompression_action": "value-sent"
+                },
+                {
+                    "id": "CoAP:Token",
+                    "length": 16,
+                    "position": 0,
+                    "direction": "Bi",
+                    "target_value": {
+                        "content": "",
+                        "length": 0,
+                        "padding": "left"
+                    },
+                    "matching_operator": "ignore",
+                    "compression_decompression_action": "value-sent"
+                }
+            ]
+        },
+        {
+            "id": {
+                "content": "03",
+                "length": 4,
+                "padding": "left"
+            },
+            "nature": "compression",
+            "field_descriptors": [
+                {
+                    "id": "IPv6:Version",
+                    "length": 4,
+                    "position": 0,
+                    "direction": "Bi",
+                    "target_value": {
+                        "content": "06",
+                        "length": 4,
+                        "padding": "left"
+                    },
+                    "matching_operator": "equal",
+                    "compression_decompression_action": "not-sent"
+                },
+                {
+                    "id": "IPv6:Traffic Class",
+                    "length": 8,
+                    "position": 0,
+                    "direction": "Bi",
+                    "target_value": {
+                        "content": "00",
+                        "length": 8,
+                        "padding": "left"
+                    },
+                    "matching_operator": "ignore",
+                    "compression_decompression_action": "not-sent"
+                },
+                {
+                    "id": "IPv6:Flow Label",
+                    "length": 20,
+                    "position": 0,
+                    "direction": "Bi",
+                    "target_value": {
+                        "content": "0fdbce",
+                        "length": 20,
+                        "padding": "left"
+                    },
+                    "matching_operator": "equal",
+                    "compression_decompression_action": "not-sent"
+                },
+                {
+                    "id": "IPv6:Payload Length",
+                    "length": 16,
+                    "position": 0,
+                    "direction": "Bi",
+                    "target_value": {
+                        "content": "",
+                        "length": 0,
+                        "padding": "left"
+                    },
+                    "matching_operator": "ignore",
+                    "compression_decompression_action": "compute"
+                },
+                {
+                    "id": "IPv6:Next Header",
+                    "length": 8,
+                    "position": 0,
+                    "direction": "Bi",
+                    "target_value": {
+                        "content": "11",
+                        "length": 8,
+                        "padding": "left"
+                    },
+                    "matching_operator": "equal",
+                    "compression_decompression_action": "not-sent"
+                },
+                {
+                    "id": "IPv6:Hop Limit",
+                    "length": 8,
+                    "position": 0,
+                    "direction": "Bi",
+                    "target_value": {
+                        "content": "40",
+                        "length": 8,
+                        "padding": "left"
+                    },
+                    "matching_operator": "equal",
+                    "compression_decompression_action": "not-sent"
+                },
+                {
+                    "id": "IPv6:Source Address",
+                    "length": 128,
+                    "position": 0,
+                    "direction": "Up",
+                    "target_value": {
+                        "content": "20010db8000a00000000000000000020",
+                        "length": 128,
+                        "padding": "left"
+                    },
+                    "matching_operator": "equal",
+                    "compression_decompression_action": "not-sent"
+                },
+                {
+                    "id": "IPv6:Destination Address",
+                    "length": 128,
+                    "position": 0,
+                    "direction": "Bi",
+                    "target_value": {
+                        "content": "20010db8000a00000000000000000003",
+                        "length": 128,
+                        "padding": "left"
+                    },
+                    "matching_operator": "equal",
+                    "compression_decompression_action": "not-sent"
+                },
+                {
+                    "id": "UDP:Source Port",
+                    "length": 16,
+                    "position": 0,
+                    "direction": "Bi",
+                    "target_value": {
+                        "content": "1633",
+                        "length": 16,
+                        "padding": "left"
+                    },
+                    "matching_operator": "equal",
+                    "compression_decompression_action": "not-sent"
+                },
+                {
+                    "id": "UDP:Destination Port",
+                    "length": 16,
+                    "position": 0,
+                    "direction": "Bi",
+                    "target_value": {
+                        "content": "90a0",
+                        "length": 16,
+                        "padding": "left"
+                    },
+                    "matching_operator": "equal",
+                    "compression_decompression_action": "not-sent"
+                },
+                {
+                    "id": "UDP:Length",
+                    "length": 16,
+                    "position": 0,
+                    "direction": "Bi",
+                    "target_value": {
+                        "content": "",
+                        "length": 0,
+                        "padding": "left"
+                    },
+                    "matching_operator": "ignore",
+                    "compression_decompression_action": "compute"
+                },
+                {
+                    "id": "UDP:Checksum",
+                    "length": 16,
+                    "position": 0,
+                    "direction": "Bi",
+                    "target_value": {
+                        "content": "",
+                        "length": 0,
+                        "padding": "left"
+                    },
+                    "matching_operator": "ignore",
+                    "compression_decompression_action": "compute"
+                },
+                {
+                    "id": "CoAP:Version",
+                    "length": 2,
+                    "position": 0,
+                    "direction": "Bi",
+                    "target_value": {
+                        "content": "01",
+                        "length": 2,
+                        "padding": "left"
+                    },
+                    "matching_operator": "equal",
+                    "compression_decompression_action": "not-sent"
+                },
+                {
+                    "id": "CoAP:Type",
+                    "length": 2,
+                    "position": 0,
+                    "direction": "Bi",
+                    "target_value": {
+                        "content": "02",
+                        "length": 2,
+                        "padding": "left"
+                    },
+                    "matching_operator": "equal",
+                    "compression_decompression_action": "not-sent"
+                },
+                {
+                    "id": "CoAP:Token Length",
+                    "length": 4,
+                    "position": 0,
+                    "direction": "Bi",
+                    "target_value": {
+                        "content": "00",
+                        "length": 4,
+                        "padding": "left"
+                    },
+                    "matching_operator": "equal",
+                    "compression_decompression_action": "not-sent"
+                },
+                {
+                    "id": "CoAP:Code",
+                    "length": 8,
+                    "position": 0,
+                    "direction": "Bi",
+                    "target_value": {
+                        "content": "00",
+                        "length": 8,
+                        "padding": "left"
+                    },
+                    "matching_operator": "equal",
+                    "compression_decompression_action": "not-sent"
+                },
+                {
+                    "id": "CoAP:Message ID",
+                    "length": 16,
+                    "position": 0,
+                    "direction": "Bi",
+                    "target_value": {
+                        "content": "",
+                        "length": 0,
+                        "padding": "left"
+                    },
+                    "matching_operator": "ignore",
+                    "compression_decompression_action": "value-sent"
+                }
+            ]
+        },
+        {
+            "id": {
+                "content": "04",
+                "length": 4,
+                "padding": "left"
+            },
+            "nature": "compression",
+            "field_descriptors": [
+                {
+                    "id": "IPv6:Version",
+                    "length": 4,
+                    "position": 0,
+                    "direction": "Bi",
+                    "target_value": {
+                        "content": "06",
+                        "length": 4,
+                        "padding": "left"
+                    },
+                    "matching_operator": "equal",
+                    "compression_decompression_action": "not-sent"
+                },
+                {
+                    "id": "IPv6:Traffic Class",
+                    "length": 8,
+                    "position": 0,
+                    "direction": "Bi",
+                    "target_value": {
+                        "content": "00",
+                        "length": 8,
+                        "padding": "left"
+                    },
+                    "matching_operator": "ignore",
+                    "compression_decompression_action": "not-sent"
+                },
+                {
+                    "id": "IPv6:Flow Label",
+                    "length": 20,
+                    "position": 0,
+                    "direction": "Bi",
+                    "target_value": {
+                        "content": "0fdbce",
+                        "length": 20,
+                        "padding": "left"
+                    },
+                    "matching_operator": "equal",
+                    "compression_decompression_action": "not-sent"
+                },
+                {
+                    "id": "IPv6:Payload Length",
+                    "length": 16,
+                    "position": 0,
+                    "direction": "Bi",
+                    "target_value": {
+                        "content": "",
+                        "length": 0,
+                        "padding": "left"
+                    },
+                    "matching_operator": "ignore",
+                    "compression_decompression_action": "compute"
+                },
+                {
+                    "id": "IPv6:Next Header",
+                    "length": 8,
+                    "position": 0,
+                    "direction": "Bi",
+                    "target_value": {
+                        "content": "11",
+                        "length": 8,
+                        "padding": "left"
+                    },
+                    "matching_operator": "equal",
+                    "compression_decompression_action": "not-sent"
+                },
+                {
+                    "id": "IPv6:Hop Limit",
+                    "length": 8,
+                    "position": 0,
+                    "direction": "Bi",
+                    "target_value": {
+                        "content": "40",
+                        "length": 8,
+                        "padding": "left"
+                    },
+                    "matching_operator": "equal",
+                    "compression_decompression_action": "not-sent"
+                },
+                {
+                    "id": "IPv6:Source Address",
+                    "length": 128,
+                    "position": 0,
+                    "direction": "Up",
+                    "target_value": {
+                        "content": "20010db8000a00000000000000000020",
+                        "length": 128,
+                        "padding": "left"
+                    },
+                    "matching_operator": "equal",
+                    "compression_decompression_action": "not-sent"
+                },
+                {
+                    "id": "IPv6:Destination Address",
+                    "length": 128,
+                    "position": 0,
+                    "direction": "Bi",
+                    "target_value": {
+                        "content": "20010db8000a00000000000000000003",
+                        "length": 128,
+                        "padding": "left"
+                    },
+                    "matching_operator": "equal",
+                    "compression_decompression_action": "not-sent"
+                },
+                {
+                    "id": "UDP:Source Port",
+                    "length": 16,
+                    "position": 0,
+                    "direction": "Bi",
+                    "target_value": {
+                        "content": "1633",
+                        "length": 16,
+                        "padding": "left"
+                    },
+                    "matching_operator": "equal",
+                    "compression_decompression_action": "not-sent"
+                },
+                {
+                    "id": "UDP:Destination Port",
+                    "length": 16,
+                    "position": 0,
+                    "direction": "Bi",
+                    "target_value": {
+                        "content": "90a0",
+                        "length": 16,
+                        "padding": "left"
+                    },
+                    "matching_operator": "equal",
+                    "compression_decompression_action": "not-sent"
+                },
+                {
+                    "id": "UDP:Length",
+                    "length": 16,
+                    "position": 0,
+                    "direction": "Bi",
+                    "target_value": {
+                        "content": "",
+                        "length": 0,
+                        "padding": "left"
+                    },
+                    "matching_operator": "ignore",
+                    "compression_decompression_action": "compute"
+                },
+                {
+                    "id": "UDP:Checksum",
+                    "length": 16,
+                    "position": 0,
+                    "direction": "Bi",
+                    "target_value": {
+                        "content": "",
+                        "length": 0,
+                        "padding": "left"
+                    },
+                    "matching_operator": "ignore",
+                    "compression_decompression_action": "compute"
+                },
+                {
+                    "id": "CoAP:Version",
+                    "length": 2,
+                    "position": 0,
+                    "direction": "Bi",
+                    "target_value": {
+                        "content": "01",
+                        "length": 2,
+                        "padding": "left"
+                    },
+                    "matching_operator": "equal",
+                    "compression_decompression_action": "not-sent"
+                },
+                {
+                    "id": "CoAP:Type",
+                    "length": 2,
+                    "position": 0,
+                    "direction": "Bi",
+                    "target_value": {
+                        "content": "00",
+                        "length": 2,
+                        "padding": "left"
+                    },
+                    "matching_operator": "equal",
+                    "compression_decompression_action": "not-sent"
+                },
+                {
+                    "id": "CoAP:Token Length",
+                    "length": 4,
+                    "position": 0,
+                    "direction": "Bi",
+                    "target_value": {
+                        "content": "02",
+                        "length": 4,
+                        "padding": "left"
+                    },
+                    "matching_operator": "equal",
+                    "compression_decompression_action": "not-sent"
+                },
+                {
+                    "id": "CoAP:Code",
+                    "length": 8,
+                    "position": 0,
+                    "direction": "Bi",
+                    "target_value": {
+                        "content": "02",
+                        "length": 8,
+                        "padding": "left"
+                    },
+                    "matching_operator": "equal",
+                    "compression_decompression_action": "not-sent"
+                },
+                {
+                    "id": "CoAP:Message ID",
+                    "length": 16,
+                    "position": 0,
+                    "direction": "Bi",
+                    "target_value": {
+                        "content": "",
+                        "length": 0,
+                        "padding": "left"
+                    },
+                    "matching_operator": "ignore",
+                    "compression_decompression_action": "value-sent"
+                },
+                {
+                    "id": "CoAP:Token",
+                    "length": 16,
+                    "position": 0,
+                    "direction": "Bi",
+                    "target_value": {
+                        "content": "",
+                        "length": 0,
+                        "padding": "left"
+                    },
+                    "matching_operator": "ignore",
+                    "compression_decompression_action": "value-sent"
+                },
+                {
+                    "id": "CoAP:Option Delta",
+                    "length": 4,
+                    "position": 0,
+                    "direction": "Bi",
+                    "target_value": {
+                        "content": "0b",
+                        "length": 4,
+                        "padding": "left"
+                    },
+                    "matching_operator": "equal",
+                    "compression_decompression_action": "not-sent"
+                },
+                {
+                    "id": "CoAP:Option Length",
+                    "length": 4,
+                    "position": 0,
+                    "direction": "Bi",
+                    "target_value": {
+                        "content": "04",
+                        "length": 4,
+                        "padding": "left"
+                    },
+                    "matching_operator": "equal",
+                    "compression_decompression_action": "not-sent"
+                },
+                {
+                    "id": "CoAP:Option Value",
+                    "length": 32,
+                    "position": 0,
+                    "direction": "Bi",
+                    "target_value": {
+                        "content": "33333030",
+                        "length": 29,
+                        "padding": "right"
+                    },
+                    "matching_operator": "most-significant-bits",
+                    "compression_decompression_action": "least-significant-bits"
+                },
+                {
+                    "id": "CoAP:Option Delta",
+                    "length": 4,
+                    "position": 0,
+                    "direction": "Bi",
+                    "target_value": {
+                        "content": "00",
+                        "length": 4,
+                        "padding": "left"
+                    },
+                    "matching_operator": "equal",
+                    "compression_decompression_action": "not-sent"
+                },
+                {
+                    "id": "CoAP:Option Length",
+                    "length": 4,
+                    "position": 0,
+                    "direction": "Bi",
+                    "target_value": {
+                        "content": "01",
+                        "length": 4,
+                        "padding": "left"
+                    },
+                    "matching_operator": "equal",
+                    "compression_decompression_action": "not-sent"
+                },
+                {
+                    "id": "CoAP:Option Value",
+                    "length": 8,
+                    "position": 0,
+                    "direction": "Bi",
+                    "target_value": {
+                        "content": "30",
+                        "length": 8,
+                        "padding": "left"
+                    },
+                    "matching_operator": "equal",
+                    "compression_decompression_action": "not-sent"
+                },
+                {
+                    "id": "CoAP:Option Delta",
+                    "length": 4,
+                    "position": 0,
+                    "direction": "Bi",
+                    "target_value": {
+                        "content": "00",
+                        "length": 4,
+                        "padding": "left"
+                    },
+                    "matching_operator": "equal",
+                    "compression_decompression_action": "not-sent"
+                },
+                {
+                    "id": "CoAP:Option Length",
+                    "length": 4,
+                    "position": 0,
+                    "direction": "Bi",
+                    "target_value": {
+                        "content": "04",
+                        "length": 4,
+                        "padding": "left"
+                    },
+                    "matching_operator": "equal",
+                    "compression_decompression_action": "not-sent"
+                },
+                {
+                    "id": "CoAP:Option Value",
+                    "length": 32,
+                    "position": 0,
+                    "direction": "Bi",
+                    "target_value": {
+                        "content": "35363035",
+                        "length": 32,
+                        "padding": "left"
+                    },
+                    "matching_operator": "equal",
+                    "compression_decompression_action": "not-sent"
+                }
+            ]
+        },
+        {
+            "id": {
+                "content": "05",
+                "length": 4,
+                "padding": "left"
+            },
+            "nature": "compression",
+            "field_descriptors": [
+                {
+                    "id": "IPv6:Version",
+                    "length": 4,
+                    "position": 0,
+                    "direction": "Bi",
+                    "target_value": {
+                        "content": "06",
+                        "length": 4,
+                        "padding": "left"
+                    },
+                    "matching_operator": "equal",
+                    "compression_decompression_action": "not-sent"
+                },
+                {
+                    "id": "IPv6:Traffic Class",
+                    "length": 8,
+                    "position": 0,
+                    "direction": "Bi",
+                    "target_value": {
+                        "content": "00",
+                        "length": 8,
+                        "padding": "left"
+                    },
+                    "matching_operator": "ignore",
+                    "compression_decompression_action": "not-sent"
+                },
+                {
+                    "id": "IPv6:Flow Label",
+                    "length": 20,
+                    "position": 0,
+                    "direction": "Bi",
+                    "target_value": {
+                        "content": "0ff85f",
+                        "length": 20,
+                        "padding": "left"
+                    },
+                    "matching_operator": "equal",
+                    "compression_decompression_action": "not-sent"
+                },
+                {
+                    "id": "IPv6:Payload Length",
+                    "length": 16,
+                    "position": 0,
+                    "direction": "Bi",
+                    "target_value": {
+                        "content": "",
+                        "length": 0,
+                        "padding": "left"
+                    },
+                    "matching_operator": "ignore",
+                    "compression_decompression_action": "compute"
+                },
+                {
+                    "id": "IPv6:Next Header",
+                    "length": 8,
+                    "position": 0,
+                    "direction": "Bi",
+                    "target_value": {
+                        "content": "11",
+                        "length": 8,
+                        "padding": "left"
+                    },
+                    "matching_operator": "equal",
+                    "compression_decompression_action": "not-sent"
+                },
+                {
+                    "id": "IPv6:Hop Limit",
+                    "length": 8,
+                    "position": 0,
+                    "direction": "Bi",
+                    "target_value": {
+                        "content": "40",
+                        "length": 8,
+                        "padding": "left"
+                    },
+                    "matching_operator": "equal",
+                    "compression_decompression_action": "not-sent"
+                },
+                {
+                    "id": "IPv6:Source Address",
+                    "length": 128,
+                    "position": 0,
+                    "direction": "Up",
+                    "target_value": {
+                        "content": "20010db8000a00000000000000000003",
+                        "length": 128,
+                        "padding": "left"
+                    },
+                    "matching_operator": "equal",
+                    "compression_decompression_action": "not-sent"
+                },
+                {
+                    "id": "IPv6:Destination Address",
+                    "length": 128,
+                    "position": 0,
+                    "direction": "Bi",
+                    "target_value": {
+                        "content": "20010db8000a00000000000000000020",
+                        "length": 128,
+                        "padding": "left"
+                    },
+                    "matching_operator": "equal",
+                    "compression_decompression_action": "not-sent"
+                },
+                {
+                    "id": "UDP:Source Port",
+                    "length": 16,
+                    "position": 0,
+                    "direction": "Bi",
+                    "target_value": {
+                        "content": "90a0",
+                        "length": 16,
+                        "padding": "left"
+                    },
+                    "matching_operator": "equal",
+                    "compression_decompression_action": "not-sent"
+                },
+                {
+                    "id": "UDP:Destination Port",
+                    "length": 16,
+                    "position": 0,
+                    "direction": "Bi",
+                    "target_value": {
+                        "content": "1633",
+                        "length": 16,
+                        "padding": "left"
+                    },
+                    "matching_operator": "equal",
+                    "compression_decompression_action": "not-sent"
+                },
+                {
+                    "id": "UDP:Length",
+                    "length": 16,
+                    "position": 0,
+                    "direction": "Bi",
+                    "target_value": {
+                        "content": "",
+                        "length": 0,
+                        "padding": "left"
+                    },
+                    "matching_operator": "ignore",
+                    "compression_decompression_action": "compute"
+                },
+                {
+                    "id": "UDP:Checksum",
+                    "length": 16,
+                    "position": 0,
+                    "direction": "Bi",
+                    "target_value": {
+                        "content": "",
+                        "length": 0,
+                        "padding": "left"
+                    },
+                    "matching_operator": "ignore",
+                    "compression_decompression_action": "compute"
+                },
+                {
+                    "id": "CoAP:Version",
+                    "length": 2,
+                    "position": 0,
+                    "direction": "Bi",
+                    "target_value": {
+                        "content": "01",
+                        "length": 2,
+                        "padding": "left"
+                    },
+                    "matching_operator": "equal",
+                    "compression_decompression_action": "not-sent"
+                },
+                {
+                    "id": "CoAP:Type",
+                    "length": 2,
+                    "position": 0,
+                    "direction": "Bi",
+                    "target_value": {
+                        "content": "00",
+                        "length": 2,
+                        "padding": "left"
+                    },
+                    "matching_operator": "equal",
+                    "compression_decompression_action": "not-sent"
+                },
+                {
+                    "id": "CoAP:Token Length",
+                    "length": 4,
+                    "position": 0,
+                    "direction": "Bi",
+                    "target_value": {
+                        "content": "02",
+                        "length": 4,
+                        "padding": "left"
+                    },
+                    "matching_operator": "equal",
+                    "compression_decompression_action": "not-sent"
+                },
+                {
+                    "id": "CoAP:Code",
+                    "length": 8,
+                    "position": 0,
+                    "direction": "Bi",
+                    "target_value": {
+                        "content": "02",
+                        "length": 8,
+                        "padding": "left"
+                    },
+                    "matching_operator": "equal",
+                    "compression_decompression_action": "not-sent"
+                },
+                {
+                    "id": "CoAP:Message ID",
+                    "length": 16,
+                    "position": 0,
+                    "direction": "Bi",
+                    "target_value": {
+                        "content": "",
+                        "length": 0,
+                        "padding": "left"
+                    },
+                    "matching_operator": "ignore",
+                    "compression_decompression_action": "value-sent"
+                },
+                {
+                    "id": "CoAP:Token",
+                    "length": 16,
+                    "position": 0,
+                    "direction": "Bi",
+                    "target_value": {
+                        "content": "",
+                        "length": 0,
+                        "padding": "left"
+                    },
+                    "matching_operator": "ignore",
+                    "compression_decompression_action": "value-sent"
+                },
+                {
+                    "id": "CoAP:Option Delta",
+                    "length": 4,
+                    "position": 0,
+                    "direction": "Bi",
+                    "target_value": {
+                        "content": "0b",
+                        "length": 4,
+                        "padding": "left"
+                    },
+                    "matching_operator": "equal",
+                    "compression_decompression_action": "not-sent"
+                },
+                {
+                    "id": "CoAP:Option Length",
+                    "length": 4,
+                    "position": 0,
+                    "direction": "Bi",
+                    "target_value": {
+                        "content": "02",
+                        "length": 4,
+                        "padding": "left"
+                    },
+                    "matching_operator": "equal",
+                    "compression_decompression_action": "not-sent"
+                },
+                {
+                    "id": "CoAP:Option Value",
+                    "length": 16,
+                    "position": 0,
+                    "direction": "Bi",
+                    "target_value": {
+                        "content": "7264",
+                        "length": 16,
+                        "padding": "left"
+                    },
+                    "matching_operator": "equal",
+                    "compression_decompression_action": "not-sent"
+                },
+                {
+                    "id": "CoAP:Option Delta",
+                    "length": 4,
+                    "position": 0,
+                    "direction": "Bi",
+                    "target_value": {
+                        "content": "00",
+                        "length": 4,
+                        "padding": "left"
+                    },
+                    "matching_operator": "equal",
+                    "compression_decompression_action": "not-sent"
+                },
+                {
+                    "id": "CoAP:Option Length",
+                    "length": 4,
+                    "position": 0,
+                    "direction": "Bi",
+                    "target_value": {
+                        "content": "0a",
+                        "length": 4,
+                        "padding": "left"
+                    },
+                    "matching_operator": "equal",
+                    "compression_decompression_action": "not-sent"
+                },
+                {
+                    "id": "CoAP:Option Value",
+                    "length": 80,
+                    "position": 0,
+                    "direction": "Bi",
+                    "target_value": {
+                        "content": "574850584b3851784b6f",
+                        "length": 80,
+                        "padding": "left"
+                    },
+                    "matching_operator": "equal",
+                    "compression_decompression_action": "not-sent"
+                }
+            ]
+        },
+        {
+            "id": {
+                "content": "06",
+                "length": 4,
+                "padding": "left"
+            },
+            "nature": "compression",
+            "field_descriptors": [
+                {
+                    "id": "IPv6:Version",
+                    "length": 4,
+                    "position": 0,
+                    "direction": "Bi",
+                    "target_value": {
+                        "content": "06",
+                        "length": 4,
+                        "padding": "left"
+                    },
+                    "matching_operator": "equal",
+                    "compression_decompression_action": "not-sent"
+                },
+                {
+                    "id": "IPv6:Traffic Class",
+                    "length": 8,
+                    "position": 0,
+                    "direction": "Bi",
+                    "target_value": {
+                        "content": "00",
+                        "length": 8,
+                        "padding": "left"
+                    },
+                    "matching_operator": "ignore",
+                    "compression_decompression_action": "not-sent"
+                },
+                {
+                    "id": "IPv6:Flow Label",
+                    "length": 20,
+                    "position": 0,
+                    "direction": "Bi",
+                    "target_value": {
+                        "content": "0fdbce",
+                        "length": 20,
+                        "padding": "left"
+                    },
+                    "matching_operator": "equal",
+                    "compression_decompression_action": "not-sent"
+                },
+                {
+                    "id": "IPv6:Payload Length",
+                    "length": 16,
+                    "position": 0,
+                    "direction": "Bi",
+                    "target_value": {
+                        "content": "",
+                        "length": 0,
+                        "padding": "left"
+                    },
+                    "matching_operator": "ignore",
+                    "compression_decompression_action": "compute"
+                },
+                {
+                    "id": "IPv6:Next Header",
+                    "length": 8,
+                    "position": 0,
+                    "direction": "Bi",
+                    "target_value": {
+                        "content": "11",
+                        "length": 8,
+                        "padding": "left"
+                    },
+                    "matching_operator": "equal",
+                    "compression_decompression_action": "not-sent"
+                },
+                {
+                    "id": "IPv6:Hop Limit",
+                    "length": 8,
+                    "position": 0,
+                    "direction": "Bi",
+                    "target_value": {
+                        "content": "40",
+                        "length": 8,
+                        "padding": "left"
+                    },
+                    "matching_operator": "equal",
+                    "compression_decompression_action": "not-sent"
+                },
+                {
+                    "id": "IPv6:Source Address",
+                    "length": 128,
+                    "position": 0,
+                    "direction": "Up",
+                    "target_value": {
+                        "content": "20010db8000a00000000000000000020",
+                        "length": 128,
+                        "padding": "left"
+                    },
+                    "matching_operator": "equal",
+                    "compression_decompression_action": "not-sent"
+                },
+                {
+                    "id": "IPv6:Destination Address",
+                    "length": 128,
+                    "position": 0,
+                    "direction": "Bi",
+                    "target_value": {
+                        "content": "20010db8000a00000000000000000003",
+                        "length": 128,
+                        "padding": "left"
+                    },
+                    "matching_operator": "equal",
+                    "compression_decompression_action": "not-sent"
+                },
+                {
+                    "id": "UDP:Source Port",
+                    "length": 16,
+                    "position": 0,
+                    "direction": "Bi",
+                    "target_value": {
+                        "content": "1633",
+                        "length": 16,
+                        "padding": "left"
+                    },
+                    "matching_operator": "equal",
+                    "compression_decompression_action": "not-sent"
+                },
+                {
+                    "id": "UDP:Destination Port",
+                    "length": 16,
+                    "position": 0,
+                    "direction": "Bi",
+                    "target_value": {
+                        "content": "90a0",
+                        "length": 16,
+                        "padding": "left"
+                    },
+                    "matching_operator": "equal",
+                    "compression_decompression_action": "not-sent"
+                },
+                {
+                    "id": "UDP:Length",
+                    "length": 16,
+                    "position": 0,
+                    "direction": "Bi",
+                    "target_value": {
+                        "content": "",
+                        "length": 0,
+                        "padding": "left"
+                    },
+                    "matching_operator": "ignore",
+                    "compression_decompression_action": "compute"
+                },
+                {
+                    "id": "UDP:Checksum",
+                    "length": 16,
+                    "position": 0,
+                    "direction": "Bi",
+                    "target_value": {
+                        "content": "",
+                        "length": 0,
+                        "padding": "left"
+                    },
+                    "matching_operator": "ignore",
+                    "compression_decompression_action": "compute"
+                },
+                {
+                    "id": "CoAP:Version",
+                    "length": 2,
+                    "position": 0,
+                    "direction": "Bi",
+                    "target_value": {
+                        "content": "01",
+                        "length": 2,
+                        "padding": "left"
+                    },
+                    "matching_operator": "equal",
+                    "compression_decompression_action": "not-sent"
+                },
+                {
+                    "id": "CoAP:Type",
+                    "length": 2,
+                    "position": 0,
+                    "direction": "Bi",
+                    "target_value": {
+                        "content": "00",
+                        "length": 2,
+                        "padding": "left"
+                    },
+                    "matching_operator": "equal",
+                    "compression_decompression_action": "not-sent"
+                },
+                {
+                    "id": "CoAP:Token Length",
+                    "length": 4,
+                    "position": 0,
+                    "direction": "Bi",
+                    "target_value": {
+                        "content": "02",
+                        "length": 4,
+                        "padding": "left"
+                    },
+                    "matching_operator": "equal",
+                    "compression_decompression_action": "not-sent"
+                },
+                {
+                    "id": "CoAP:Code",
+                    "length": 8,
+                    "position": 0,
+                    "direction": "Bi",
+                    "target_value": {
+                        "content": "03",
+                        "length": 8,
+                        "padding": "left"
+                    },
+                    "matching_operator": "equal",
+                    "compression_decompression_action": "not-sent"
+                },
+                {
+                    "id": "CoAP:Message ID",
+                    "length": 16,
+                    "position": 0,
+                    "direction": "Bi",
+                    "target_value": {
+                        "content": "",
+                        "length": 0,
+                        "padding": "left"
+                    },
+                    "matching_operator": "ignore",
+                    "compression_decompression_action": "value-sent"
+                },
+                {
+                    "id": "CoAP:Token",
+                    "length": 16,
+                    "position": 0,
+                    "direction": "Bi",
+                    "target_value": {
+                        "content": "",
+                        "length": 0,
+                        "padding": "left"
+                    },
+                    "matching_operator": "ignore",
+                    "compression_decompression_action": "value-sent"
+                },
+                {
+                    "id": "CoAP:Option Delta",
+                    "length": 4,
+                    "position": 0,
+                    "direction": "Bi",
+                    "target_value": {
+                        "content": "0b",
+                        "length": 4,
+                        "padding": "left"
+                    },
+                    "matching_operator": "equal",
+                    "compression_decompression_action": "not-sent"
+                },
+                {
+                    "id": "CoAP:Option Length",
+                    "length": 4,
+                    "position": 0,
+                    "direction": "Bi",
+                    "target_value": {
+                        "content": "04",
+                        "length": 4,
+                        "padding": "left"
+                    },
+                    "matching_operator": "equal",
+                    "compression_decompression_action": "not-sent"
+                },
+                {
+                    "id": "CoAP:Option Value",
+                    "length": 32,
+                    "position": 0,
+                    "direction": "Bi",
+                    "target_value": {
+                        "content": "33333038",
+                        "length": 32,
+                        "padding": "left"
+                    },
+                    "matching_operator": "equal",
+                    "compression_decompression_action": "not-sent"
+                },
+                {
+                    "id": "CoAP:Option Delta",
+                    "length": 4,
+                    "position": 0,
+                    "direction": "Bi",
+                    "target_value": {
+                        "content": "00",
+                        "length": 4,
+                        "padding": "left"
+                    },
+                    "matching_operator": "equal",
+                    "compression_decompression_action": "not-sent"
+                },
+                {
+                    "id": "CoAP:Option Length",
+                    "length": 4,
+                    "position": 0,
+                    "direction": "Bi",
+                    "target_value": {
+                        "content": "01",
+                        "length": 4,
+                        "padding": "left"
+                    },
+                    "matching_operator": "equal",
+                    "compression_decompression_action": "not-sent"
+                },
+                {
+                    "id": "CoAP:Option Value",
+                    "length": 8,
+                    "position": 0,
+                    "direction": "Bi",
+                    "target_value": {
+                        "content": "30",
+                        "length": 8,
+                        "padding": "left"
+                    },
+                    "matching_operator": "equal",
+                    "compression_decompression_action": "not-sent"
+                },
+                {
+                    "id": "CoAP:Option Delta",
+                    "length": 4,
+                    "position": 0,
+                    "direction": "Bi",
+                    "target_value": {
+                        "content": "00",
+                        "length": 4,
+                        "padding": "left"
+                    },
+                    "matching_operator": "equal",
+                    "compression_decompression_action": "not-sent"
+                },
+                {
+                    "id": "CoAP:Option Length",
+                    "length": 4,
+                    "position": 0,
+                    "direction": "Bi",
+                    "target_value": {
+                        "content": "04",
+                        "length": 4,
+                        "padding": "left"
+                    },
+                    "matching_operator": "equal",
+                    "compression_decompression_action": "not-sent"
+                },
+                {
+                    "id": "CoAP:Option Value",
+                    "length": 32,
+                    "position": 0,
+                    "direction": "Bi",
+                    "target_value": {
+                        "content": "35393030",
+                        "length": 32,
+                        "padding": "left"
+                    },
+                    "matching_operator": "equal",
+                    "compression_decompression_action": "not-sent"
+                },
+                {
+                    "id": "CoAP:Option Delta",
+                    "length": 4,
+                    "position": 0,
+                    "direction": "Bi",
+                    "target_value": {
+                        "content": "01",
+                        "length": 4,
+                        "padding": "left"
+                    },
+                    "matching_operator": "equal",
+                    "compression_decompression_action": "not-sent"
+                },
+                {
+                    "id": "CoAP:Option Length",
+                    "length": 4,
+                    "position": 0,
+                    "direction": "Bi",
+                    "target_value": {
+                        "content": "01",
+                        "length": 4,
+                        "padding": "left"
+                    },
+                    "matching_operator": "equal",
+                    "compression_decompression_action": "not-sent"
+                },
+                {
+                    "id": "CoAP:Option Value",
+                    "length": 8,
+                    "position": 0,
+                    "direction": "Bi",
+                    "target_value": {
+                        "content": "3c",
+                        "length": 8,
+                        "padding": "left"
+                    },
+                    "matching_operator": "equal",
+                    "compression_decompression_action": "not-sent"
+                },
+                {
+                    "id": "CoAP:Payload Marker",
+                    "length": 8,
+                    "position": 0,
+                    "direction": "Bi",
+                    "target_value": {
+                        "content": "ff",
+                        "length": 8,
+                        "padding": "left"
+                    },
+                    "matching_operator": "equal",
+                    "compression_decompression_action": "not-sent"
+                }
+            ]
+        },
+        {
+            "id": {
+                "content": "07",
+                "length": 4,
+                "padding": "left"
+            },
+            "nature": "compression",
+            "field_descriptors": [
+                {
+                    "id": "IPv6:Version",
+                    "length": 4,
+                    "position": 0,
+                    "direction": "Bi",
+                    "target_value": {
+                        "content": "06",
+                        "length": 4,
+                        "padding": "left"
+                    },
+                    "matching_operator": "equal",
+                    "compression_decompression_action": "not-sent"
+                },
+                {
+                    "id": "IPv6:Traffic Class",
+                    "length": 8,
+                    "position": 0,
+                    "direction": "Bi",
+                    "target_value": {
+                        "content": "00",
+                        "length": 8,
+                        "padding": "left"
+                    },
+                    "matching_operator": "ignore",
+                    "compression_decompression_action": "not-sent"
+                },
+                {
+                    "id": "IPv6:Flow Label",
+                    "length": 20,
+                    "position": 0,
+                    "direction": "Bi",
+                    "target_value": {
+                        "content": "0ff85f",
+                        "length": 20,
+                        "padding": "left"
+                    },
+                    "matching_operator": "equal",
+                    "compression_decompression_action": "not-sent"
+                },
+                {
+                    "id": "IPv6:Payload Length",
+                    "length": 16,
+                    "position": 0,
+                    "direction": "Bi",
+                    "target_value": {
+                        "content": "",
+                        "length": 0,
+                        "padding": "left"
+                    },
+                    "matching_operator": "ignore",
+                    "compression_decompression_action": "compute"
+                },
+                {
+                    "id": "IPv6:Next Header",
+                    "length": 8,
+                    "position": 0,
+                    "direction": "Bi",
+                    "target_value": {
+                        "content": "11",
+                        "length": 8,
+                        "padding": "left"
+                    },
+                    "matching_operator": "equal",
+                    "compression_decompression_action": "not-sent"
+                },
+                {
+                    "id": "IPv6:Hop Limit",
+                    "length": 8,
+                    "position": 0,
+                    "direction": "Bi",
+                    "target_value": {
+                        "content": "40",
+                        "length": 8,
+                        "padding": "left"
+                    },
+                    "matching_operator": "equal",
+                    "compression_decompression_action": "not-sent"
+                },
+                {
+                    "id": "IPv6:Source Address",
+                    "length": 128,
+                    "position": 0,
+                    "direction": "Up",
+                    "target_value": {
+                        "content": "20010db8000a00000000000000000003",
+                        "length": 128,
+                        "padding": "left"
+                    },
+                    "matching_operator": "equal",
+                    "compression_decompression_action": "not-sent"
+                },
+                {
+                    "id": "IPv6:Destination Address",
+                    "length": 128,
+                    "position": 0,
+                    "direction": "Bi",
+                    "target_value": {
+                        "content": "20010db8000a00000000000000000020",
+                        "length": 128,
+                        "padding": "left"
+                    },
+                    "matching_operator": "equal",
+                    "compression_decompression_action": "not-sent"
+                },
+                {
+                    "id": "UDP:Source Port",
+                    "length": 16,
+                    "position": 0,
+                    "direction": "Bi",
+                    "target_value": {
+                        "content": "90a0",
+                        "length": 16,
+                        "padding": "left"
+                    },
+                    "matching_operator": "equal",
+                    "compression_decompression_action": "not-sent"
+                },
+                {
+                    "id": "UDP:Destination Port",
+                    "length": 16,
+                    "position": 0,
+                    "direction": "Bi",
+                    "target_value": {
+                        "content": "1633",
+                        "length": 16,
+                        "padding": "left"
+                    },
+                    "matching_operator": "equal",
+                    "compression_decompression_action": "not-sent"
+                },
+                {
+                    "id": "UDP:Length",
+                    "length": 16,
+                    "position": 0,
+                    "direction": "Bi",
+                    "target_value": {
+                        "content": "",
+                        "length": 0,
+                        "padding": "left"
+                    },
+                    "matching_operator": "ignore",
+                    "compression_decompression_action": "compute"
+                },
+                {
+                    "id": "UDP:Checksum",
+                    "length": 16,
+                    "position": 0,
+                    "direction": "Bi",
+                    "target_value": {
+                        "content": "",
+                        "length": 0,
+                        "padding": "left"
+                    },
+                    "matching_operator": "ignore",
+                    "compression_decompression_action": "compute"
+                },
+                {
+                    "id": "CoAP:Version",
+                    "length": 2,
+                    "position": 0,
+                    "direction": "Bi",
+                    "target_value": {
+                        "content": "01",
+                        "length": 2,
+                        "padding": "left"
+                    },
+                    "matching_operator": "equal",
+                    "compression_decompression_action": "not-sent"
+                },
+                {
+                    "id": "CoAP:Type",
+                    "length": 2,
+                    "position": 0,
+                    "direction": "Bi",
+                    "target_value": {
+                        "content": "00",
+                        "length": 1,
+                        "padding": "left"
+                    },
+                    "matching_operator": "most-significant-bits",
+                    "compression_decompression_action": "least-significant-bits"
+                },
+                {
+                    "id": "CoAP:Token Length",
+                    "length": 4,
+                    "position": 0,
+                    "direction": "Bi",
+                    "target_value": {
+                        "content": "02",
+                        "length": 4,
+                        "padding": "left"
+                    },
+                    "matching_operator": "equal",
+                    "compression_decompression_action": "not-sent"
+                },
+                {
+                    "id": "CoAP:Code",
+                    "length": 8,
+                    "position": 0,
+                    "direction": "Bi",
+                    "target_value": {
+                        "content": "45",
+                        "length": 8,
+                        "padding": "left"
+                    },
+                    "matching_operator": "equal",
+                    "compression_decompression_action": "not-sent"
+                },
+                {
+                    "id": "CoAP:Message ID",
+                    "length": 16,
+                    "position": 0,
+                    "direction": "Bi",
+                    "target_value": {
+                        "content": "",
+                        "length": 0,
+                        "padding": "left"
+                    },
+                    "matching_operator": "ignore",
+                    "compression_decompression_action": "value-sent"
+                },
+                {
+                    "id": "CoAP:Token",
+                    "length": 16,
+                    "position": 0,
+                    "direction": "Bi",
+                    "target_value": {
+                        "content": "",
+                        "length": 0,
+                        "padding": "left"
+                    },
+                    "matching_operator": "ignore",
+                    "compression_decompression_action": "value-sent"
+                },
+                {
+                    "id": "CoAP:Option Delta",
+                    "length": 4,
+                    "position": 0,
+                    "direction": "Bi",
+                    "target_value": {
+                        "content": "06",
+                        "length": 4,
+                        "padding": "left"
+                    },
+                    "matching_operator": "equal",
+                    "compression_decompression_action": "not-sent"
+                },
+                {
+                    "id": "CoAP:Option Length",
+                    "length": 4,
+                    "position": 0,
+                    "direction": "Bi",
+                    "target_value": {
+                        "content": "00",
+                        "length": 2,
+                        "padding": "right"
+                    },
+                    "matching_operator": "most-significant-bits",
+                    "compression_decompression_action": "least-significant-bits"
+                },
+                {
+                    "id": "CoAP:Option Value",
+                    "length": 0,
+                    "position": 0,
+                    "direction": "Bi",
+                    "target_value": {
+                        "content": "",
+                        "length": 0,
+                        "padding": "left"
+                    },
+                    "matching_operator": "ignore",
+                    "compression_decompression_action": "value-sent"
+                },
+                {
+                    "id": "CoAP:Option Delta",
+                    "length": 4,
+                    "position": 0,
+                    "direction": "Bi",
+                    "target_value": {
+                        "content": "06",
+                        "length": 4,
+                        "padding": "left"
+                    },
+                    "matching_operator": "equal",
+                    "compression_decompression_action": "not-sent"
+                },
+                {
+                    "id": "CoAP:Option Length",
+                    "length": 4,
+                    "position": 0,
+                    "direction": "Bi",
+                    "target_value": {
+                        "content": "01",
+                        "length": 4,
+                        "padding": "left"
+                    },
+                    "matching_operator": "equal",
+                    "compression_decompression_action": "not-sent"
+                },
+                {
+                    "id": "CoAP:Option Value",
+                    "length": 8,
+                    "position": 0,
+                    "direction": "Bi",
+                    "target_value": {
+                        "content": "3c",
+                        "length": 8,
+                        "padding": "left"
+                    },
+                    "matching_operator": "equal",
+                    "compression_decompression_action": "not-sent"
+                },
+                {
+                    "id": "CoAP:Payload Marker",
+                    "length": 8,
+                    "position": 0,
+                    "direction": "Bi",
+                    "target_value": {
+                        "content": "ff",
+                        "length": 8,
+                        "padding": "left"
+                    },
+                    "matching_operator": "equal",
+                    "compression_decompression_action": "not-sent"
+                }
+            ]
+        },
+        {
+            "id": {
+                "content": "08",
+                "length": 4,
+                "padding": "left"
+            },
+            "nature": "no-compression"
+        }
+    ]
+}
