@@ -1,9 +1,11 @@
+from typing import List, Tuple
+
 from microschc.parser.parser import PacketParser
 from microschc.protocol.registry import Stack, factory
 from microschc.protocol.coap import CoAPFields, CoAPOptionMode, CoAPParser
 from microschc.protocol.ipv6 import IPv6Fields, IPv6Parser
 from microschc.protocol.udp import UDPFields, UDPParser
-from microschc.rfc8724 import DirectionIndicator, PacketDescriptor
+from microschc.rfc8724 import PacketDescriptor
 from microschc.binary.buffer import Buffer
 
 def test_parser_ipv6_udp_coap():
@@ -255,3 +257,94 @@ def test_parser_ipv6_udp_coap_semantic():
                                 b"\x34\x38\x2e\x30\x7d\x2c\x7b\x22\x6e\x22\x3a\x22\x30\x2f\x35\x22" \
                                 b"\x2c\x22\x76\x22\x3a\x31\x36\x36\x36\x32\x36\x33\x33\x33\x39\x7d\x5d"
     assert packet_descriptor.payload == Buffer(content=payload_content, length=8*len(payload_content))
+
+def test_unparser_ipv6_udp_coap_semantic():
+    """
+    Test the unparsing of a semantic CoAP packet with IPv6 and UDP headers.
+        
+    - CoAP Options (semantic representation):
+        - URI-Path: "3303"
+        - URI-Path: "0"
+        - URI-Path: "5605"
+        - Payload Marker: 0xff
+
+    - an IPv6 header with following fields:
+        - id='Version'              length=4    position=0  value=b'\x06'
+        - id='Traffic Class'        length=8    position=0  value=b'\x00'
+        - id='Flow Label'           length=20   position=0  value=b'\x0f\xdb\xce'
+        - id='Payload Length'       length=16   position=0  value=b'\x00\x1a'
+        - id='Next Header'          length=8    position=0  value=b'\x11'
+        - id='Hop Limit'            length=8    position=0  value=b'\x40'
+        - id='Source Address'       length=128  position=0  value=b"\x20\x01\x0d\xb8\x00\x0a\x00\x00\x00\x00\x00\x00\x00\x00\x00\x20"
+        - id='Destination Address'  length=128  position=0  value=b"\x20\x01\x0d\xb8\x00\x0a\x00\x00\x00\x00\x00\x00\x00\x00\x00\x03"
+
+    - a UDP header with following fields:
+        - id='Source Port'          length=16    position=0  value=b'\x16\x33'
+        - id='Destination Port'     length=16    position=0  value=b'\x90\xa0'
+        - id='Length'               length=16    position=0  value=b'\x00\x1a'
+        - id='Checksum'             length=16    position=0  value=b'\x8e\x20'
+
+    - a CoAP header with following fields:
+        - id='Version'                length=2    position=0  value=b'\x01'
+        - id='Type'                   length=2    position=0  value=b'\x00'
+        - id='Token Length'           length=4    position=0  value=b'\x02'
+        - id='Code'                   length=8    position=0  value=b'\x02'
+        - id='message ID'             length=16   position=0  value=b'\x2d\x43'
+        - id='Token'                  length=16   position=0  value=b'\x50\x03'
+        - id='Uri-Path'               length=32   position=0  value=b'\x33\x33\x30\x33'
+        - id='Uri-Path'               length=8    position=0  value=b'\x30'
+        - id='Uri-Path'               length=32   position=0  value=b'\x35\x36\x30\x35'
+
+    Tests the conversion from semantic CoAP options to their syntactic representation,
+    verifying that option deltas and lengths are correctly calculated.
+    """
+
+    packet_fields: List[Tuple[str, Buffer]] = []
+    packet_fields.append((IPv6Fields.VERSION, Buffer(content=b'\x06', length=4)))
+    packet_fields.append((IPv6Fields.TRAFFIC_CLASS, Buffer(content=b'\x00', length=8)))
+    packet_fields.append((IPv6Fields.FLOW_LABEL, Buffer(content=b'\x0f\xdb\xce', length=20)))
+    packet_fields.append((IPv6Fields.PAYLOAD_LENGTH, Buffer(content=b'\x00\x1a', length=16)))
+    packet_fields.append((IPv6Fields.NEXT_HEADER, Buffer(content=b'\x11', length=8)))
+    packet_fields.append((IPv6Fields.HOP_LIMIT, Buffer(content=b'\x40', length=8)))
+    packet_fields.append((IPv6Fields.SRC_ADDRESS, Buffer(content=b"\x20\x01\x0d\xb8\x00\x0a\x00\x00\x00\x00\x00\x00\x00\x00\x00\x20", length=128)))
+    packet_fields.append((IPv6Fields.DST_ADDRESS, Buffer(content=b"\x20\x01\x0d\xb8\x00\x0a\x00\x00\x00\x00\x00\x00\x00\x00\x00\x03", length=128)))
+    packet_fields.append((UDPFields.SOURCE_PORT, Buffer(content=b'\x16\x33', length=16)))
+    packet_fields.append((UDPFields.DESTINATION_PORT, Buffer(content=b'\x90\xa0', length=16))) 
+    packet_fields.append((UDPFields.LENGTH, Buffer(content=b'\x00\x1a', length=16)))
+    packet_fields.append((UDPFields.CHECKSUM, Buffer(content=b'\x8e\x20', length=16)))
+    packet_fields.append((CoAPFields.VERSION, Buffer(content=b'\x01', length=2)))
+    packet_fields.append((CoAPFields.TYPE, Buffer(content=b'\x00', length=2)))
+    packet_fields.append((CoAPFields.TOKEN_LENGTH, Buffer(content=b'\x02', length=4)))
+    packet_fields.append((CoAPFields.CODE, Buffer(content=b'\x02', length=8)))
+    packet_fields.append((CoAPFields.MESSAGE_ID, Buffer(content=b'\x2d\x43', length=16)))
+    packet_fields.append((CoAPFields.TOKEN, Buffer(content=b'\x50\x03', length=16)))
+
+    semantic_fields: List[Tuple[str, Buffer]] = packet_fields.copy()
+    semantic_fields.append((CoAPFields.OPTION_URI_PATH, Buffer(content=b'\x33\x33\x30\x33', length=32)))
+    semantic_fields.append((CoAPFields.OPTION_URI_PATH, Buffer(content=b'\x30', length=8)))
+    semantic_fields.append((CoAPFields.OPTION_URI_PATH, Buffer(content=b'\x35\x36\x30\x35', length=32)))
+    semantic_fields.append((CoAPFields.PAYLOAD_MARKER, Buffer(content=b'\xff', length=8)))
+
+    expected_syntaxic_fields: List[Tuple[str, Buffer]] = packet_fields.copy()
+    expected_syntaxic_fields.append((CoAPFields.OPTION_DELTA, Buffer(content=b'\x0b', length=4)))
+    expected_syntaxic_fields.append((CoAPFields.OPTION_LENGTH, Buffer(content=b'\x04', length=4)))
+    expected_syntaxic_fields.append((CoAPFields.OPTION_VALUE, Buffer(content=b'\x33\x33\x30\x33', length=32)))
+    expected_syntaxic_fields.append((CoAPFields.OPTION_DELTA, Buffer(content=b'\x00', length=4)))
+    expected_syntaxic_fields.append((CoAPFields.OPTION_LENGTH, Buffer(content=b'\x01', length=4)))
+    expected_syntaxic_fields.append((CoAPFields.OPTION_VALUE, Buffer(content=b'\x30', length=8)))
+    expected_syntaxic_fields.append((CoAPFields.OPTION_DELTA, Buffer(content=b'\x00', length=4)))
+    expected_syntaxic_fields.append((CoAPFields.OPTION_LENGTH, Buffer(content=b'\x04', length=4)))
+    expected_syntaxic_fields.append((CoAPFields.OPTION_VALUE, Buffer(content=b'\x35\x36\x30\x35', length=32)))
+    expected_syntaxic_fields.append((CoAPFields.PAYLOAD_MARKER, Buffer(content=b'\xff', length=8)))
+
+    packet_parser: PacketParser = PacketParser(
+        name='IPv6.UDP.CoAP-semantic',
+        parsers=[
+            IPv6Parser(),
+            UDPParser(),
+            CoAPParser(interpret_options=CoAPOptionMode.SEMANTIC)
+        ]
+    )
+    syntaxic_fields: List[Tuple[str, Buffer]] = packet_parser.unparse(semantic_fields)
+
+    assert expected_syntaxic_fields == syntaxic_fields

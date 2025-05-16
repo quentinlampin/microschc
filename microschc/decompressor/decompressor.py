@@ -5,12 +5,12 @@ Implementation SCHC packet decompression as described in section 7.2 of [1].
 '''
 
 from functools import cmp_to_key, reduce
-from typing import Dict, List, Set, Tuple
+from typing import List, Optional, Set, Tuple
 from microschc.binary.buffer import Buffer, Padding
 from microschc.parser.parser import PacketParser
 from microschc.protocol import ComputeFunctions
 from microschc.protocol.compute import ComputeFunctionType
-from microschc.rfc8724 import RuleFieldDescriptor, MatchMapping, RuleDescriptor
+from microschc.rfc8724 import DirectionIndicator, RuleFieldDescriptor, MatchMapping, RuleDescriptor
 from microschc.rfc8724 import CompressionDecompressionAction as CDA
 from microschc.rfc8724extras import ParserDefinitions
 
@@ -38,10 +38,10 @@ def compute_function_sort(entry_1: ComputeEntry, entry_2: ComputeEntry) -> int:
 
 
 
-def decompress(schc_packet: Buffer, rule_descriptor: RuleDescriptor, unparser: PacketParser=None) -> Buffer:
+def decompress(schc_packet: Buffer, rule_descriptor: RuleDescriptor, direction: Optional[DirectionIndicator] = None, unparser: PacketParser=None) -> Buffer:
     """
-        Decompress the packet fields following the rule's compression actions.
-        See section 7.2 of [1].
+    Decompress the packet fields following the rule's compression actions.
+    See section 7.2 of [1].
     """
     compute_entries: List[ComputeEntry] = []
 
@@ -50,11 +50,24 @@ def decompress(schc_packet: Buffer, rule_descriptor: RuleDescriptor, unparser: P
     # remove rule ID
     schc_packet = schc_packet[rule_descriptor.id.length:]
 
+    # Filter rule fields by direction
+    matching_fields: List[RuleFieldDescriptor]
+    if direction is None:
+        matching_fields = rule_descriptor.field_descriptors
+    else:
+        matching_fields: List[RuleFieldDescriptor] = [
+            rf for rf in rule_descriptor.field_descriptors
+            if rf.direction == direction or rf.direction == DirectionIndicator.BIDIRECTIONAL
+        ]
+
+    # decompress header length
+    packet_header_len: int = 0
+
     # decompress all fields
     field_residue: Buffer
     residue_bitlength: int
     decompressed_field: Buffer
-    for rf_position, rf in enumerate(rule_descriptor.field_descriptors):
+    for rf_position, rf in enumerate(matching_fields):
         residue_bitlength = 0
         decompressed_field = Buffer(content=b'', length=0, padding=Padding.RIGHT)
         if rf.compression_decompression_action == CDA.NOT_SENT:
@@ -119,8 +132,23 @@ def decompress(schc_packet: Buffer, rule_descriptor: RuleDescriptor, unparser: P
         
         decompressed_fields.append((rf.id, decompressed_field))
         
+        # fill theoric header len
+        packet_header_len += decompressed_field.length
+
         schc_packet = schc_packet[residue_bitlength:]
-    decompressed_fields.append((ParserDefinitions.PAYLOAD, schc_packet))
+
+    # feed to unparser if provided
+    if unparser is not None:
+        decompressed_fields = unparser.unparse(decompressed_fields)
+
+    # payload is assumed to be byte-aligned, truncate the residue to keep a multiple of 8 bits.
+    padding: int = schc_packet.length%8
+    payload: Buffer = schc_packet[0: schc_packet.length-padding]
+
+    # add payload to decompressed fields
+    decompressed_fields.append((ParserDefinitions.PAYLOAD, payload))
+
+    
     # sort compute CDA entries according 
     compute_entries.sort(key=cmp_to_key(compute_function_sort))
 
@@ -130,10 +158,6 @@ def decompress(schc_packet: Buffer, rule_descriptor: RuleDescriptor, unparser: P
         field_position: int = compute_entry.field_position
         compute_function: ComputeFunctionType = compute_entry.function        
         decompressed_fields[field_position] = (field_id, compute_function(decompressed_fields, field_position))
-        
-    # feed to unparser if provided
-    if unparser is not None:
-        decompressed_fields = unparser.unparse(decompressed_fields)
 
     # concatenate decompressed fields
     decompressed_field_values = [field_value for field_id, field_value in decompressed_fields]
@@ -142,3 +166,23 @@ def decompress(schc_packet: Buffer, rule_descriptor: RuleDescriptor, unparser: P
     decompressed: Buffer = reduce(lambda x, y: x+y, decompressed_field_values, decompressed_buffer)
 
     return decompressed
+
+def _find_payload_length(schc_packet: Buffer, packet_len: int) -> Buffer:
+    """
+    Calculate real payload length ensuring total packet length is multiple of 8.
+    
+    Args:
+        schc_packet: Remaining SCHC packet (payload)
+        packet_len: Current decompressed packet length in bits
+        
+    Returns:
+        Buffer: SCHC packet trimmed to correct payload length
+    """
+
+    # Find first length that makes total packet length multiple of 8
+    for length in range(schc_packet.length, schc_packet.length - 8, -1):
+        if (packet_len + length) % 8 == 0:
+            return schc_packet[:length]
+    
+    # If no valid length found, return original (should not happen)
+    return schc_packet
