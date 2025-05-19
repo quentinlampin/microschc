@@ -15,9 +15,11 @@ from typing import Dict, List, Tuple, Type, Union
 from microschc.binary.buffer import Buffer, Padding
 from microschc.parser import HeaderParser, ParserError
 from microschc.protocol.compute import ComputeFunctionDependenciesType, ComputeFunctionType
-from microschc.protocol.registry import PARSERS, REGISTER_PARSER, ProtocolsIDs
+from microschc.protocol.registry import PARSERS, REGISTER_COMPUTE_FUNCTIONS, REGISTER_PARSER, ProtocolsIDs
 from microschc.rfc8724 import FieldDescriptor, HeaderDescriptor, RuleFieldDescriptor, DirectionIndicator as DI, MatchingOperator as MO, CompressionDecompressionAction as CDA, TargetValue
 from microschc.tools import create_target_value
+from microschc.tools.cda import select_cda
+from microschc.tools.mo import select_mo
 
 IPV4_HEADER_ID = 'IPv4'
 
@@ -262,6 +264,7 @@ IPv4ComputeFunctions: Dict[str, Tuple[ComputeFunctionType, ComputeFunctionDepend
 }
 
 REGISTER_PARSER(protocol_id=ProtocolsIDs.IPV4, parser_class=IPv4Parser)
+REGISTER_COMPUTE_FUNCTIONS(IPv4ComputeFunctions)
 
 IPV4_BASE_HEADER_FIELDS: List[RuleFieldDescriptor] = [
     RuleFieldDescriptor(
@@ -400,22 +403,20 @@ def ipv4_field_descriptors_template(
     }
     
     # Generate rule field descriptors from header fields
-    return [
-        RuleFieldDescriptor(
-            id=field.id,
-            length=field.length,
-            position=field.position,
-            direction=field.direction,
-            matching_operator=(
-                MO.MATCH_MAPPING if isinstance(target_values.get(field.id), MatchMapping)
-                else MO.MSB if isinstance(target_values.get(field.id), Buffer) and target_values.get(field.id).length < field.length
-                else MO.EQUAL
-            ),
-            compression_decompression_action=(
-                CDA.MAPPING_SENT if isinstance(target_values.get(field.id), MatchMapping)
-                else CDA.LSB if isinstance(target_values.get(field.id), Buffer) and target_values.get(field.id).length < field.length
-                else CDA.NOT_SENT
-            ),
-            target_value=target_values.get(field.id)
-        ) for field in IPV4_BASE_HEADER_FIELDS
-    ]
+    rule_field_descriptors = []
+    for field in IPV4_BASE_HEADER_FIELDS:
+        mo: MO = select_mo(target_values.get(field.id), field_length=field.length)
+        cda: CDA = select_cda(matching_operator=mo)
+
+        rule_field_descriptors.append(
+            RuleFieldDescriptor(
+                id=field.id,
+                length=field.length,
+                position=field.position,
+                direction=field.direction,
+                matching_operator=mo,
+                compression_decompression_action=cda,
+                target_value=target_values.get(field.id)
+            )
+        )
+    return rule_field_descriptors

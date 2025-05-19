@@ -12,12 +12,14 @@ from microschc.compat import StrEnum
 from functools import reduce
 from typing import Dict, List, Tuple, Type, Union
 from microschc.crypto.crc import CRC32C_TABLE, crc32c
-from microschc.protocol.registry import PARSERS, REGISTER_PARSER, ProtocolsIDs
+from microschc.protocol.registry import PARSERS, REGISTER_COMPUTE_FUNCTIONS, REGISTER_PARSER, ProtocolsIDs
 from microschc.binary.buffer import Buffer, Padding
 from microschc.parser import HeaderParser, ParserError
 from microschc.protocol.compute import ComputeFunctionDependenciesType, ComputeFunctionType
 from microschc.rfc8724 import FieldDescriptor, HeaderDescriptor, RuleFieldDescriptor, DirectionIndicator as DI, MatchingOperator as MO, CompressionDecompressionAction as CDA, TargetValue
 from microschc.tools import create_target_value
+from microschc.tools.cda import select_cda
+from microschc.tools.mo import select_mo
 
 
 SCTP_HEADER_ID = 'SCTP'
@@ -656,6 +658,8 @@ SCTPComputeFunctions: Dict[str, Tuple[ComputeFunctionType, ComputeFunctionDepend
 }
     
 REGISTER_PARSER(protocol_id=ProtocolsIDs.SCTP, parser_class=SCTPParser)
+REGISTER_COMPUTE_FUNCTIONS(SCTPComputeFunctions)
+
 
 SCTP_BASE_HEADER_FIELDS: List[RuleFieldDescriptor] = [
     RuleFieldDescriptor(
@@ -711,16 +715,21 @@ def sctp_base_header_template(
         SCTPFields.VERIFICATION_TAG: create_target_value(verification_tag, length=32),
     }
     
-    
     # Generate rule field descriptors from header fields
-    return [
-        RuleFieldDescriptor(
-            id=field.id,
-            length=field.length,
-            position=field.position,
-            direction=field.direction,
-            matching_operator=field.matching_operator,
-            compression_decompression_action=field.compression_decompression_action,
-            target_value=target_values.get(field.id)
-        ) for field in SCTP_BASE_HEADER_FIELDS
-    ]
+    rule_field_descriptors = []
+    for field in SCTP_BASE_HEADER_FIELDS:
+        mo: MO = select_mo(target_values.get(field.id), field_length=field.length)
+        cda: CDA = select_cda(matching_operator=mo, field_id=field.id)
+
+        rule_field_descriptors.append(
+            RuleFieldDescriptor(
+                id=field.id,
+                length=field.length,
+                position=field.position,
+                direction=field.direction,
+                matching_operator=mo,
+                compression_decompression_action=cda,
+                target_value=target_values.get(field.id)
+            )
+        )
+    return rule_field_descriptors

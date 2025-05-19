@@ -17,9 +17,11 @@ from typing import Callable, Dict, List, Tuple, Type, Union
 from microschc.binary.buffer import Buffer, Padding
 from microschc.parser import HeaderParser, ParserError
 from microschc.protocol.compute import ComputeFunctionDependenciesType, ComputeFunctionType
-from microschc.protocol.registry import ProtocolsIDs, REGISTER_PARSER, PARSERS
+from microschc.protocol.registry import REGISTER_COMPUTE_FUNCTIONS, ProtocolsIDs, REGISTER_PARSER, PARSERS
 from microschc.rfc8724 import FieldDescriptor, HeaderDescriptor, MatchMapping, RuleFieldDescriptor, DirectionIndicator as DI, MatchingOperator as MO, CompressionDecompressionAction as CDA, TargetValue
 from microschc.tools import create_target_value
+from microschc.tools.cda import select_cda
+from microschc.tools.mo import select_mo
 
 IPV6_HEADER_ID = 'IPv6'
 
@@ -225,28 +227,24 @@ def ipv6_base_header_template(
     }
     
     # Generate rule field descriptors from header fields
-    return [
-        RuleFieldDescriptor(
-            id=field.id,
-            length=field.length,
-            position=field.position,
-            direction=field.direction,
-            matching_operator=(
-                MO.MATCH_MAPPING if isinstance(target_values.get(field.id), MatchMapping)
-                else MO.MSB if isinstance(target_values.get(field.id), Buffer) and target_values.get(field.id).length < field.length
-                else MO.EQUAL if isinstance(target_values.get(field.id), Buffer) and target_values.get(field.id).length == field.length
-                else MO.IGNORE
-            ),
-            compression_decompression_action=(
-                CDA.MAPPING_SENT if isinstance(target_values.get(field.id), MatchMapping)
-                else CDA.LSB if isinstance(target_values.get(field.id), Buffer) and target_values.get(field.id).length < field.length
-                else CDA.NOT_SENT if isinstance(target_values.get(field.id), Buffer) and target_values.get(field.id).length == field.length
-                else CDA.COMPUTE if IPv6ComputeFunctions.get(field.id) is not None
-                else CDA.VALUE_SENT
-            ),
-            target_value=target_values.get(field.id)
-        ) for field in IPV6_BASE_HEADER_FIELDS
-    ]
+    rule_field_descriptors = []
+    for field in IPV6_BASE_HEADER_FIELDS:
+        mo: MO = select_mo(target_values.get(field.id), field_length=field.length)
+        cda: CDA = select_cda(matching_operator=mo, field_id=field.id)
+
+        rule_field_descriptors.append(
+            RuleFieldDescriptor(
+                id=field.id,
+                length=field.length,
+                position=field.position,
+                direction=field.direction,
+                matching_operator=mo,
+                compression_decompression_action=cda,
+                target_value=target_values.get(field.id)
+            )
+        )
+    return rule_field_descriptors
+
     
 IPV6_SUPPORTED_PAYLOAD_PROTOCOLS: List[ProtocolsIDs] = [
     ProtocolsIDs.UDP,
@@ -254,3 +252,5 @@ IPV6_SUPPORTED_PAYLOAD_PROTOCOLS: List[ProtocolsIDs] = [
 ]
     
 REGISTER_PARSER(protocol_id=ProtocolsIDs.IPV6, parser_class=IPv6Parser)
+REGISTER_COMPUTE_FUNCTIONS(IPv6ComputeFunctions)
+

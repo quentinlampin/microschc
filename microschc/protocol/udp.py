@@ -13,11 +13,13 @@ from typing import Dict, Iterator, List, Tuple, Type, Union
 from microschc.parser import HeaderParser, ParserError
 from microschc.protocol.compute import ComputeFunctionDependenciesType, ComputeFunctionType
 from microschc.protocol.ipv4 import IPV4_HEADER_ID, IPv4Fields
-from microschc.protocol.registry import PARSERS, REGISTER_PARSER, ProtocolsIDs
+from microschc.protocol.registry import PARSERS, REGISTER_COMPUTE_FUNCTIONS, REGISTER_PARSER, ProtocolsIDs
 from microschc.rfc8724 import FieldDescriptor, HeaderDescriptor, MatchMapping, RuleFieldDescriptor, DirectionIndicator as DI, MatchingOperator as MO, CompressionDecompressionAction as CDA, TargetValue
 from microschc.binary.buffer import Buffer, Padding
 from microschc.protocol.ipv6 import IPV6_HEADER_ID, IPv6Fields
 from microschc.tools import create_target_value
+from microschc.tools.cda import select_cda
+from microschc.tools.mo import select_mo
 
 UDP_HEADER_ID = 'UDP'
 
@@ -323,29 +325,25 @@ def udp_header_template(
         UDPFields.SOURCE_PORT: create_target_value(source_port, length=16),
         UDPFields.DESTINATION_PORT: create_target_value(destination_port, length=16)
     }
-    
+
     # Generate rule field descriptors from header fields
-    return [
-        RuleFieldDescriptor(
-            id=field.id,
-            length=field.length,
-            position=field.position,
-            direction=field.direction,
-            matching_operator=(
-                MO.MATCH_MAPPING if isinstance(target_values.get(field.id), MatchMapping)
-                else MO.MSB if isinstance(target_values.get(field.id), Buffer) and target_values.get(field.id).length < field.length
-                else MO.EQUAL if isinstance(target_values.get(field.id), Buffer) and target_values.get(field.id).length == field.length
-                else MO.IGNORE
-            ),
-            compression_decompression_action=(
-                CDA.MAPPING_SENT if isinstance(target_values.get(field.id), MatchMapping)
-                else CDA.LSB if isinstance(target_values.get(field.id), Buffer) and target_values.get(field.id).length < field.length
-                else CDA.NOT_SENT if isinstance(target_values.get(field.id), Buffer) and target_values.get(field.id).length == field.length
-                else CDA.COMPUTE if UDPComputeFunctions.get(field.id) is not None
-                else CDA.VALUE_SENT
-            ),
-            target_value=target_values.get(field.id)
-        ) for field in UDP_BASE_HEADER_FIELDS
-    ]
+    rule_field_descriptors = []
+    for field in UDP_BASE_HEADER_FIELDS:
+        mo: MO = select_mo(target_values.get(field.id), field_length=field.length)
+        cda: CDA = select_cda(matching_operator=mo, field_id=field.id)
+
+        rule_field_descriptors.append(
+            RuleFieldDescriptor(
+                id=field.id,
+                length=field.length,
+                position=field.position,
+                direction=field.direction,
+                matching_operator=mo,
+                compression_decompression_action=cda,
+                target_value=target_values.get(field.id)
+            )
+        )
+    return rule_field_descriptors
 
 REGISTER_PARSER(protocol_id=ProtocolsIDs.UDP, parser_class=UDPParser)
+REGISTER_COMPUTE_FUNCTIONS(UDPComputeFunctions)

@@ -8,7 +8,7 @@ from functools import cmp_to_key, reduce
 from typing import List, Optional, Set, Tuple
 from microschc.binary.buffer import Buffer, Padding
 from microschc.parser.parser import PacketParser
-from microschc.protocol import ComputeFunctions
+from microschc.protocol.registry import COMPUTE_FUNCTIONS
 from microschc.protocol.compute import ComputeFunctionType
 from microschc.rfc8724 import DirectionIndicator, RuleFieldDescriptor, MatchMapping, RuleDescriptor
 from microschc.rfc8724 import CompressionDecompressionAction as CDA
@@ -121,7 +121,7 @@ def decompress(schc_packet: Buffer, rule_descriptor: RuleDescriptor, direction: 
             decompressed_field: Buffer = Buffer(content=bytes(1+field_length//8), length=field_length)
 
             # retrieve compute dependencies
-            compute_function, compute_dependencies = ComputeFunctions[field_id]
+            compute_function, compute_dependencies = COMPUTE_FUNCTIONS[field_id]
             compute_entry: ComputeEntry = ComputeEntry(
                 field_position=rf_position,
                 field_id=rf.id,
