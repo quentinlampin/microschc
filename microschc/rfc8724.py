@@ -268,7 +268,7 @@ class RuleFieldDescriptor:
             'length': self.length,
             'position': self.position,
             'direction': self.direction,
-            'target_value': self.target_value.__json__(),
+            'target_value': self.target_value.__json__() if self.target_value is not None else Buffer(content=b'').__json__(),
             'matching_operator': self.matching_operator,
             'compression_decompression_action': self.compression_decompression_action
         }
@@ -283,6 +283,8 @@ class RuleFieldDescriptor:
             target_value = MatchMapping.__from_json_object__(json_object=json_object['target_value'])
         else:
             target_value = Buffer.__from_json_object__(json_object=json_object['target_value'])
+            if target_value == Buffer(content=b''):
+                target_value = None
 
         return RuleFieldDescriptor(
             id=json_object['id'],
