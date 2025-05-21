@@ -42,10 +42,16 @@ pip install dist/microschc-<version>-py3-none-any.whl
 Here's a quick example of how to use microSCHC to compress IPv6/UDP/CoAP headers:
 
 ```python
-from microschc import ContextManager, Context, Stack, RuleDescriptor, RuleNature
+from microschc import ContextManager, Context, Stack, RuleDescriptor, RuleNature, Buffer
 from microschc.protocol.ipv6 import ipv6_base_header_template
 from microschc.protocol.udp import udp_header_template
 from microschc.protocol.coap import coap_base_header_template, coap_option_template
+
+# Packet example to compress
+packet: Buffer = Buffer(content=b'\x60\x0f\xf8\x5f\x00\x1c\x11\x40\x20\x01\x0d\xb8\x00\x0a\x00\x00\x00\x00\x00'\
+                                b'\x00\x00\x00\x03\x20\x01\x0d\xb8\x00\x0a\x00\x00\x00\x00\x00\x00\x00\x20\x90'\
+                                b'\xa0\x16\x33\x00\x1c\x29\x23\x52\x45\x14\xb5\x37\x09\x61\x76\x61\x3c\xff\xfb'\
+                                b'\x40\x31\x66\x66\x66\x66\x66\x66')
 
 # Create field descriptors for IPv6 header
 ipv6_field_descriptors = ipv6_base_header_template(
