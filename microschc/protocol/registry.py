@@ -1,10 +1,11 @@
-from typing import List, Type
+from typing import Dict, List, Tuple, Type
 from microschc.parser import PacketParser
 
 from enum import IntEnum
 from microschc.compat import StrEnum
 
 from microschc.parser.parser import HeaderParser
+from microschc.protocol.compute import ComputeFunctionDependenciesType, ComputeFunctionType
 
 class ProtocolsIDs(IntEnum):
     IPV4 =    4
@@ -22,9 +23,16 @@ PARSERS = {
     # ProtocolsIDs.SCTP: SCTPParser
 }
 
+COMPUTE_FUNCTIONS = {
+    # dynamically filled by individual protocol modules
+}
+
 def REGISTER_PARSER(protocol_id: int, parser_class: Type[HeaderParser]):
     PARSERS[protocol_id] = parser_class
 
+def REGISTER_COMPUTE_FUNCTIONS(compute_functions: Dict[str, Tuple[ComputeFunctionType, ComputeFunctionDependenciesType]]):
+    for field_id, compute_function in compute_functions.items():
+        COMPUTE_FUNCTIONS[field_id] = compute_function
 
 
 class Stack(StrEnum):

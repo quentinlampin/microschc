@@ -5,6 +5,9 @@ from microschc.parser.parser import HeaderDescriptor, PacketParser
 from microschc.rfc8724 import FieldDescriptor, PacketDescriptor
 from microschc.binary.buffer import Buffer
 from microschc.rfc8724extras import ParserDefinitions
+from microschc.tools.targetvalue import create_target_value
+from microschc.protocol.udp import udp_header_template
+from microschc.rfc8724 import DI, MO, CDA
 
 def test_udp_parser_import():
     """test: UDP header parser import and instanciation
@@ -147,3 +150,43 @@ def test_udp_compute_checksum():
     decompressed_fields: List[Tuple[str, Buffer]] = [ (field.id,field.value) for field in packet_descriptor.fields]
     checksum_buffer: Buffer = UDPComputeFunctions[UDPFields.CHECKSUM][0](decompressed_fields, 11)
     assert checksum_buffer == expected_checksum
+
+def test_udp_header_template():
+    """Test the UDP field descriptors template generation."""
+    # Test with all fields provided
+    field_descriptors = udp_header_template(
+        source_port=5683,
+        destination_port=5683
+    )
+
+    # Verify the number of fields
+    assert len(field_descriptors) == 4
+
+    # Verify each field's properties
+    for field in field_descriptors:
+        assert field.direction == DI.BIDIRECTIONAL
+        assert field.position == 0
+
+        if field.id == UDPFields.SOURCE_PORT:
+            assert field.length == 16
+            assert field.matching_operator == MO.EQUAL
+            assert field.compression_decompression_action == CDA.NOT_SENT
+            assert field.target_value == create_target_value(5683, length=16)
+
+        elif field.id == UDPFields.DESTINATION_PORT:
+            assert field.length == 16
+            assert field.matching_operator == MO.EQUAL
+            assert field.compression_decompression_action == CDA.NOT_SENT
+            assert field.target_value == create_target_value(5683, length=16)
+
+        elif field.id == UDPFields.LENGTH:
+            assert field.length == 16
+            assert field.matching_operator == MO.IGNORE
+            assert field.compression_decompression_action == CDA.COMPUTE
+            assert field.target_value is None
+
+        elif field.id == UDPFields.CHECKSUM:
+            assert field.length == 16
+            assert field.matching_operator == MO.IGNORE
+            assert field.compression_decompression_action == CDA.COMPUTE
+            assert field.target_value is None

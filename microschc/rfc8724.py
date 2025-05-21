@@ -7,7 +7,7 @@ definitions from RFC 8724 [1] and corresponding data models.
 from microschc.compat import StrEnum
 from dataclasses import dataclass
 import json
-from typing import  Dict, List, Union
+from typing import Dict, List, Union
 
 from microschc.binary.buffer import Buffer
 
@@ -222,6 +222,25 @@ class RuleFieldDescriptor:
     target_value: TargetValue
     matching_operator: MatchingOperator
     compression_decompression_action: CompressionDecompressionAction
+    
+    def __init__(self, 
+        id: str,
+        length: int,
+        position: int = 0,
+        direction: DirectionIndicator = DI.BIDIRECTIONAL,
+        target_value: TargetValue = None,
+        matching_operator: MatchingOperator = MO.IGNORE,
+        compression_decompression_action: CompressionDecompressionAction = CDA.VALUE_SENT
+    ) -> None:
+        self.id = id
+        self.length = length
+        self.position = position
+        self.direction = direction
+        self.target_value = target_value
+        self.matching_operator = matching_operator
+        self.compression_decompression_action = compression_decompression_action
+        
+        
 
     def __eq__(self, other: object) -> bool:
         if not isinstance(other, RuleFieldDescriptor):
@@ -239,7 +258,7 @@ class RuleFieldDescriptor:
 
     def __repr__(self) -> str:
         mo_to_short_str: Dict[str,str] = {MO.EQUAL:'eq', MO.IGNORE:'ig', MO.MATCH_MAPPING:'ma', MO.MSB:'ms'}
-        cda_to_short_str: Dict[str,str] = {CDA.NOT_SENT:'ns', CDA.VALUE_SENT:'vs', CDA.MAPPING_SENT:'ma', CDA.LSB:'ls', CDA.COMPUTE:'co'}
+        cda_to_short_str: Dict[str,str] = {CDA.NOT_SENT:'ns', CDA.VALUE_SENT:'vs', CDA.MAPPING_SENT:'ms', CDA.LSB:'ls', CDA.COMPUTE:'co'}
         repr: str = "{"+f"{self.id}({self.length}):{mo_to_short_str[self.matching_operator]}/{cda_to_short_str[self.compression_decompression_action]}|{self.target_value}"+"}"
         return repr
 
@@ -249,7 +268,7 @@ class RuleFieldDescriptor:
             'length': self.length,
             'position': self.position,
             'direction': self.direction,
-            'target_value': self.target_value.__json__(),
+            'target_value': self.target_value.__json__() if self.target_value is not None else Buffer(content=b'').__json__(),
             'matching_operator': self.matching_operator,
             'compression_decompression_action': self.compression_decompression_action
         }
@@ -264,6 +283,8 @@ class RuleFieldDescriptor:
             target_value = MatchMapping.__from_json_object__(json_object=json_object['target_value'])
         else:
             target_value = Buffer.__from_json_object__(json_object=json_object['target_value'])
+            if target_value == Buffer(content=b''):
+                target_value = None
 
         return RuleFieldDescriptor(
             id=json_object['id'],

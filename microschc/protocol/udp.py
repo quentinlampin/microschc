@@ -9,14 +9,17 @@ Parser for the UDP protocol header as defined in RFC768 [1].
 
 from microschc.compat import StrEnum
 from functools import reduce
-from typing import  Dict, Iterator, List, Tuple, Type
+from typing import Dict, Iterator, List, Tuple, Type, Union
 from microschc.parser import HeaderParser, ParserError
 from microschc.protocol.compute import ComputeFunctionDependenciesType, ComputeFunctionType
 from microschc.protocol.ipv4 import IPV4_HEADER_ID, IPv4Fields
-from microschc.protocol.registry import PARSERS, REGISTER_PARSER, ProtocolsIDs
-from microschc.rfc8724 import FieldDescriptor, HeaderDescriptor
+from microschc.protocol.registry import PARSERS, REGISTER_COMPUTE_FUNCTIONS, REGISTER_PARSER, ProtocolsIDs
+from microschc.rfc8724 import FieldDescriptor, HeaderDescriptor, MatchMapping, RuleFieldDescriptor, DirectionIndicator as DI, MatchingOperator as MO, CompressionDecompressionAction as CDA, TargetValue
 from microschc.binary.buffer import Buffer, Padding
 from microschc.protocol.ipv6 import IPV6_HEADER_ID, IPv6Fields
+from microschc.tools import create_target_value
+from microschc.tools.cda import select_cda
+from microschc.tools.mo import select_mo
 
 UDP_HEADER_ID = 'UDP'
 
@@ -25,7 +28,8 @@ class UDPFields(StrEnum):
     DESTINATION_PORT    = f'{UDP_HEADER_ID}:Destination Port'
     LENGTH              = f'{UDP_HEADER_ID}:Length'
     CHECKSUM            = f'{UDP_HEADER_ID}:Checksum'
-    
+
+
 UDP_SUPPORTED_PAYLOAD_PROTOCOLS: List[ProtocolsIDs] = [
     ProtocolsIDs.COAP,
     ProtocolsIDs.SCTP
@@ -269,4 +273,77 @@ UDPComputeFunctions: Dict[str, Tuple[ComputeFunctionType, ComputeFunctionDepende
                                               IPv4Fields.DST_ADDRESS }),
 }
 
+
+UDP_BASE_HEADER_FIELDS: List[RuleFieldDescriptor] = [
+    RuleFieldDescriptor(
+        id=UDPFields.SOURCE_PORT,
+        length=16,
+        position=0,
+        direction=DI.BIDIRECTIONAL,
+        matching_operator=MO.EQUAL,
+        compression_decompression_action=CDA.NOT_SENT,
+        target_value=None
+    ),
+    RuleFieldDescriptor(
+        id=UDPFields.DESTINATION_PORT,
+        length=16,
+        position=0,
+        direction=DI.BIDIRECTIONAL,
+        matching_operator=MO.EQUAL,
+        compression_decompression_action=CDA.NOT_SENT,
+        target_value=None
+    ),
+    RuleFieldDescriptor(
+        id=UDPFields.LENGTH,
+        length=16,
+        position=0,
+        direction=DI.BIDIRECTIONAL,
+        matching_operator=MO.IGNORE,
+        compression_decompression_action=CDA.COMPUTE,
+        target_value=None
+    ),
+    RuleFieldDescriptor(
+        id=UDPFields.CHECKSUM,
+        length=16,
+        position=0,
+        direction=DI.BIDIRECTIONAL,
+        matching_operator=MO.IGNORE,
+        compression_decompression_action=CDA.COMPUTE,
+        target_value=None
+    )
+]
+
+def udp_header_template(
+    source_port: Union[bytes, Buffer, int],
+    destination_port: Union[bytes, Buffer, int]
+) -> List[RuleFieldDescriptor]:
+    """
+    Rule descriptor template for UDP header.
+    """
+    # Create target values for each field
+    target_values = {
+        UDPFields.SOURCE_PORT: create_target_value(source_port, length=16),
+        UDPFields.DESTINATION_PORT: create_target_value(destination_port, length=16)
+    }
+
+    # Generate rule field descriptors from header fields
+    rule_field_descriptors = []
+    for field in UDP_BASE_HEADER_FIELDS:
+        mo: MO = select_mo(target_values.get(field.id), field_length=field.length)
+        cda: CDA = select_cda(matching_operator=mo, field_id=field.id)
+
+        rule_field_descriptors.append(
+            RuleFieldDescriptor(
+                id=field.id,
+                length=field.length,
+                position=field.position,
+                direction=field.direction,
+                matching_operator=mo,
+                compression_decompression_action=cda,
+                target_value=target_values.get(field.id)
+            )
+        )
+    return rule_field_descriptors
+
 REGISTER_PARSER(protocol_id=ProtocolsIDs.UDP, parser_class=UDPParser)
+REGISTER_COMPUTE_FUNCTIONS(UDPComputeFunctions)

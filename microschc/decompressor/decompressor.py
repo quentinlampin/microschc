@@ -8,7 +8,7 @@ from functools import cmp_to_key, reduce
 from typing import List, Optional, Set, Tuple
 from microschc.binary.buffer import Buffer, Padding
 from microschc.parser.parser import PacketParser
-from microschc.protocol import ComputeFunctions
+from microschc.protocol.registry import COMPUTE_FUNCTIONS
 from microschc.protocol.compute import ComputeFunctionType
 from microschc.rfc8724 import DirectionIndicator, RuleFieldDescriptor, MatchMapping, RuleDescriptor
 from microschc.rfc8724 import CompressionDecompressionAction as CDA
@@ -60,9 +60,6 @@ def decompress(schc_packet: Buffer, rule_descriptor: RuleDescriptor, direction: 
             if rf.direction == direction or rf.direction == DirectionIndicator.BIDIRECTIONAL
         ]
 
-    # decompress header length
-    packet_header_len: int = 0
-
     # decompress all fields
     field_residue: Buffer
     residue_bitlength: int
@@ -88,7 +85,6 @@ def decompress(schc_packet: Buffer, rule_descriptor: RuleDescriptor, direction: 
                     residue_bitlength = key.length
                     break
         elif rf.compression_decompression_action == CDA.VALUE_SENT:
-            assert isinstance(rf.target_value, Buffer)
             if rf.length != 0:
                 field_residue = schc_packet[0:rf.length]
                 decompressed_field += field_residue
@@ -121,7 +117,7 @@ def decompress(schc_packet: Buffer, rule_descriptor: RuleDescriptor, direction: 
             decompressed_field: Buffer = Buffer(content=bytes(1+field_length//8), length=field_length)
 
             # retrieve compute dependencies
-            compute_function, compute_dependencies = ComputeFunctions[field_id]
+            compute_function, compute_dependencies = COMPUTE_FUNCTIONS[field_id]
             compute_entry: ComputeEntry = ComputeEntry(
                 field_position=rf_position,
                 field_id=rf.id,
@@ -131,9 +127,6 @@ def decompress(schc_packet: Buffer, rule_descriptor: RuleDescriptor, direction: 
             compute_entries.append(compute_entry)
         
         decompressed_fields.append((rf.id, decompressed_field))
-        
-        # fill theoric header len
-        packet_header_len += decompressed_field.length
 
         schc_packet = schc_packet[residue_bitlength:]
 

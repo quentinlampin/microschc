@@ -133,7 +133,7 @@ def test_rule_field_descriptor_from_json():
     assert rule_field_descriptor.length == 16
     assert rule_field_descriptor.position == 0
     assert rule_field_descriptor.direction == DirectionIndicator.BIDIRECTIONAL
-    assert rule_field_descriptor.target_value == Buffer(content=b'', length=0)
+    assert rule_field_descriptor.target_value == None
     assert rule_field_descriptor.matching_operator == MO.IGNORE
     assert rule_field_descriptor.compression_decompression_action == CDA.VALUE_SENT
 
@@ -172,7 +172,7 @@ def test_compression_rule_descriptor_from_json():
     assert rule_descriptor.field_descriptors[0].length == 16
     assert rule_descriptor.field_descriptors[0].position == 0
     assert rule_descriptor.field_descriptors[0].direction == DirectionIndicator.BIDIRECTIONAL
-    assert rule_descriptor.field_descriptors[0].target_value == Buffer(content=b'', length=0)
+    assert rule_descriptor.field_descriptors[0].target_value == None
     assert rule_descriptor.field_descriptors[0].matching_operator == MO.IGNORE
     assert rule_descriptor.field_descriptors[0].compression_decompression_action == CDA.VALUE_SENT
 
@@ -242,7 +242,7 @@ def test_context_from_json():
     assert context.ruleset[0].field_descriptors[0].length == 16
     assert context.ruleset[0].field_descriptors[0].position == 0
     assert context.ruleset[0].field_descriptors[0].direction == DirectionIndicator.BIDIRECTIONAL
-    assert context.ruleset[0].field_descriptors[0].target_value == Buffer(content=b'', length=0)
+    assert context.ruleset[0].field_descriptors[0].target_value == None
     assert context.ruleset[0].field_descriptors[0].matching_operator == MO.IGNORE
     assert context.ruleset[0].field_descriptors[0].compression_decompression_action == CDA.VALUE_SENT
 

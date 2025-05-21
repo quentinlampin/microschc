@@ -30,6 +30,11 @@ dependencies = [
 ]
 dynamic = ["version"]
 
+[project.optional-dependencies]
+extras = [
+  "python-pcapng"
+]
+
 [project.urls]
 "Homepage" = "https://github.com/quentinlampin/microschc/"
 "Bug Tracker" = "https://github.com/quentinlampin/microschc/issues"
