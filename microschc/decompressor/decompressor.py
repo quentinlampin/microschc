@@ -60,9 +60,6 @@ def decompress(schc_packet: Buffer, rule_descriptor: RuleDescriptor, direction: 
             if rf.direction == direction or rf.direction == DirectionIndicator.BIDIRECTIONAL
         ]
 
-    # decompress header length
-    packet_header_len: int = 0
-
     # decompress all fields
     field_residue: Buffer
     residue_bitlength: int
@@ -88,7 +85,6 @@ def decompress(schc_packet: Buffer, rule_descriptor: RuleDescriptor, direction: 
                     residue_bitlength = key.length
                     break
         elif rf.compression_decompression_action == CDA.VALUE_SENT:
-            assert isinstance(rf.target_value, Buffer)
             if rf.length != 0:
                 field_residue = schc_packet[0:rf.length]
                 decompressed_field += field_residue
@@ -131,9 +127,6 @@ def decompress(schc_packet: Buffer, rule_descriptor: RuleDescriptor, direction: 
             compute_entries.append(compute_entry)
         
         decompressed_fields.append((rf.id, decompressed_field))
-        
-        # fill theoric header len
-        packet_header_len += decompressed_field.length
 
         schc_packet = schc_packet[residue_bitlength:]
 
