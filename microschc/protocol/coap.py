@@ -787,7 +787,7 @@ def coap_semantic_option_template(option_name: str, option_value: Union[bytes, i
     ]
 
 def coap_option_name_to_field_id(option_name: str) -> str:
-    if option_name in CoAPFields:
+    if option_name in list(CoAPFields):
         return option_name
     else:
         option_id: str = f"OPTION_{option_name.replace('-', '_').upper()}"
@@ -798,7 +798,7 @@ def coap_option_name_to_field_id(option_name: str) -> str:
         return field_id
     
 def coap_option_field_id_to_number(option_id: str) -> int:
-    if option_id in CoAPFields:
+    if option_id in list(CoAPFields):
         return COAP_OPTIONS_NAME_TO_NUMBER[option_id]
     else:
         raise ValueError(f"Invalid CoAP option ID: {option_id}")
