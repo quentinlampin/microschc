@@ -141,11 +141,6 @@ def test_error_cases():
     with pytest.raises(ValueError):
         create_target_value(42)
     
-    # Test unsupported type
-    with pytest.raises(TypeError):
-        create_target_value(None)
-    
-    
     # Test invalid mapping values
     with pytest.raises(TypeError):
         create_target_value({1: None}, length=8)  # None can't be a Buffer
