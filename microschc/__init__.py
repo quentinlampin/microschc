@@ -1,4 +1,4 @@
-__version__ = '0.20.2'
+__version__ = '0.20.3'
 
 
 from .rfc8724 import RuleDescriptor, RuleNature, RuleFieldDescriptor, FieldDescriptor, TargetValue, DirectionIndicator, MatchingOperator, CompressionDecompressionAction
