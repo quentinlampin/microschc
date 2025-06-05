@@ -491,3 +491,13 @@ def test_from_json():
     assert buffer.content == b"\x0a\xf0"
     assert buffer.length == 12
     assert buffer.padding == Padding.LEFT
+
+def test_from_json_strict():
+    """
+    test JSON serialized to object instance
+    """
+    json_str = '{"content": "0af0", "length": 12, "padding": "left"}'
+    buffer: Buffer = Buffer.from_json(json_str=json_str)
+    assert buffer.content == b"\x0a\xf0"
+    assert buffer.length == 12
+    assert buffer.padding is Padding.LEFT
