@@ -557,7 +557,7 @@ class Buffer:
         return Buffer(
             content=bytes.fromhex(json_object['content']), 
             length=json_object['length'],
-            padding=json_object['padding']
+            padding=Padding(json_object['padding'])
         )
 
     def from_json(json_str: str):
