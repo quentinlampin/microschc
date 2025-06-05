@@ -2,7 +2,6 @@
 
 **Important notice** 
 
-- Do not read this document before completing the "A look in the dataset" section of the labwork.
 - Marion Dumay (@mdumay on GitHub) has contributed a lot to the analysis of this dataset, providing both insight on the LwM2M and CBOR analysis.
 - Stéphane Coutant (@scoutant on GitHub) has contributed to the dataset capture and provided the PCAP file.
 
