@@ -14,6 +14,7 @@ def create_target_value(value, length=None, padding=None) -> TargetValue:
             - list of (bytes, bytes) or (int, int) or (int, bytes): Creates a MatchMapping from pairs
             - dict with Buffer keys and values: Creates a MatchMapping from the dictionary
             - MatchMapping or Buffer: Returns the value unchanged
+            - None
         length: For Buffer creation, the bit length (required for int and bytes inputs)
         padding: For Buffer creation, the padding type (defaults to LEFT padding)
     
@@ -25,7 +26,7 @@ def create_target_value(value, length=None, padding=None) -> TargetValue:
         ValueError: If required parameters are missing for the input type
     """
     # If already a TargetValue, return as is
-    if isinstance(value, (Buffer, MatchMapping)):
+    if isinstance(value, (Buffer, MatchMapping)) or (value is None):
         return value
     
     # Handle integer input - create Buffer
