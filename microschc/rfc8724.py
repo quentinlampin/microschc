@@ -28,6 +28,12 @@ class MatchMapping:
         repr: str = "{" + ",".join([f"{k}:{v}" for k,v in self.reverse.items()]) + "}"
         return repr
     
+    def __eq__(self, other:object):
+        if not isinstance(other, MatchMapping):
+            return False
+        return self.forward == other.forward and self.reverse == other.reverse
+        
+    
     def json(self, indent=None, separators=None):
         return json.dumps(self.__json__(), indent=indent, separators=separators)
 
