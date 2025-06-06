@@ -590,7 +590,10 @@ def coap_base_header_template(
 
 def coap_option_template(
     option_name: Union[str, None] = None,
-    option_length: Union[bytes, Buffer, int, None] = None,
+    option_delta: Union[bytes, Buffer, TargetValue, List, Dict, int, None] = None,
+    option_length:Union[bytes, Buffer, TargetValue, List, Dict, int, None] = None,
+    option_delta_extended: Union[bytes, Buffer, TargetValue, List, Dict, int, None] = None,
+    option_length_extended: Union[bytes, Buffer, TargetValue, List, Dict, int, None] = None,
     option_value: Union[bytes, Buffer, int, None] = None,
     last_option_name: Union[str, None] = None,
     position: int = 1,
@@ -624,47 +627,111 @@ def coap_option_template(
         CoAPFields.OPTION_LENGTH: {'target_value': None, 'field_length': 4},
     }
 
-    # retrieve the option number for calculating the option delta
-    option_field_id: str = coap_option_name_to_field_id(option_name)
-    option_number: int = coap_option_field_id_to_number(option_field_id)
-    if last_option_name is not None:
-        last_option_field_id: str = coap_option_name_to_field_id(last_option_name)
-        last_option_number: int = coap_option_field_id_to_number(last_option_field_id)
-    else:
-        last_option_number = 0
-    
-    option_delta: int = option_number - last_option_number
-    _coap_option_variable_encoding_summary(CoAPFields.OPTION_DELTA, option_delta, option_fields_summary)
-    
-    # `option_length` is provided as a number of bytes
-    if option_length is not None:
-        # if option_value is not an instance of MatchMapping, Buffer, bytes, use option_length in create_target_value
-        if not isinstance(option_value, (TargetValue, bytes, list, dict)):
-            option_value_tv: TargetValue = create_target_value(option_value, option_length*8)
+    if option_name is not None:
+        # retrieve the option number for calculating the option delta
+        option_field_id: str = coap_option_name_to_field_id(option_name)
+        option_number: int = coap_option_field_id_to_number(option_field_id)
+        if last_option_name is not None:
+            last_option_field_id: str = coap_option_name_to_field_id(last_option_name)
+            last_option_number: int = coap_option_field_id_to_number(last_option_field_id)
         else:
-           option_value_tv: TargetValue = create_target_value(option_value)
-        _coap_option_variable_encoding_summary(CoAPFields.OPTION_LENGTH, option_length, option_fields_summary)
+            last_option_number = 0
+        
+        option_delta: int = option_number - last_option_number
+        _coap_option_variable_encoding_summary(CoAPFields.OPTION_DELTA, option_delta, option_fields_summary)
+        
+        # `option_length` is provided as a number of bytes
+        if option_length is not None:
+            # if option_value is not an instance of MatchMapping, Buffer, bytes, use option_length in create_target_value
+            if not isinstance(option_value, (TargetValue, bytes, list, dict)):
+                option_value_tv: TargetValue = create_target_value(option_value, option_length*8)
+            else:
+                option_value_tv: TargetValue = create_target_value(option_value)
+            _coap_option_variable_encoding_summary(CoAPFields.OPTION_LENGTH, option_length, option_fields_summary)
+            option_fields_summary[CoAPFields.OPTION_VALUE] = {}
+            option_fields_summary[CoAPFields.OPTION_VALUE]['target_value'] = option_value_tv
+            option_fields_summary[CoAPFields.OPTION_VALUE]['field_length'] = option_length * 8 if isinstance(option_length, int) else 0
+        else:
+            # If `option_length` is *not* provided, `option_value` must be a Buffer or bytes or match_mapping
+            option_value_tv: TargetValue = create_target_value(option_value)
+            if isinstance(option_value_tv, Buffer):
+                _coap_option_variable_encoding_summary(CoAPFields.OPTION_LENGTH, option_value_tv.length//8, option_fields_summary)
+                option_fields_summary[CoAPFields.OPTION_VALUE] = {}
+                option_fields_summary[CoAPFields.OPTION_VALUE]['target_value'] = option_value_tv
+                option_fields_summary[CoAPFields.OPTION_VALUE]['field_length'] = option_value_tv.length
+            elif isinstance(option_value_tv, MatchMapping):
+                mapping_values: List[Buffer] = list(option_value_tv.forward.keys())
+                option_lengths: Set[int] = set([mv.length//8 for mv in mapping_values])
+                _coap_option_variable_encoding_summary(CoAPFields.OPTION_LENGTH, option_lengths, option_fields_summary)
+                option_fields_summary[CoAPFields.OPTION_VALUE] = {}
+                option_fields_summary[CoAPFields.OPTION_VALUE]['target_value'] = option_value_tv
+                option_fields_summary[CoAPFields.OPTION_VALUE]['field_length'] = 0
+            else:
+                raise ValueError(f"option value must be a Buffer or bytes if option length is not provided")
+            
+    else:
+        option_delta_tv = create_target_value(option_delta, length=4)
+        option_length_tv = create_target_value(option_length, length=4)
+        option_fields_summary[CoAPFields.OPTION_DELTA]['target_value'] = option_delta_tv
+        option_fields_summary[CoAPFields.OPTION_LENGTH]['target_value'] = option_length_tv
+
+        if option_delta_extended is not None:
+            option_delta_extended_length = None
+            if isinstance(option_delta_tv, Buffer) and option_delta_tv.content == CoAPDefinitions.OPTION_DELTA_EXTENDED_8BITS:
+                option_delta_extended_length = 8
+                option_delta_extended_fl = 8
+            elif isinstance(option_delta_tv, Buffer) and option_delta_tv.content == CoAPDefinitions.OPTION_DELTA_EXTENDED_16BITS:
+                option_delta_extended_length = 16
+                option_delta_extended_fl = 16
+            else:
+                option_delta_extended_length = None
+                option_delta_extended_fl = 0
+
+            option_delta_extended_tv = create_target_value(option_delta_extended, length=option_delta_extended_length)
+            option_fields_summary[CoAPFields.OPTION_DELTA_EXTENDED]= {}
+            option_fields_summary[CoAPFields.OPTION_DELTA_EXTENDED]['target_value'] = option_delta_extended_tv
+            option_fields_summary[CoAPFields.OPTION_DELTA_EXTENDED]['field_length'] = option_delta_extended_fl
+        
+        if option_length_extended is not None:
+            option_length_extended_length = None
+            if isinstance(option_length_tv, Buffer) and option_delta_tv.content == CoAPDefinitions.OPTION_LENGTH_EXTENDED_8BITS:
+                option_length_extended_length = 8
+                option_length_extended_fl = 8
+            elif isinstance(option_delta_tv, Buffer) and option_delta_tv.content == CoAPDefinitions.OPTION_LENGTH_EXTENDED_16BITS:
+                option_length_extended_length = 16
+                option_length_extended_fl = 16
+            else:
+                option_length_extended_length = None
+                option_length_extended_fl = 0
+            option_length_extended_tv = create_target_value(option_length_extended, length=option_length_extended_length)
+            option_fields_summary[CoAPFields.OPTION_LENGTH_EXTENDED]= {}
+            option_fields_summary[CoAPFields.OPTION_LENGTH_EXTENDED]['target_value'] = option_length_extended_tv
+            option_fields_summary[CoAPFields.OPTION_LENGTH_EXTENDED]['field_length'] = option_length_extended_fl
+
+        # determine option_value_fl
+        if isinstance(option_length_tv, Buffer) and option_length_tv.length == 4:
+            # option_length assumes a single value, use it for option_value_fl
+            if option_length_tv.value() < 13:
+                option_value_fl = option_length_tv.value() * 8 
+            elif option_length_tv.content == CoAPDefinitions.OPTION_LENGTH_EXTENDED_8BITS and isinstance(option_length_extended_tv, Buffer) and option_length_extended_tv.length == 8:
+                option_value_fl = (13 + option_length_extended_tv.value()) * 8
+            elif option_length_tv.content == CoAPDefinitions.OPTION_LENGTH_EXTENDED_16BITS and isinstance(option_length_extended_tv, Buffer):
+                option_value_fl = (269 + option_length_extended_tv.value()) * 8
+            else:
+                option_value_fl = 0
+        else:
+            option_value_fl = 0
+
+        # if option_value is not an instance of MatchMapping, Buffer, bytes, use option_value_fl in create_target_value
+        if not isinstance(option_value, (TargetValue, bytes, list, dict)):
+            option_value_tv: TargetValue = create_target_value(option_value, option_value_fl)
+        else:
+            option_value_tv: TargetValue = create_target_value(option_value)
+
         option_fields_summary[CoAPFields.OPTION_VALUE] = {}
         option_fields_summary[CoAPFields.OPTION_VALUE]['target_value'] = option_value_tv
-        option_fields_summary[CoAPFields.OPTION_VALUE]['field_length'] = option_length * 8 if isinstance(option_length, int) else 0
-    else:
-        # If `option_length` is *not* provided, `option_value` must be a Buffer or bytes or match_mapping
-        option_value_tv: TargetValue = create_target_value(option_value)
-        if isinstance(option_value_tv, Buffer):
-            _coap_option_variable_encoding_summary(CoAPFields.OPTION_LENGTH, option_value_tv.length//8, option_fields_summary)
-            option_fields_summary[CoAPFields.OPTION_VALUE] = {}
-            option_fields_summary[CoAPFields.OPTION_VALUE]['target_value'] = option_value_tv
-            option_fields_summary[CoAPFields.OPTION_VALUE]['field_length'] = option_value_tv.length
-        elif isinstance(option_value_tv, MatchMapping):
-            mapping_values: List[Buffer] = list(option_value_tv.forward.keys())
-            option_lengths: Set[int] = set([mv.length//8 for mv in mapping_values])
-            _coap_option_variable_encoding_summary(CoAPFields.OPTION_LENGTH, option_lengths, option_fields_summary)
-            option_fields_summary[CoAPFields.OPTION_VALUE] = {}
-            option_fields_summary[CoAPFields.OPTION_VALUE]['target_value'] = option_value_tv
-            option_fields_summary[CoAPFields.OPTION_VALUE]['field_length'] = 0
-        else:
-            raise ValueError(f"option value must be a Buffer or bytes if option length is not provided")
-    
+        option_fields_summary[CoAPFields.OPTION_VALUE]['field_length'] = option_value_fl
+
     # Generate rule field descriptors from option fields
     field_descriptors = []
         

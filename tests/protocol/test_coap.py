@@ -992,3 +992,118 @@ def test_coap_option_template_semantic_extended_delta_extended_length():
     assert field_descriptor_4.id == CoAPFields.OPTION_VALUE
     assert field_descriptor_4.length == 16 * 8
     assert field_descriptor_4.target_value == create_target_value(b"a"*16)
+
+def test_coap_syntactic_option_template_basic():
+    option_descriptors = coap_option_template(
+        option_delta=b'\x06',
+        option_length=1,
+        option_value=Buffer(content=b'\xff')
+    )
+
+    assert len(option_descriptors) == 3  # OPTION_DELTA, OPTION_LENGTH, OPTION_VALUE
+
+    field_descriptor_0 = option_descriptors[0]
+    assert field_descriptor_0.id == CoAPFields.OPTION_DELTA
+    assert field_descriptor_0.length == 4
+    assert field_descriptor_0.target_value == create_target_value(6, length=4)
+
+    field_descriptor_1 = option_descriptors[1]
+    assert field_descriptor_1.id == CoAPFields.OPTION_LENGTH
+    assert field_descriptor_1.length == 4
+    assert field_descriptor_1.target_value == create_target_value(1, length=4)
+
+    field_descriptor_2 = option_descriptors[2]
+    assert field_descriptor_2.id == CoAPFields.OPTION_VALUE
+    assert field_descriptor_2.matching_operator == MO.EQUAL
+    assert field_descriptor_2.compression_decompression_action == CDA.NOT_SENT
+    assert field_descriptor_2.length == 8
+    assert field_descriptor_2.target_value == Buffer(content=b'\xff', length=8)
+
+def test_coap_syntactic_option_template_extended_delta():
+    option_descriptors = coap_option_template(
+        option_delta=CoAPDefinitions.OPTION_DELTA_EXTENDED_8BITS,
+        option_delta_extended=1,
+        option_length=1,
+        option_value=Buffer(content=b'\xff')
+    )
+
+    assert len(option_descriptors) == 4  # OPTION_DELTA, OPTION_LENGTH, OPTION_DELTA_EXTENDED, OPTION_VALUE
+
+    field_descriptor_0 = option_descriptors[0]
+    assert field_descriptor_0.id == CoAPFields.OPTION_DELTA
+    assert field_descriptor_0.length == 4
+    assert field_descriptor_0.target_value == create_target_value(CoAPDefinitions.OPTION_DELTA_EXTENDED_8BITS, length=4)
+
+    field_descriptor_1 = option_descriptors[1]
+    assert field_descriptor_1.id == CoAPFields.OPTION_LENGTH
+    assert field_descriptor_1.length == 4
+    assert field_descriptor_1.target_value == create_target_value(1, length=4)
+
+    field_descriptor_2 = option_descriptors[2]
+    assert field_descriptor_2.id == CoAPFields.OPTION_DELTA_EXTENDED
+    assert field_descriptor_2.matching_operator == MO.EQUAL
+    assert field_descriptor_2.compression_decompression_action == CDA.NOT_SENT
+    assert field_descriptor_2.length == 8
+    assert field_descriptor_2.target_value == create_target_value(1, length=8)
+
+    field_descriptor_3 = option_descriptors[3]
+    assert field_descriptor_3.id == CoAPFields.OPTION_VALUE
+    assert field_descriptor_3.matching_operator == MO.EQUAL
+    assert field_descriptor_3.compression_decompression_action == CDA.NOT_SENT
+    assert field_descriptor_3.length == 8
+    assert field_descriptor_3.target_value == Buffer(content=b'\xff', length=8)
+
+def test_coap_syntactic_option_template_msb():
+    option_descriptors = coap_option_template(
+        option_delta=6,
+        option_length=3, # option_length is longer that option_value in bytes
+        option_value=Buffer(content=b'\xff')
+    )
+
+    assert len(option_descriptors) == 3  # OPTION_DELTA, OPTION_LENGTH, OPTION_VALUE
+
+    field_descriptor_0 = option_descriptors[0]
+    assert field_descriptor_0.id == CoAPFields.OPTION_DELTA
+    assert field_descriptor_0.length == 4
+    assert field_descriptor_0.target_value == create_target_value(6, length=4)
+
+    field_descriptor_1 = option_descriptors[1]
+    assert field_descriptor_1.id == CoAPFields.OPTION_LENGTH
+    assert field_descriptor_1.length == 4
+    assert field_descriptor_1.target_value == create_target_value(3, length=4)
+
+    field_descriptor_2 = option_descriptors[2]
+    assert field_descriptor_2.id == CoAPFields.OPTION_VALUE
+    assert field_descriptor_2.matching_operator == MO.MSB
+    assert field_descriptor_2.compression_decompression_action == CDA.LSB
+    assert field_descriptor_2.length == 24
+    assert field_descriptor_2.target_value == create_target_value(b'\xff', length=8)
+
+
+def test_coap_syntactic_option_template_option_lenght_matchmapping():
+    option_descriptors = coap_option_template(
+        option_delta=b'\x06',
+        option_length=[1, 2],
+        option_value=None
+    )
+
+    assert len(option_descriptors) == 3  # OPTION_DELTA, OPTION_LENGTH, OPTION_VALUE
+
+    field_descriptor_0 = option_descriptors[0]
+    assert field_descriptor_0.id == CoAPFields.OPTION_DELTA
+    assert field_descriptor_0.length == 4
+    assert field_descriptor_0.target_value == create_target_value(6, length=4)
+
+    field_descriptor_1 = option_descriptors[1]
+    assert field_descriptor_1.id == CoAPFields.OPTION_LENGTH
+    assert field_descriptor_1.length == 4
+    assert field_descriptor_1.target_value == create_target_value([1,2], length=4)
+
+    field_descriptor_2 = option_descriptors[2]
+    assert field_descriptor_2.id == CoAPFields.OPTION_VALUE
+    assert field_descriptor_2.matching_operator == MO.IGNORE
+    assert field_descriptor_2.compression_decompression_action == CDA.VALUE_SENT
+    assert field_descriptor_2.length == 0
+    assert field_descriptor_2.target_value == None
+
+
