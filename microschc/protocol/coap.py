@@ -136,6 +136,7 @@ class CoAPDefinitions(bytes, Enum):
 class CoAPOptionMode(StrEnum):
     SYNTACTIC   = 'syntactic'
     SEMANTIC    = 'semantic'
+    LAURENT     = 'semantic'
 
 
 class CoAPParser(HeaderParser):
@@ -638,7 +639,7 @@ def coap_option_template(
     # `option_length` is provided as a number of bytes
     if option_length is not None:
         # if option_value is not an instance of MatchMapping, Buffer, bytes, use option_length in create_target_value
-        if not isinstance(option_value, (TargetValue, bytes)):
+        if not isinstance(option_value, (TargetValue, bytes, list, dict)):
             option_value_tv: TargetValue = create_target_value(option_value, option_length*8)
         else:
            option_value_tv: TargetValue = create_target_value(option_value)

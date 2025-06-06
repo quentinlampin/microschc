@@ -368,7 +368,126 @@ def test_coap_parser_parse_semantic():
     assert payload_marker_fd.id == CoAPFields.PAYLOAD_MARKER
     assert payload_marker_fd.position == 0
     assert payload_marker_fd.value == Buffer(content=b'\xff', length=8)
+
+def test_coap_parser_parse_semantic_lmode():
+    """test: CoAP header parser parses CoAP packet
+
+    The packet is made of a CoAP header with following fields:
+        - id='Version'                length=2    position=0  value=b'\x01'
+        - id='Type'                   length=2    position=0  value=b'\x00'
+        - id='Token Length'           length=4    position=0  value=b'\x08'
+        - id='Code'                   length=8    position=0  value=b'\x02'
+        - id='message ID'             length=16   position=0  value=b'\x84\x99'
+        - id='Token'                  length=32   position=0  value=b'\x74\xcd\xe8\xcb\x4e\x8c\x0d\xb7'
+
+        - id='Option Uri-Path'        length=16   position=1  value=b'\x72\64'
+
+        - id='Option Content-Format'  length=8    position=1  value=b'\x28'
+        
+        - id='Option Uri-Query'       length=24   position=1  value=b'\x62\x3d\x55'
+
+        - id='Option Uri-Query'       length=72   position=2  value=b'\x6c\x77\x6d\x32\x6d\x3d\x31\x2e\x31'
+
+        - id='Option Uri-Query'       length=48   position=3  value=b'\x6c\x74\x3d\x33\x30\x30'
+
+        - id='Option Uri-Query'       length=120  position=4  value=b'\x65\x70\x3d\x38\x35\x62\x61\x39\x62\x64\x61\x63\x30\x62\x65'
+        
+        - id='Option Block1'          length=8    position=1  value=b'\x0d'
+
+        - id='Option Size1'           length=16   position=1  value=b'\x07\x2b'
+
+        - id='Payload Marker'         length=8    position=0  value=b'\xff'
+
+    """
+    valid_coap_packet:bytes = bytes(b"\x48\x02\x84\x99\x74\xcd\xe8\xcb\x4e\x8c\x0d\xb7\xb2\x72\x64\x11" \
+                                   b"\x28\x33\x62\x3d\x55\x09\x6c\x77\x6d\x32\x6d\x3d\x31\x2e\x31\x06" \
+                                   b"\x6c\x74\x3d\x33\x30\x30\x0d\x02\x65\x70\x3d\x38\x35\x62\x61\x39" \
+                                   b"\x62\x64\x61\x63\x30\x62\x65\xc1\x0d\xd2\x14\x07\x2b\xff")
     
+    valid_coap_packet_buffer: Buffer = Buffer(content=valid_coap_packet, length=len(valid_coap_packet)*8)
+    parser:CoAPParser = CoAPParser(interpret_options=CoAPOptionMode.LAURENT)
+    coap_header_descriptor: HeaderDescriptor = parser.parse(buffer=valid_coap_packet_buffer)
+
+    assert isinstance(coap_header_descriptor, HeaderDescriptor)
+    assert len(coap_header_descriptor.fields) == 15
+    for field in coap_header_descriptor.fields:
+        assert isinstance(field, FieldDescriptor)
+
+    # Header fields
+    version_fd = coap_header_descriptor.fields[0]
+    assert version_fd.id == CoAPFields.VERSION
+    assert version_fd.position == 0
+    assert version_fd.value == Buffer(content=b'\x01', length=2)
+
+    type_fd = coap_header_descriptor.fields[1]
+    assert type_fd.id == CoAPFields.TYPE
+    assert type_fd.position == 0
+    assert type_fd.value == Buffer(content=b'\x00', length=2)
+
+    token_length_fd = coap_header_descriptor.fields[2]
+    assert token_length_fd.id == CoAPFields.TOKEN_LENGTH
+    assert token_length_fd.position == 0
+    assert token_length_fd.value == Buffer(content=b'\x08', length=4)
+
+    code_fd = coap_header_descriptor.fields[3]
+    assert code_fd.id == CoAPFields.CODE
+    assert code_fd.position == 0
+    assert code_fd.value == Buffer(content=b'\x02', length=8)
+
+    message_id_fd = coap_header_descriptor.fields[4]
+    assert message_id_fd.id == CoAPFields.MESSAGE_ID
+    assert message_id_fd.position == 0
+    assert message_id_fd.value == Buffer(content=b'\x84\x99', length=16)
+
+    token_fd = coap_header_descriptor.fields[5]
+    assert token_fd.id == CoAPFields.TOKEN
+    assert token_fd.position == 0
+    assert token_fd.value == Buffer(content=b'\x74\xcd\xe8\xcb\x4e\x8c\x0d\xb7', length=64)
+    
+    option_uri_path_fd = coap_header_descriptor.fields[6]
+    assert option_uri_path_fd.id == CoAPFields.OPTION_URI_PATH
+    assert option_uri_path_fd.position == 1
+    assert option_uri_path_fd.value == Buffer(content=b'\x72\x64', length=16)
+    
+    option_content_format_fd = coap_header_descriptor.fields[7]
+    assert option_content_format_fd.id == CoAPFields.OPTION_CONTENT_FORMAT
+    assert option_content_format_fd.position == 1
+    assert option_content_format_fd.value == Buffer(content=b'\x28', length=8)
+    
+    option_uri_query_1_fd = coap_header_descriptor.fields[8]
+    assert option_uri_query_1_fd.id == CoAPFields.OPTION_URI_QUERY
+    assert option_uri_query_1_fd.position == 1
+    assert option_uri_query_1_fd.value == Buffer(content=b'\x62\x3d\x55', length=24)
+    
+    option_uri_query_2_fd = coap_header_descriptor.fields[9]
+    assert option_uri_query_2_fd.id == CoAPFields.OPTION_URI_QUERY
+    assert option_uri_query_2_fd.position == 2
+    assert option_uri_query_2_fd.value == Buffer(content=b'\x6c\x77\x6d\x32\x6d\x3d\x31\x2e\x31', length=72)
+    
+    option_uri_query_3_fd = coap_header_descriptor.fields[10]
+    assert option_uri_query_3_fd.id == CoAPFields.OPTION_URI_QUERY
+    assert option_uri_query_3_fd.position == 3
+    assert option_uri_query_3_fd.value == Buffer(content=b'\x6c\x74\x3d\x33\x30\x30', length=48)
+    
+    option_uri_query_4_fd = coap_header_descriptor.fields[11]
+    assert option_uri_query_4_fd.id == CoAPFields.OPTION_URI_QUERY
+    assert option_uri_query_4_fd.position == 4
+    assert option_uri_query_4_fd.value == Buffer(content=b'\x65\x70\x3d\x38\x35\x62\x61\x39\x62\x64\x61\x63\x30\x62\x65', length=120)
+    
+    option_block1_fd = coap_header_descriptor.fields[12]
+    assert option_block1_fd.id == CoAPFields.OPTION_BLOCK1
+    assert option_block1_fd.position == 1
+    assert option_block1_fd.value == Buffer(content=b'\x0d', length=8)
+    
+    option_size1_fd = coap_header_descriptor.fields[13]
+    assert option_size1_fd.id == CoAPFields.OPTION_SIZE1
+    assert option_size1_fd.position == 1
+    assert option_size1_fd.value == Buffer(content=b'\x07\x2b', length=16)
+    
+    payload_marker_fd = coap_header_descriptor.fields[14]
+    assert payload_marker_fd.id == CoAPFields.PAYLOAD_MARKER
+    assert payload_marker_fd.position == 0
+    assert payload_marker_fd.value == Buffer(content=b'\xff', length=8)
     
 def test_coap_parser_unparse_semantic():
     
