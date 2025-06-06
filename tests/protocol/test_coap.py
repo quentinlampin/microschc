@@ -1,7 +1,7 @@
 from typing import List, Tuple
 from venv import create
 from microschc.protocol.coap import CoAPDefinitions, CoAPFields, CoAPOptionMode, CoAPParser, coap_base_header_template, coap_option_template, coap_semantic_option_template
-from microschc.rfc8724 import CDA, DI, MO, FieldDescriptor, HeaderDescriptor
+from microschc.rfc8724 import CDA, DI, MO, FieldDescriptor, HeaderDescriptor, MatchMapping
 from microschc.binary.buffer import Buffer
 from microschc.tools.targetvalue import create_target_value
 
@@ -644,7 +644,7 @@ def test_coap_option_template_basic():
     """Test the CoAP option template generation."""
     # Test with basic option (no extended fields)
     option_descriptors = coap_option_template(
-        option_delta=11,
+        option_name='Uri-Path',
         option_length=2,  # Length of "rd" in bytes
         option_value=b"rd"  # "rd" in bytes
     )
@@ -668,147 +668,59 @@ def test_coap_option_template_basic():
     assert field_descriptor_1.compression_decompression_action == CDA.NOT_SENT
     assert field_descriptor_1.target_value == create_target_value(value=2, length=4)
 
-def test_coap_option_template_extended_delta_8bits():
-    """Test the CoAP option template generation with an extended delta."""
-    # Test with an extended delta (delta > 12)
+def test_coap_option_template_match_mapping():
+    """Test the CoAP option template generation with a match mapping."""
+    # Test with extended fields and a match mapping
     option_descriptors = coap_option_template(
-        option_delta=13,
-        option_length=4,
-        option_delta_extended=1,  # Extended delta value
-        option_value=b"1234"
+        option_name='Uri-Path',
+        option_length=2,
+        option_value=[b"rd", b"ra"]
     )
-    assert len(option_descriptors) == 4  # OPTION_DELTA, OPTION_LENGTH, OPTION_DELTA_EXTENDED, OPTION_VALUE
-    field_descriptor_0 = option_descriptors[0]
+    assert len(option_descriptors) == 3  # OPTION_DELTA, OPTION_LENGTH, OPTION_VALUE
 
+    field_descriptor_0 = option_descriptors[0]
     assert field_descriptor_0.id == CoAPFields.OPTION_DELTA
     assert field_descriptor_0.length == 4
     assert field_descriptor_0.matching_operator == MO.EQUAL
     assert field_descriptor_0.compression_decompression_action == CDA.NOT_SENT
-    assert field_descriptor_0.target_value == create_target_value(value=13, length=4)  # Extended delta value
+    assert field_descriptor_0.target_value == create_target_value(value=11, length=4)
 
     field_descriptor_1 = option_descriptors[1]
     assert field_descriptor_1.id == CoAPFields.OPTION_LENGTH
     assert field_descriptor_1.length == 4
     assert field_descriptor_1.matching_operator == MO.EQUAL
     assert field_descriptor_1.compression_decompression_action == CDA.NOT_SENT
-    assert field_descriptor_1.target_value == create_target_value(value=4, length=4)
+    assert field_descriptor_1.target_value == create_target_value(value=2, length=4)
 
     field_descriptor_2 = option_descriptors[2]
-    assert field_descriptor_2.id == CoAPFields.OPTION_DELTA_EXTENDED
-    assert field_descriptor_2.length == 8
-    assert field_descriptor_2.matching_operator == MO.EQUAL
-    assert field_descriptor_2.compression_decompression_action == CDA.NOT_SENT
-    assert field_descriptor_2.target_value == create_target_value(value=1, length=8)
-
-def test_coap_option_template_extended_delta_16bits():
-    """Test the CoAP option template generation with an extended delta."""
-    # Test with an extended delta (delta > 12)
-    option_descriptors = coap_option_template(
-        option_delta=14,
-        option_length=4,
-        option_delta_extended=1,  # Extended delta value
-        option_value=b"1234"
-    )
-    assert len(option_descriptors) == 4  # OPTION_DELTA, OPTION_LENGTH, OPTION_DELTA_EXTENDED, OPTION_VALUE
-    field_descriptor_0 = option_descriptors[0]
-
-    assert field_descriptor_0.id == CoAPFields.OPTION_DELTA
-    assert field_descriptor_0.length == 4
-    assert field_descriptor_0.matching_operator == MO.EQUAL
-    assert field_descriptor_0.compression_decompression_action == CDA.NOT_SENT
-    assert field_descriptor_0.target_value == create_target_value(value=14, length=4)  # Extended delta value
-
-    field_descriptor_1 = option_descriptors[1]
-    assert field_descriptor_1.id == CoAPFields.OPTION_LENGTH
-    assert field_descriptor_1.length == 4
-    assert field_descriptor_1.matching_operator == MO.EQUAL
-    assert field_descriptor_1.compression_decompression_action == CDA.NOT_SENT
-    assert field_descriptor_1.target_value == create_target_value(value=4, length=4)
-
-    field_descriptor_2 = option_descriptors[2]
-    assert field_descriptor_2.id == CoAPFields.OPTION_DELTA_EXTENDED
+    assert field_descriptor_2.id == CoAPFields.OPTION_VALUE
     assert field_descriptor_2.length == 16
-    assert field_descriptor_2.matching_operator == MO.EQUAL
-    assert field_descriptor_2.compression_decompression_action == CDA.NOT_SENT
-    assert field_descriptor_2.target_value == create_target_value(value=1, length=16)
+    assert field_descriptor_2.matching_operator == MO.MATCH_MAPPING
+    assert field_descriptor_2.compression_decompression_action == CDA.MAPPING_SENT
+    assert isinstance(field_descriptor_2.target_value, MatchMapping)
+    assert list(field_descriptor_2.target_value.forward.keys()) == [create_target_value(b"rd"), create_target_value(b"ra")]
 
-    field_descriptor_3 = option_descriptors[3]
-    assert field_descriptor_3.id == CoAPFields.OPTION_VALUE
-    assert field_descriptor_3.length == 32
-    assert field_descriptor_3.matching_operator == MO.EQUAL
-    assert field_descriptor_3.compression_decompression_action == CDA.NOT_SENT
-    assert field_descriptor_3.target_value == create_target_value(value=b"1234", length=32)
-
-def test_coap_option_template_extended_length_8bits():
-    """Test the CoAP option template generation with an extended length."""
-    # Test with an extended delta (delta > 12)
+def test_coap_option_template_two_matchmappings():
+    """Test the CoAP option semantic template generation with two MatchMappings."""
+    # Test with basic option (no extended fields)
     option_descriptors = coap_option_template(
-        option_delta=11,
-        option_length=13,
-        option_length_extended=1,
-        option_value=b"0123456789abc"
+        option_name='Uri-Path',
+        option_length=[2,3],  # 2 and 3 bytes
+        option_value=[b"rd", b"rad"]  # "rd" and "ra" in bytes
     )
-    assert len(option_descriptors) == 4  # OPTION_DELTA, OPTION_LENGTH, OPTION_LENGTH_EXTENDED, OPTION_VALUE
-    field_descriptor_0 = option_descriptors[0]
 
+    assert len(option_descriptors) == 3  # OPTION_DELTA, OPTION_LENGTH, OPTION_VALUE
+
+    field_descriptor_0 = option_descriptors[0]
     assert field_descriptor_0.id == CoAPFields.OPTION_DELTA
     assert field_descriptor_0.length == 4
-    assert field_descriptor_0.matching_operator == MO.EQUAL
-    assert field_descriptor_0.compression_decompression_action == CDA.NOT_SENT
-    assert field_descriptor_0.target_value == create_target_value(value=11, length=4)  # Extended delta value
+    field_descriptor_0.target_value = create_target_value(11, length=4)
 
     field_descriptor_1 = option_descriptors[1]
     assert field_descriptor_1.id == CoAPFields.OPTION_LENGTH
     assert field_descriptor_1.length == 4
-    assert field_descriptor_1.matching_operator == MO.EQUAL
-    assert field_descriptor_1.compression_decompression_action == CDA.NOT_SENT
-    assert field_descriptor_1.target_value == create_target_value(value=13, length=4)
+    assert field_descriptor_1.target_value == create_target_value([2,3], length=4)
 
-    field_descriptor_2 = option_descriptors[2]
-    assert field_descriptor_2.id == CoAPFields.OPTION_LENGTH_EXTENDED
-    assert field_descriptor_2.length == 8
-    assert field_descriptor_2.matching_operator == MO.EQUAL
-    assert field_descriptor_2.compression_decompression_action == CDA.NOT_SENT
-    assert field_descriptor_2.target_value == create_target_value(value=1, length=8)
-
-def test_coap_option_template_extended_length_16bits():
-    """Test the CoAP option template generation with an extended length."""
-    # Test with an extended delta (delta > 12)
-    option_descriptors = coap_option_template(
-        option_delta=11,
-        option_length=14,
-        option_length_extended=1,
-        option_value=b"0"*270
-    )
-    assert len(option_descriptors) == 4  # OPTION_DELTA, OPTION_LENGTH, OPTION_LENGTH_EXTENDED, OPTION_VALUE
-    field_descriptor_0 = option_descriptors[0]
-
-    assert field_descriptor_0.id == CoAPFields.OPTION_DELTA
-    assert field_descriptor_0.length == 4
-    assert field_descriptor_0.matching_operator == MO.EQUAL
-    assert field_descriptor_0.compression_decompression_action == CDA.NOT_SENT
-    assert field_descriptor_0.target_value == create_target_value(value=11, length=4)  # Extended delta value
-
-    field_descriptor_1 = option_descriptors[1]
-    assert field_descriptor_1.id == CoAPFields.OPTION_LENGTH
-    assert field_descriptor_1.length == 4
-    assert field_descriptor_1.matching_operator == MO.EQUAL
-    assert field_descriptor_1.compression_decompression_action == CDA.NOT_SENT
-    assert field_descriptor_1.target_value == create_target_value(value=14, length=4)
-
-    field_descriptor_2 = option_descriptors[2]
-    assert field_descriptor_2.id == CoAPFields.OPTION_LENGTH_EXTENDED
-    assert field_descriptor_2.length == 16
-    assert field_descriptor_2.matching_operator == MO.EQUAL
-    assert field_descriptor_2.compression_decompression_action == CDA.NOT_SENT
-    assert field_descriptor_2.target_value == create_target_value(value=1, length=16)
-
-    field_descriptor_3 = option_descriptors[3]
-    assert field_descriptor_3.id == CoAPFields.OPTION_VALUE
-    assert field_descriptor_3.length == 270*8
-    assert field_descriptor_3.matching_operator == MO.EQUAL
-    assert field_descriptor_3.compression_decompression_action == CDA.NOT_SENT
-    assert field_descriptor_3.target_value == create_target_value(value=b"0"*270, length=270*8)
 
 def test_coap_option_template_semantic_basic():
     """Test the CoAP option semantic template generation."""
@@ -824,6 +736,32 @@ def test_coap_option_template_semantic_basic():
     assert field_descriptor_0.id == CoAPFields.OPTION_DELTA
     assert field_descriptor_0.length == 4
     assert field_descriptor_0.target_value == create_target_value(11, length=4)
+
+    field_descriptor_1 = option_descriptors[1]
+    assert field_descriptor_1.id == CoAPFields.OPTION_LENGTH
+    assert field_descriptor_1.length == 4
+    assert field_descriptor_1.target_value == create_target_value(2, length=4)
+    
+    field_descriptor_2 = option_descriptors[2]
+    assert field_descriptor_2.id == CoAPFields.OPTION_VALUE
+    assert field_descriptor_2.length == 16
+    assert field_descriptor_2.target_value == create_target_value(b"rd", length=16)
+
+def test_coap_option_template_semantic_last_option_name():
+    """Test the CoAP option semantic template generation."""
+    # Test with basic option (no extended fields)
+    option_descriptors = coap_option_template(
+        option_name='Uri-Path',
+        option_length=2,  # 2 bytes
+        option_value=b"rd",  # "rd" in bytes
+        last_option_name='Uri-Path'
+    )
+
+    assert len(option_descriptors) == 3  # OPTION_DELTA, OPTION_LENGTH, OPTION_VALUE
+    field_descriptor_0 = option_descriptors[0]
+    assert field_descriptor_0.id == CoAPFields.OPTION_DELTA
+    assert field_descriptor_0.length == 4
+    assert field_descriptor_0.target_value == create_target_value(0, length=4)
 
     field_descriptor_1 = option_descriptors[1]
     assert field_descriptor_1.id == CoAPFields.OPTION_LENGTH
