@@ -197,12 +197,12 @@ class SCTPParser(HeaderParser):
         chunk_length: Buffer = buffer[16:32]
         fields.append(FieldDescriptor(id=SCTPFields.CHUNK_LENGTH, position=0, value=chunk_length))
         
-        chunk_length_value: int = chunk_length.value(type='unsigned int') * 8
+        chunk_length_value: int = int(chunk_length.value(type='unsigned int')) * 8
             
         # Chunk Value: variable length
         chunk_value_length = chunk_length_value - 32  # Length includes the 4 bytes of type, flags, and length
         if chunk_value_length > 0:
-            chunk_type_value: int = chunk_type.value()
+            chunk_type_value: int = int(chunk_type.value())
             chunk_value: Buffer = buffer[32: 32 + chunk_value_length]
             
             if chunk_type_value == SCTPChunkTypes.DATA:
@@ -277,11 +277,11 @@ class SCTPParser(HeaderParser):
                 FieldDescriptor(id=SCTPFields.CHUNK_DATA_STREAM_SEQUENCE_NUMBER, value=stream_sequence_number_n, position=0),
                 FieldDescriptor(id=SCTPFields.CHUNK_DATA_PAYLOAD_PROTOCOL_IDENTIFIER, value=payload_protocol_identifier, position=0)
         ])
-        payload_protocol_identifier_value: int = payload_protocol_identifier.value()
+        payload_protocol_identifier_value: int = int(payload_protocol_identifier.value())
         user_data: Buffer = buffer[96:]
         if self.predict_next is True and payload_protocol_identifier_value in SCTP_SUPPORTED_PAYLOAD_PROTOCOLS:
             next_parser_class: Type[HeaderParser] = PARSERS[payload_protocol_identifier_value]
-            next_parser: HeaderParser = next_parser_class(predict_next=True)
+            next_parser: HeaderParser = next_parser_class(predict_next=True) # type: ignore
             next_header_descriptor: HeaderDescriptor = next_parser.parse(user_data)
             fields.extend(next_header_descriptor.fields)
         else:
@@ -421,23 +421,23 @@ class SCTPParser(HeaderParser):
         
         remainer: Buffer = buffer[96:]
         # Gap ack Blocks
-        number_gap_ack_blocks_value: int = number_gap_ack_blocks.value()
+        number_gap_ack_blocks_value: int = int(number_gap_ack_blocks.value())
         
-        for _ in range(number_gap_ack_blocks_value):
+        for pos in range(number_gap_ack_blocks_value):
             gap_ack_block_start: Buffer = remainer[0:16]
             gap_ack_block_end: Buffer = remainer[16:32]
             fields.extend([
-                FieldDescriptor(id=SCTPFields.CHUNK_SACK_GAP_ACK_BLOCK_START, value=gap_ack_block_start),
-                FieldDescriptor(id=SCTPFields.CHUNK_SACK_GAP_ACK_BLOCK_END, value=gap_ack_block_end)
+                FieldDescriptor(id=SCTPFields.CHUNK_SACK_GAP_ACK_BLOCK_START, value=gap_ack_block_start, position=pos+1),
+                FieldDescriptor(id=SCTPFields.CHUNK_SACK_GAP_ACK_BLOCK_END, value=gap_ack_block_end, position=pos+1)
             ])
             remainer = remainer[32:]
         
         # Duplicate TSNs
-        number_duplicate_tsns_value: int = number_duplicate_tsns.value()
-        for _ in range(number_duplicate_tsns_value):
+        number_duplicate_tsns_value: int = int(number_duplicate_tsns.value())
+        for pos in range(number_duplicate_tsns_value):
             duplicate_tsn: Buffer = remainer[0:32]
             fields.extend([
-                FieldDescriptor(id=SCTPFields.CHUNK_SACK_DUPLICATE_TSN, value=duplicate_tsn),
+                FieldDescriptor(id=SCTPFields.CHUNK_SACK_DUPLICATE_TSN, value=duplicate_tsn, position=pos+1),
             ])
             remainer = remainer[32:]
         
@@ -621,7 +621,7 @@ class SCTPParser(HeaderParser):
             FieldDescriptor(id=SCTPFields.PARAMETER_LENGTH, value=parameter_length, position=0),
         ])
         
-        parameter_length_value: int = parameter_length.value() * 8
+        parameter_length_value: int = int(parameter_length.value()) * 8
         parameter_value_length: int = parameter_length_value - 32
         if parameter_value_length > 0:
             parameter_value: Buffer = buffer[32: parameter_length_value]
@@ -709,7 +709,7 @@ def sctp_base_header_template(
     Rule descriptor template for SCTP header.
     """
     # Create target values for each field
-    target_values = {
+    target_values:dict[str, TargetValue] = {
         SCTPFields.SOURCE_PORT: create_target_value(source_port, length=16),
         SCTPFields.DESTINATION_PORT: create_target_value(destination_port, length=16),
         SCTPFields.VERIFICATION_TAG: create_target_value(verification_tag, length=32),
