@@ -554,14 +554,16 @@ class Buffer:
     def json(self, indent=None, separators=None) -> str:
         return json.dumps(self.__json__(), indent=indent, separators=separators)
 
-    def __from_json_object__(json_object:object):
+    @classmethod
+    def __from_json_object__(cls, json_object:dict):
         return Buffer(
             content=bytes.fromhex(json_object['content']), 
             length=json_object['length'],
             padding=Padding(json_object['padding'])
         )
 
-    def from_json(json_str: str):
+    @classmethod
+    def from_json(cls, json_str: str):
         json_object: dict = json.loads(json_str)
         return Buffer.__from_json_object__(json_object=json_object)
     
