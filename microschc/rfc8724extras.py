@@ -41,7 +41,8 @@ class Context:
     def json(self, indent=None, separators=None) -> str:
         return json.dumps(self.__json__(), indent=indent, separators=separators)
 
-    def __from_json_object__(json_object):
+    @classmethod
+    def __from_json_object__(cls, json_object):
         return Context(
             id=json_object['id'],
             description=json_object['description'],
@@ -50,6 +51,7 @@ class Context:
             ruleset=[RuleDescriptor.__from_json_object__(rd_json) for rd_json in json_object['ruleset']],
         )
 
-    def from_json(json_str: str):
+    @classmethod
+    def from_json(cls, json_str: str):
         json_object = json.loads(json_str)
         return Context.__from_json_object__(json_object=json_object)
