@@ -12,6 +12,7 @@ adjustement out-of-the-box and allows indexing and slicing bit sequences
 using slicing notations.
 """
 
+from typing import Union
 from microschc.compat import StrEnum
 import json
 from typing import Iterable
@@ -22,7 +23,7 @@ class Padding(StrEnum):
 
 class Buffer:
 
-    def __init__(self, content: bytes, length:int=None, padding=Padding.LEFT) -> None:
+    def __init__(self, content: bytes, length:Union[int, None]=None, padding=Padding.LEFT) -> None:
         if length is None:
             length = len(content) * 8
         padding_length: int = _calculate_padding_length(length=length)
@@ -33,7 +34,7 @@ class Buffer:
                 content = b'\x00' * (byte_length - len(content)) + content
             content = content[-byte_length:]
             if padding_length > 0:
-                mask: bytes = (0xff >> padding_length) & 0xff
+                mask: int = (0xff >> padding_length) & 0xff
                 first_byte = (content[0] & mask).to_bytes(1, 'big')
                 content = first_byte + content[1:]
         elif padding is Padding.RIGHT:
@@ -41,7 +42,7 @@ class Buffer:
                 content += b'\x00' * (byte_length - len(content))
             content = content[0:byte_length]
             if padding_length > 0:
-                mask: bytes = (0xff << padding_length) & 0xff
+                mask: int = (0xff << padding_length) & 0xff
                 last_byte = (content[-1] & mask).to_bytes(1, 'big')
                 content = content[:-1] + last_byte
             
@@ -211,7 +212,7 @@ class Buffer:
     def copy(self):
         return Buffer(content=self.content, length=self.length, padding=self.padding)
     
-    def value(self, type:str='unsigned int', encoding:str='big-endian'):
+    def value(self, type:str='unsigned int', encoding:str='big-endian') -> Union[int, str]:
         """
         returns the content of the buffer, decoded with given parameters.
         """
@@ -221,7 +222,7 @@ class Buffer:
             buffer = self
         
         padding_length: int = buffer.padding_length
-        mask: bytes = (0xff >> padding_length) & 0xff
+        mask: int = (0xff >> padding_length) & 0xff
         first_byte = (buffer.content[0] & mask).to_bytes(1, 'big')
         content = first_byte + buffer.content[1:]
 
@@ -484,7 +485,7 @@ class Buffer:
             shift_bits: int = (start_bit%8)
             carry_mask: int = (1 << shift_bits) - 1
             last_byte_mask: int = (0xff << (8-stop_bit%8)) & 0xff
-            last_byte: bytes = self.content[stop_byte-1]
+            last_byte: int = self.content[stop_byte-1]
             new_content: bytes =(( (last_byte & last_byte_mask) << shift_bits) & 0xff).to_bytes(1, 'big')
             carry = (last_byte >> (8 - shift_bits)) & carry_mask
             
