@@ -56,7 +56,7 @@ class IPv4Parser(HeaderParser):
         
         return (version == b'\x04')
 
-    def parse(self, buffer:bytes) -> HeaderDescriptor:
+    def parse(self, buffer:Buffer) -> HeaderDescriptor:
         """
         
          0                   1                   2                   3
