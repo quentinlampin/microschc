@@ -507,10 +507,10 @@ COAP_OPTION_TEMPLATE: List[RuleFieldDescriptor] = [
 ]
 
 def coap_base_header_template(
-    type: Union[bytes, Buffer, int],
-    code: Union[bytes, Buffer, int],
-    message_id: Union[bytes, Buffer, int, None] = None,
-    token: Union[bytes, Buffer, int, None] = None,
+    type: Union[bytes, Buffer, TargetValue, List, Dict, int, None] = None,
+    code: Union[bytes, Buffer, TargetValue, List, Dict, int, None] = None,
+    message_id: Union[bytes, Buffer, TargetValue, List, Dict, int, None] = None,
+    token: Union[bytes, Buffer, TargetValue, List, Dict, int, None] = None,
 ) -> List[RuleFieldDescriptor]:
     """
     Rule descriptor template for CoAP header.
@@ -594,7 +594,7 @@ def coap_option_template(
     option_length:Union[bytes, Buffer, TargetValue, List, Dict, int, None] = None,
     option_delta_extended: Union[bytes, Buffer, TargetValue, List, Dict, int, None] = None,
     option_length_extended: Union[bytes, Buffer, TargetValue, List, Dict, int, None] = None,
-    option_value: Union[bytes, Buffer, int, None] = None,
+    option_value: Union[bytes, Buffer, TargetValue, List, Dict, int, None] = None,
     last_option_name: Union[str, None] = None,
     position: int = 1,
     direction: DI = DI.BIDIRECTIONAL
