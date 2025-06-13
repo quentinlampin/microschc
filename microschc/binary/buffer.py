@@ -227,14 +227,15 @@ class Buffer:
         content = first_byte + buffer.content[1:]
 
         if 'int' in type:
-            encoding: str = 'big' if encoding == 'big-endian' else 'little'
+            encoding_int: str = 'big' if encoding == 'big-endian' else 'little'
             signed: bool = False if 'unsigned' in type else True
-            value:int = int.from_bytes(content, encoding, signed=signed)
+            value_int :int = int.from_bytes(content, encoding_int, signed=signed)
+            return value_int
         elif 'str' in type:
-            value:str = self.content.decode(encoding=encoding)
-        else:
-            raise ValueError('unknown type/decoding requirements')
-        return value
+            value_str:str = self.content.decode(encoding=encoding)
+            return value_str
+        raise ValueError('unknown type/decoding requirements')
+        
     
     def chunks(self, length: int, padding: bool = False) -> Iterable['Buffer']:
         chunks_count = self.length // length if self.length % length == 0 else self.length//length + 1
