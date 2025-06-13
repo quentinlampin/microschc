@@ -42,16 +42,38 @@ pip install dist/microschc-<version>-py3-none-any.whl
 Here's a quick example of how to use microSCHC to compress IPv6/UDP/CoAP headers:
 
 ```python
-from microschc import ContextManager, Context, Stack, RuleDescriptor, RuleNature, Buffer
+ffrom microschc import ContextManager, Context, Stack, RuleDescriptor, RuleNature, Buffer
 from microschc.protocol.ipv6 import ipv6_base_header_template
 from microschc.protocol.udp import udp_header_template
-from microschc.protocol.coap import coap_base_header_template, coap_option_template
+from microschc.protocol.coap import CoAPFields, coap_base_header_template, coap_option_template
+from microschc.rfc8724 import RuleFieldDescriptor, CDA, MO
+from microschc.tools.targetvalue import create_target_value
 
 # Packet example to compress
-packet: Buffer = Buffer(content=b'\x60\x0f\xf8\x5f\x00\x1c\x11\x40\x20\x01\x0d\xb8\x00\x0a\x00\x00\x00\x00\x00'\
-                                b'\x00\x00\x00\x03\x20\x01\x0d\xb8\x00\x0a\x00\x00\x00\x00\x00\x00\x00\x20\x90'\
-                                b'\xa0\x16\x33\x00\x1c\x29\x23\x52\x45\x14\xb5\x37\x09\x61\x76\x61\x3c\xff\xfb'\
-                                b'\x40\x31\x66\x66\x66\x66\x66\x66')
+packet: Buffer = Buffer(content= b"\x60\x0f\xf8\x5f"                        # IPv6  Version + Traffic Class + Flow Label
+                                 b"\x00\x1c"                                #       Payload Length
+                                 b"\x11"                                    #       Next Header 
+                                 b"\x40"                                    #       Hop Limit
+                                 b"\x20\x01\x0d\xb8\x00\x0a\x00\x00"        #       Source Address
+                                 b"\x00\x00\x00\x00\x00\x00\x00\x03"        #       |
+                                 b"\x20\x01\x0d\xb8\x00\x0a\x00\x00"        #       Destination Address
+                                 b"\x00\x00\x00\x00\x00\x00\x00\x20"        #       |
+                                 b"\x90\xa0"                                # UDP   Source Port
+                                 b"\x16\x33"                                #       Destination Port
+                                 b"\x00\x1c"                                #       Length
+                                 b"\x29\x23"                                #       Checksum
+                                 b"\x52"                                    # CoAP  Version + Type + Token Length
+                                 b"\x45"                                    #       Code
+                                 b"\x14\xb5"                                #       Message ID
+                                 b"\x37\x09"                                #       Token
+                                 b"\x61"                                    #       Option Delta 1 + Option Length 1
+                                 b"\x76"                                    #       Option Value 1
+                                 b"\x61"                                    #       Option Delta 2 + Option Length 2
+                                 b"\x3c"                                    #       Option Value 2
+                                 b"\xff"                                    #       Payload Marker
+                                 b"\xfb\x40\x31\x66\x66\x66\x66\x66\x66"    # App   Payload
+
+)
 
 # Create field descriptors for IPv6 header
 ipv6_field_descriptors = ipv6_base_header_template(
@@ -70,7 +92,7 @@ udp_field_descriptors = udp_header_template(
 
 # Create field descriptors for CoAP header
 coap_base_header_field_descriptors = coap_base_header_template(
-    type=b'\x00',
+    type=b'\x01',
     code=0b01000101,
     token=[b'\xd1\x59', b'\x21\x50', b'\x37\x09', b'\x1f\x0a', b'\xb7\x25', b'\x8d\x43']
 )
@@ -88,18 +110,27 @@ coap_option_2_field_descriptors = coap_option_template(
     option_value=[b"\x2d\x16", b"\x3c"]
 )
 
+coap_payload_maker_field_descriptor =  RuleFieldDescriptor(
+    id=CoAPFields.PAYLOAD_MARKER,
+    length=8,
+    target_value=create_target_value(b"\xff"),
+    matching_operator=MO.EQUAL,
+    compression_decompression_action=CDA.NOT_SENT
+)
+
 # Combine all field descriptors
 field_descriptors = (
     ipv6_field_descriptors
     + udp_field_descriptors 
     + coap_base_header_field_descriptors 
     + coap_option_1_field_descriptors 
-    + coap_option_2_field_descriptors 
+    + coap_option_2_field_descriptors
+    + [coap_payload_maker_field_descriptor]
 )
 
 # Create a rule descriptor
 rule_descriptor = RuleDescriptor(
-    id=b'\x00',
+    id=Buffer(b'\x00', length=8),
     nature=RuleNature.COMPRESSION,
     field_descriptors=field_descriptors,
 )
