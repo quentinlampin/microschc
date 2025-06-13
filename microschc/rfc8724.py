@@ -37,7 +37,8 @@ class MatchMapping:
     def json(self, indent=None, separators=None):
         return json.dumps(self.__json__(), indent=indent, separators=separators)
 
-    def __from_json_object__(json_object):
+    @classmethod
+    def __from_json_object__(cls, json_object):
         forward: Mapping = {}
         for entry in json_object:
             index: Buffer = Buffer.__from_json_object__(entry['index'])
@@ -45,13 +46,14 @@ class MatchMapping:
             forward[value] = index
         return MatchMapping(forward_mapping=forward)
 
-    def from_json(json_str: str):
+    @classmethod
+    def from_json(cls, json_str: str):
         json_object = json.loads(json_str)
         match_mapping: MatchMapping = MatchMapping.__from_json_object__(json_object=json_object)
         return match_mapping
 
 
-TargetValue = Union[Buffer, MatchMapping]
+TargetValue = Union[Buffer, MatchMapping, None]
 
 class DirectionIndicator(StrEnum):
     UP = 'Up'
