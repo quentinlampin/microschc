@@ -137,10 +137,10 @@ class IPv4Parser(HeaderParser):
             ]
         )
         if self.predict_next is True:
-            next_header_value: int = protocol.value(type='unsigned int')
+            next_header_value: int = int(protocol.value(type='unsigned int'))
             if next_header_value in IPV4_SUPPORTED_PAYLOAD_PROTOCOLS:
                 next_parser_class: Type[HeaderParser] = PARSERS[next_header_value]
-                next_parser: HeaderParser = next_parser_class(predict_next=True)
+                next_parser: HeaderParser = next_parser_class(predict_next=True) # type: ignore
                 next_header_descriptor: HeaderDescriptor = next_parser.parse(buffer[160:])
                 header_descriptor.fields.extend(next_header_descriptor.fields)
                 header_descriptor.length += next_header_descriptor.length
@@ -234,7 +234,7 @@ def _compute_checksum(decompressed_fields: List[Tuple[str, Buffer]], rule_field_
     header_checksum: int = 0
     # compute the sum of the 2-bytes chunks of the IPv4 header
     for chunk in ipv4_header.chunks(length=16):
-        header_checksum += chunk.value(type='unsigned int')
+        header_checksum += int(chunk.value(type='unsigned int'))
         carry = header_checksum >> 16
         header_checksum = (header_checksum + carry) & 0xffff 
     
@@ -247,7 +247,7 @@ def _compute_checksum(decompressed_fields: List[Tuple[str, Buffer]], rule_field_
 
 
 IPv4ComputeFunctions: Dict[str, Tuple[ComputeFunctionType, ComputeFunctionDependenciesType]] = {
-    IPv4Fields.TOTAL_LENGTH: (_compute_total_length, {}),
+    IPv4Fields.TOTAL_LENGTH: (_compute_total_length, set({})),
     IPv4Fields.HEADER_CHECKSUM: (_compute_checksum, { 
                                                         IPv4Fields.VERSION, 
                                                         IPv4Fields.HEADER_LENGTH,
@@ -390,7 +390,7 @@ def ipv4_field_descriptors_template(
     Rule descriptor template for IPv4 header.
     """
     # Create target values for each field
-    target_values = {
+    target_values: dict[str, TargetValue] = {
         IPv4Fields.VERSION: create_target_value(4, length=4),
         IPv4Fields.HEADER_LENGTH: create_target_value(5, length=4),
         IPv4Fields.TYPE_OF_SERVICE: create_target_value(tos, length=8),

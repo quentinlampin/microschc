@@ -105,10 +105,10 @@ class IPv6Parser(HeaderParser):
         )
         
         if self.predict_next is True:
-            next_header_value: int = next_header.value(type='unsigned int')
+            next_header_value: int = int(next_header.value(type='unsigned int'))
             if next_header_value in IPV6_SUPPORTED_PAYLOAD_PROTOCOLS:
                 next_parser_class: Type[HeaderParser] = PARSERS[next_header_value]
-                next_parser: HeaderParser = next_parser_class(predict_next=True)
+                next_parser: HeaderParser = next_parser_class(predict_next=True) # type: ignore
                 next_header_descriptor: HeaderDescriptor = next_parser.parse(buffer[320:])
                 header_descriptor.fields.extend(next_header_descriptor.fields)
                 header_descriptor.length += next_header_descriptor.length
@@ -126,7 +126,7 @@ def _compute_payload_length( decompressed_fields: List[Tuple[str, Buffer]], rule
 
 
 IPv6ComputeFunctions: Dict[str, Tuple[ComputeFunctionType, ComputeFunctionDependenciesType]] = {
-    IPv6Fields.PAYLOAD_LENGTH: (_compute_payload_length, {})
+    IPv6Fields.PAYLOAD_LENGTH: (_compute_payload_length, set({}))
 }
 
 IPV6_BASE_HEADER_FIELDS: List[RuleFieldDescriptor] = [
