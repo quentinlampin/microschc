@@ -31,9 +31,10 @@ Note: The case of CoAP in the context of SCHC is a odd one.
 
 
 from enum import Enum, IntEnum
+from multiprocessing import Value
 from microschc.compat import StrEnum
 import re
-from typing import Dict, List, Optional, Set, Tuple, Union
+from typing import Dict, Iterable, List, Optional, Set, Tuple, Union
 from microschc.binary.buffer import Buffer
 from microschc.parser import HeaderParser, ParserError
 from microschc.parser.parser import UnparserError
@@ -123,7 +124,7 @@ COAP_OPTIONS_NUMBER_TO_NAME = {
     CoAPOptionIDs.OPTION_SIZE1:            CoAPFields.OPTION_SIZE1
 }
 
-COAP_OPTIONS_NAME_TO_NUMBER = {v:k for k,v in COAP_OPTIONS_NUMBER_TO_NAME.items()}
+COAP_OPTIONS_NAME_TO_NUMBER:Dict[str, int] = {v:k for k,v in COAP_OPTIONS_NUMBER_TO_NAME.items()}
 
 
 class CoAPDefinitions(bytes, Enum):
@@ -150,7 +151,7 @@ class CoAPParser(HeaderParser):
     def match(self, buffer: Buffer) -> bool:
         return (buffer.length >= 32)
 
-    def parse(self, buffer: bytes) -> HeaderDescriptor:
+    def parse(self, buffer: Buffer) -> HeaderDescriptor:
         """
          0                   1                   2                   3
          0 1 2 3 4 5 6 7 8 9 0 1 2 3 4 5 6 7 8 9 0 1 2 3 4 5 6 7 8 9 0 1
@@ -219,7 +220,7 @@ class CoAPParser(HeaderParser):
             return decompressed_fields
 
             
-        unparsed_fields: List[Tuple[str, Buffer]] = []
+        unparsed_fields: List[Tuple[str, TargetValue]] = []
         previous_option_number: int = 0
         
         for (field_id, field_value) in decompressed_fields:
@@ -229,18 +230,18 @@ class CoAPParser(HeaderParser):
                 unparsed_fields.append((field_id, field_value))
             else:
                 try:
-                    option_number = COAP_OPTIONS_NAME_TO_NUMBER[field_id]
+                    option_number:int = COAP_OPTIONS_NAME_TO_NUMBER[field_id]
                 except KeyError:
                     match = re.match(self.unknown_option_pattern, field_id)
                     if match:
-                        option_number = match.group(1)
+                        option_number:int = int(match.group(1))
                     else:
                         raise UnparserError(
                             decompressed_fields=decompressed_fields,
                             message=f'unrecognized field ID: {field_id}'
-                        ) 
+                        )
                 finally:
-                    option_delta: int = option_number - previous_option_number
+                    option_delta: int = option_number - previous_option_number # type: ignore
                     
                     # option delta
                     if option_delta < 13:
@@ -250,7 +251,7 @@ class CoAPParser(HeaderParser):
                     else:
                         unparsed_fields.append((CoAPFields.OPTION_DELTA, create_target_value(CoAPDefinitions.OPTION_DELTA_EXTENDED_16BITS, length=4)))
 
-                    previous_option_number = option_number
+                    previous_option_number = option_number # type: ignore
                     
                     # option length
                     option_length_bytes: int = field_value.length//8
@@ -275,7 +276,7 @@ class CoAPParser(HeaderParser):
                         
                     # option value
                     unparsed_fields.append((CoAPFields.OPTION_VALUE, field_value))
-        return unparsed_fields
+        return unparsed_fields # type: ignore
                                     
                     
         
@@ -309,6 +310,7 @@ def _parse_options(buffer: Buffer, mode:CoAPOptionMode) -> Tuple[List[FieldDescr
     cursor: int = 0
     option_field_positions: Dict[CoAPFields, int] = {oid: 0 for oid in CoAPFields}
     option_index: int = 0
+    option_value: Union[Buffer, None] = None
 
     # parse options until reaching the payload marker byte or end of buffer
     while cursor < buffer.length and buffer[cursor:cursor+8] != CoAPDefinitions.PAYLOAD_MARKER_VALUE:
@@ -316,39 +318,42 @@ def _parse_options(buffer: Buffer, mode:CoAPOptionMode) -> Tuple[List[FieldDescr
 
         option_delta: Buffer = option_bytes[0:4]
         option_length: Buffer = option_bytes[4:8]
-        option_length_int: int = option_length.value()
+        option_length_int: int = int(option_length.value())
         option_length_extended_int: int = 0
+
+        option_delta_extended: TargetValue = None
+        option_length_extended: TargetValue = None
 
         option_offset: int = 8 # to keep track of variable length fields
 
         if option_delta == CoAPDefinitions.OPTION_DELTA_EXTENDED_8BITS:
-            option_delta_extended: Buffer = option_bytes[option_offset:option_offset+8]
+            option_delta_extended = option_bytes[option_offset:option_offset+8]
             option_field_positions[CoAPFields.OPTION_DELTA_EXTENDED] += 1
             option_offset += 8
 
         elif option_delta == CoAPDefinitions.OPTION_DELTA_EXTENDED_16BITS:
-            option_delta_extended: bytes = option_bytes[option_offset:option_offset+16]
+            option_delta_extended = option_bytes[option_offset:option_offset+16]
             option_field_positions[CoAPFields.OPTION_DELTA_EXTENDED] += 1
             option_offset += 16
 
         if option_length == CoAPDefinitions.OPTION_LENGTH_EXTENDED_8BITS:
-            option_length_extended: Buffer = option_bytes[option_offset:option_offset+8]
-            option_length_extended_int: int = option_length_extended.value()
+            option_length_extended = option_bytes[option_offset:option_offset+8]
+            option_length_extended_int: int = int(option_length_extended.value())
             option_field_positions[CoAPFields.OPTION_LENGTH_EXTENDED] += 1
             option_offset += 8
 
         elif option_length == CoAPDefinitions.OPTION_LENGTH_EXTENDED_16BITS:
             # option_length_extended: 16 bits
             option_length_int = 269
-            option_length_extended: Buffer = option_bytes[option_offset:option_offset+16]
-            option_length_extended_int: int = option_length_extended.value()
+            option_length_extended = option_bytes[option_offset:option_offset+16]
+            option_length_extended_int: int = int(option_length_extended.value())
             option_field_positions[CoAPFields.OPTION_LENGTH_EXTENDED] += 1
             option_offset += 16
 
         option_value_length = (option_length_int + option_length_extended_int) * 8
 
         if option_value_length > 0:
-            option_value: Buffer = option_bytes[option_offset: option_offset+option_value_length]
+            option_value = option_bytes[option_offset: option_offset+option_value_length]
             option_field_positions[CoAPFields.OPTION_VALUE] += 1
 
         option_offset += option_value_length
@@ -362,36 +367,56 @@ def _parse_options(buffer: Buffer, mode:CoAPOptionMode) -> Tuple[List[FieldDescr
             fields.append(FieldDescriptor(id=CoAPFields.OPTION_LENGTH, position=option_field_positions[CoAPFields.OPTION_LENGTH], value=option_length))
 
             if option_delta in {CoAPDefinitions.OPTION_DELTA_EXTENDED_8BITS, CoAPDefinitions.OPTION_DELTA_EXTENDED_16BITS}:
-                fields.append(FieldDescriptor(id=CoAPFields.OPTION_DELTA_EXTENDED, position=option_field_positions[CoAPFields.OPTION_DELTA_EXTENDED], value=option_delta_extended))
+                assert option_delta_extended is not None
+                fields.append(FieldDescriptor(id=CoAPFields.OPTION_DELTA_EXTENDED, 
+                                              position=option_field_positions[CoAPFields.OPTION_DELTA_EXTENDED], 
+                                              value=option_delta_extended)
+                )
 
             if option_length in {CoAPDefinitions.OPTION_LENGTH_EXTENDED_8BITS, CoAPDefinitions.OPTION_LENGTH_EXTENDED_16BITS}:
-                fields.append(FieldDescriptor(id=CoAPFields.OPTION_LENGTH_EXTENDED, position=option_field_positions[CoAPFields.OPTION_LENGTH_EXTENDED], value=option_length_extended))
+                assert option_length_extended is not None
+                fields.append(FieldDescriptor(id=CoAPFields.OPTION_LENGTH_EXTENDED,
+                                              position=option_field_positions[CoAPFields.OPTION_LENGTH_EXTENDED],
+                                              value=option_length_extended)
+                )
 
             if option_value_length > 0:
-                fields.append(FieldDescriptor(id=CoAPFields.OPTION_VALUE, position=option_field_positions[CoAPFields.OPTION_VALUE], value=option_value))
+                assert option_value is not None
+                fields.append(FieldDescriptor(id=CoAPFields.OPTION_VALUE, 
+                                              position=option_field_positions[CoAPFields.OPTION_VALUE], 
+                                              value=option_value)
+                )
 
         elif mode is CoAPOptionMode.SEMANTIC:
+            interpreted_option_field_id:str = ''
             try:
-                option_delta_int: int = option_delta.value()
+                option_delta_int: int = int(option_delta.value())
                 if option_delta_int < 13:
                     option_index += option_delta_int
                 elif option_delta_int == 13:
-                    option_delta_extended_int = option_delta_extended.value()
+                    assert option_delta_extended
+                    option_delta_extended_int = int(option_delta_extended.value())
                     option_index += option_delta_extended_int + 13
                 else:
+                    assert option_delta_extended
+                    option_delta_extended_int = int(option_delta_extended.value())
                     option_index += option_delta_extended_int + 269
-                interpreted_option_field_id = COAP_OPTIONS_NUMBER_TO_NAME[option_index]
+                interpreted_option_field_id = COAP_OPTIONS_NUMBER_TO_NAME[CoAPOptionIDs(option_index)]
                 option_field_positions[interpreted_option_field_id] += 1
 
             except KeyError:
                 interpreted_option_field_id = f"{CoAPFields.OPTION_UNKNOWN}({option_index})"
                 try:
-                    option_field_positions[interpreted_option_field_id] += 1
+                    option_field_positions[CoAPFields(interpreted_option_field_id)] += 1
                 except KeyError:
-                    option_field_positions[interpreted_option_field_id] = 1
+                    option_field_positions[CoAPFields(interpreted_option_field_id)] = 1
                     
             finally:
-                fields.append(FieldDescriptor(id=interpreted_option_field_id, value=option_value, position=option_field_positions[interpreted_option_field_id]))
+                assert option_value
+                fields.append(FieldDescriptor(id=interpreted_option_field_id, 
+                                              value=option_value, 
+                                              position=option_field_positions[CoAPFields(interpreted_option_field_id)])
+                )
 
     # append payload marker field
     if cursor < buffer.length:
@@ -532,9 +557,10 @@ def coap_base_header_template(
     - MESSAGE_ID
     - TOKEN (only included if token is provided)
     """
-    
+    token_length = 0
+
     # Create target values for each field
-    target_values = {
+    target_values:dict[str, TargetValue] = {
         CoAPFields.VERSION: create_target_value(1, length=2),  # CoAP version 1
         CoAPFields.TYPE: create_target_value(type, length=2),
         CoAPFields.CODE: create_target_value(code, length=8),
@@ -545,6 +571,7 @@ def coap_base_header_template(
     # Handle token and token length
     if token is not None:
         token_value = create_target_value(token)
+        assert token_value is not None
         token_length = token_value.length // 8 if isinstance(token_value, Buffer) else list(token_value.forward.keys())[0].length // 8
         target_values[CoAPFields.TOKEN_LENGTH] = create_target_value(token_length, length=4)
         target_values[CoAPFields.TOKEN] = token_value
@@ -590,7 +617,7 @@ def coap_base_header_template(
 
 def coap_option_template(
     option_name: Union[str, None] = None,
-    option_delta: Union[bytes, Buffer, TargetValue, List, Dict, int, None] = None,
+    option_delta: Union[bytes, Buffer, TargetValue, List, Dict, int, None] = None, # type: ignore
     option_length:Union[bytes, Buffer, TargetValue, List, Dict, int, None] = None,
     option_delta_extended: Union[bytes, Buffer, TargetValue, List, Dict, int, None] = None,
     option_length_extended: Union[bytes, Buffer, TargetValue, List, Dict, int, None] = None,
@@ -622,6 +649,9 @@ def coap_option_template(
     Returns:
         List[RuleFieldDescriptor]: List of rule field descriptors for the CoAP option
     """
+
+    option_length_extended_tv = None
+
     option_fields_summary = {
         CoAPFields.OPTION_DELTA: {'target_value': None, 'field_length': 4},
         CoAPFields.OPTION_LENGTH: {'target_value': None, 'field_length': 4},
@@ -641,7 +671,7 @@ def coap_option_template(
         _coap_option_variable_encoding_summary(CoAPFields.OPTION_DELTA, option_delta, option_fields_summary)
         
         # `option_length` is provided as a number of bytes
-        if option_length is not None:
+        if option_length is not None and isinstance(option_length, int):
             # if option_value is not an instance of MatchMapping, Buffer, bytes, use option_length in create_target_value
             if not isinstance(option_value, (Buffer, MatchMapping, bytes, list, dict)):
                 option_value_tv: TargetValue = create_target_value(option_value, option_length*8)
@@ -694,10 +724,10 @@ def coap_option_template(
         
         if option_length_extended is not None:
             option_length_extended_length = None
-            if isinstance(option_length_tv, Buffer) and option_delta_tv.content == CoAPDefinitions.OPTION_LENGTH_EXTENDED_8BITS:
+            if isinstance(option_length_tv, Buffer) and option_length_tv.content == CoAPDefinitions.OPTION_LENGTH_EXTENDED_8BITS:
                 option_length_extended_length = 8
                 option_length_extended_fl = 8
-            elif isinstance(option_delta_tv, Buffer) and option_delta_tv.content == CoAPDefinitions.OPTION_LENGTH_EXTENDED_16BITS:
+            elif isinstance(option_length_tv, Buffer) and option_length_tv.content == CoAPDefinitions.OPTION_LENGTH_EXTENDED_16BITS:
                 option_length_extended_length = 16
                 option_length_extended_fl = 16
             else:
@@ -711,12 +741,12 @@ def coap_option_template(
         # determine option_value_fl
         if isinstance(option_length_tv, Buffer) and option_length_tv.length == 4:
             # option_length assumes a single value, use it for option_value_fl
-            if option_length_tv.value() < 13:
+            if int(option_length_tv.value()) < 13:
                 option_value_fl = option_length_tv.value() * 8 
             elif option_length_tv.content == CoAPDefinitions.OPTION_LENGTH_EXTENDED_8BITS and isinstance(option_length_extended_tv, Buffer) and option_length_extended_tv.length == 8:
-                option_value_fl = (13 + option_length_extended_tv.value()) * 8
+                option_value_fl = (13 + int(option_length_extended_tv.value())) * 8
             elif option_length_tv.content == CoAPDefinitions.OPTION_LENGTH_EXTENDED_16BITS and isinstance(option_length_extended_tv, Buffer):
-                option_value_fl = (269 + option_length_extended_tv.value()) * 8
+                option_value_fl = (269 + int(option_length_extended_tv.value())) * 8
             else:
                 option_value_fl = 0
         else:
@@ -754,7 +784,7 @@ def coap_option_template(
         )
     return field_descriptors
 
-def coap_semantic_option_template(option_name: str, option_value: Union[bytes, int, TargetValue, List[Buffer]], option_length=None, position:Optional[int] = 1) -> List[RuleFieldDescriptor]:
+def coap_semantic_option_template(option_name: str, option_value: Union[bytes, int, TargetValue, List[Buffer]], option_length=None, position:int = 1) -> List[RuleFieldDescriptor]:
     """
     Creates a single RuleFieldDescriptor for a semantic CoAP option.
 
@@ -773,6 +803,8 @@ def coap_semantic_option_template(option_name: str, option_value: Union[bytes, i
     if option_length is not None:
         field_length = option_length * 8  # Convert bytes to bits
     else:
+        if not isinstance(target_value, Buffer):
+            raise ValueError(f"target value must be of type Buffer if option_length is None")
         field_length = target_value.length
 
     mo: MO = select_mo(target_value=target_value, field_length=field_length)
@@ -807,7 +839,7 @@ def coap_option_field_id_to_number(option_id: str) -> int:
     else:
         raise ValueError(f"Invalid CoAP option ID: {option_id}")
     
-def _coap_option_variable_encoding_summary(field: str, value: int, summary:Dict) -> None:
+def _coap_option_variable_encoding_summary(field: str, value: Union[int, Iterable[int]], summary:Dict) -> None:
     if field == CoAPFields.OPTION_DELTA:
         extended_field = CoAPFields.OPTION_DELTA_EXTENDED
     elif field == CoAPFields.OPTION_LENGTH:
@@ -829,7 +861,7 @@ def _coap_option_variable_encoding_summary(field: str, value: int, summary:Dict)
             summary[extended_field]['target_value'] = create_target_value(value-269, length=16)
             summary[extended_field]['field_length'] = 16
 
-    elif isinstance(value, list) and all(isinstance(od, int) for od in value):
+    elif isinstance(value, Iterable) and all(isinstance(od, int) for od in value):
         if all(od < 13 for od in value):
             summary[field]['target_value'] = create_target_value(value, length=4)
         elif all(od >= 13 and od < 269 for od in value):
