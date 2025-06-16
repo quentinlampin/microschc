@@ -62,7 +62,7 @@ def create_target_value(value, length=None, padding=None) -> TargetValue:
         return Buffer(content=value, length=length, padding=actual_padding)
     
     # Handle list input - create MatchMapping
-    elif isinstance(value, list):
+    elif isinstance(value, (list, set)):
         # For empty list, raise a ValueError
         if len(value) == 0:
             raise ValueError("a non empty list is required for MatchMapping")
