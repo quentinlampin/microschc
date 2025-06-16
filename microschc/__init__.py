@@ -1,4 +1,4 @@
-__version__ = '0.20.4'
+__version__ = '0.20.5'
 
 
 from .rfc8724 import RuleDescriptor, RuleNature, RuleFieldDescriptor, FieldDescriptor, TargetValue, DirectionIndicator, MatchingOperator, CompressionDecompressionAction
@@ -7,3 +7,4 @@ from .rfc8724extras import Context
 from .binary import Buffer, Padding
 from .manager import ContextManager
 from .protocol.registry import ProtocolsIDs, PARSERS, Stack, factory
+from .parser import PacketDescriptor, HeaderParser, ParserError
