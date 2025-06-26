@@ -84,6 +84,28 @@ class CoAPFields(StrEnum):
     OPTION_SIZE1            = f'{COAP_HEADER_ID}:Option Size1'
     OPTION_UNKNOWN          = f'{COAP_HEADER_ID}:Option Unknown'
 
+COAP_OPTION_FIELDS: Set[CoAPFields] = {
+    CoAPFields.OPTION_IF_MATCH,
+    CoAPFields.OPTION_URI_HOST,     
+    CoAPFields.OPTION_ETAG,     
+    CoAPFields.OPTION_IF_NONE_MATCH,
+    CoAPFields.OPTION_OBSERVE,
+    CoAPFields.OPTION_URI_PORT,      
+    CoAPFields.OPTION_LOCATION_PATH,
+    CoAPFields.OPTION_URI_PATH,
+    CoAPFields.OPTION_CONTENT_FORMAT,
+    CoAPFields.OPTION_MAX_AGE,
+    CoAPFields.OPTION_URI_QUERY,     
+    CoAPFields.OPTION_ACCEPT,    
+    CoAPFields.OPTION_LOCATION_QUERY,
+    CoAPFields.OPTION_BLOCK2,
+    CoAPFields.OPTION_BLOCK1,       
+    CoAPFields.OPTION_PROXY_URI,
+    CoAPFields.OPTION_PROXY_SCHEME,
+    CoAPFields.OPTION_SIZE1, 
+    CoAPFields.OPTION_UNKNOWN       
+}
+
 class CoAPOptionIDs(IntEnum):
     OPTION_IF_MATCH            = 1
     OPTION_URI_HOST            = 3
@@ -147,6 +169,7 @@ class CoAPParser(HeaderParser):
         self.interpret_options: CoAPOptionMode = interpret_options
         if self.interpret_options is CoAPOptionMode.SEMANTIC:
             self.unknown_option_pattern = rf'{CoAPFields.OPTION_UNKNOWN}\((\d+)\)'
+            self.has_unparser = True
 
     def match(self, buffer: Buffer) -> bool:
         return (buffer.length >= 32)
@@ -218,17 +241,12 @@ class CoAPParser(HeaderParser):
         
         if self.interpret_options is CoAPOptionMode.SYNTACTIC:
             return decompressed_fields
-
             
         unparsed_fields: List[Tuple[str, TargetValue]] = []
         previous_option_number: int = 0
         
         for (field_id, field_value) in decompressed_fields:
-
-            if field_id in { CoAPFields.VERSION, CoAPFields.TYPE, CoAPFields.TOKEN_LENGTH, CoAPFields.CODE,
-                             CoAPFields.MESSAGE_ID, CoAPFields.TOKEN, CoAPFields.PAYLOAD_MARKER }:
-                unparsed_fields.append((field_id, field_value))
-            else:
+            if field_id in COAP_OPTION_FIELDS:
                 try:
                     option_number:int = COAP_OPTIONS_NAME_TO_NUMBER[field_id]
                 except KeyError:
@@ -276,6 +294,8 @@ class CoAPParser(HeaderParser):
                         
                     # option value
                     unparsed_fields.append((CoAPFields.OPTION_VALUE, field_value))
+            else:
+                unparsed_fields.append((field_id, field_value))
         return unparsed_fields # type: ignore
                                     
                     
@@ -535,6 +555,7 @@ def coap_base_header_template(
     type: Union[bytes, Buffer, TargetValue, List, Dict, int, None] = None,
     code: Union[bytes, Buffer, TargetValue, List, Dict, int, None] = None,
     message_id: Union[bytes, Buffer, TargetValue, List, Dict, int, None] = None,
+    token_length: Union[bytes, Buffer, TargetValue, List, Dict, int, None] = None,
     token: Union[bytes, Buffer, TargetValue, List, Dict, int, None] = None,
 ) -> List[RuleFieldDescriptor]:
     """
@@ -544,7 +565,8 @@ def coap_base_header_template(
         type: The CoAP message type (CON, NON, ACK, RST)
         code: The CoAP message code (GET, POST, etc.)
         message_id: The CoAP message ID
-        token: Optional token value. If provided, its length will be used to set TOKEN_LENGTH
+        token_length: Optional token_length value. If provided, its length with be used to set token field length.
+        token: Optional token value. If provided and token_length is not provided, its length will be used to set TOKEN_LENGTH
         
     Returns:
         List[RuleFieldDescriptor]: List of rule field descriptors for the CoAP header
@@ -557,7 +579,7 @@ def coap_base_header_template(
     - MESSAGE_ID
     - TOKEN (only included if token is provided)
     """
-    token_length = 0
+    token_length_bits:Union[int,None] = None
 
     # Create target values for each field
     target_values:dict[str, TargetValue] = {
@@ -569,27 +591,63 @@ def coap_base_header_template(
     if message_id is not None:
         target_values[CoAPFields.MESSAGE_ID] = create_target_value(message_id, length=16)
     # Handle token and token length
-    if token is not None:
-        token_value = create_target_value(token)
-        assert token_value is not None
-        token_length = token_value.length // 8 if isinstance(token_value, Buffer) else list(token_value.forward.keys())[0].length // 8
-        target_values[CoAPFields.TOKEN_LENGTH] = create_target_value(token_length, length=4)
-        target_values[CoAPFields.TOKEN] = token_value
+    if token_length is not None:
+        token_length_value: TargetValue = create_target_value(token_length, length=4)
+        target_values[CoAPFields.TOKEN_LENGTH] = token_length_value
+        if isinstance(token_length_value, Buffer) and token_length_value.length == 4:
+            token_length_bits = 8 * int(token_length_value.value(type='unsigned int'))
+        elif isinstance(token_length_value, MatchMapping):
+            mapping_values: List[Buffer] = list(token_length_value.forward.keys())
+            token_lengths: Set[int] = set([int(mv.value()) for mv in mapping_values])
+            if len(token_lengths) == 1:
+                token_length_bits = 8 * int(mapping_values[0].value())
+            else:
+                token_length_bits = 0
+    if token_length_bits is not None:
+        token_value = create_target_value(token, token_length_bits)
     else:
+        token_value = create_target_value(token)
+        
+    if token_length_bits is None and token_value is not None:
+        # try determining token_length_bits
+        if isinstance(token_value, Buffer):
+            token_length_bits = token_value.length
+            token_length_bytes = token_length_bits // 8
+            target_values[CoAPFields.TOKEN_LENGTH] = create_target_value(token_length_bytes, length=4)
+        elif isinstance(token_value, MatchMapping):
+            mapping_values: List[Buffer] = list(token_value.forward.keys())
+            token_lengths: Set[int] = set([mv.length for mv in mapping_values])
+            if len(token_lengths) == 1:
+                token_length_bits = 8 * int(mapping_values[0].value())
+            else:
+                token_length_bits = 0
+        else:
+            token_length_bits = 0
+        token_length_bytes = token_length_bits // 8 if isinstance(token_value, Buffer) else list(token_value.forward.keys())[0].length // 8
+        target_values[CoAPFields.TOKEN_LENGTH] = create_target_value(token_length_bytes, length=4)
+        token_length_bits = 8 * token_length_bytes
+        if token_value is not None:
+            target_values[CoAPFields.TOKEN] = token_value
+        else:
+            target_values[CoAPFields.TOKEN] = create_target_value(value=b'', length=token_length_bits)
+    elif token_length_bits is None:
         target_values[CoAPFields.TOKEN_LENGTH] = create_target_value(0, length=4)
-    
+        token_length_bits = 0
     # Generate rule field descriptors
     field_descriptors = []
     
     # Add base fields
     for field in COAP_BASE_HEADER_FIELDS:
-        if field.id == CoAPFields.TOKEN and token is None:
+        if field.id == CoAPFields.TOKEN and token is None and token_length is None:
             continue  # Skip TOKEN field if no token provided
             
         target_value = target_values.get(field.id)
         field_length = field.length
-        if field.id == CoAPFields.TOKEN and token is not None:
-            field_length = token_length * 8
+        if field.id == CoAPFields.TOKEN:
+            if token_length_bits is not None:
+                field_length = token_length_bits
+            else:
+                field_length = 0
             
         field_descriptors.append(
             RuleFieldDescriptor(
@@ -599,13 +657,13 @@ def coap_base_header_template(
                 direction=field.direction,
                 matching_operator=(
                     MO.MATCH_MAPPING if isinstance(target_value, MatchMapping)
-                    else MO.MSB if isinstance(target_value, Buffer) and target_value.length < field_length
+                    else MO.MSB if isinstance(target_value, Buffer) and target_value.length < field_length and target_value.length > 0
                     else MO.EQUAL if isinstance(target_value, Buffer) and target_value.length == field_length
                     else MO.IGNORE
                 ),
                 compression_decompression_action=(
                     CDA.MAPPING_SENT if isinstance(target_value, MatchMapping)
-                    else CDA.LSB if isinstance(target_value, Buffer) and target_value.length < field_length
+                    else CDA.LSB if isinstance(target_value, Buffer) and target_value.length < field_length and target_value.length > 0
                     else CDA.NOT_SENT if isinstance(target_value, Buffer) and target_value.length == field_length
                     else CDA.VALUE_SENT
                 ),
