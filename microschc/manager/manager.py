@@ -56,6 +56,6 @@ class ContextManager:
     
     def decompress(self, schc_packet: Buffer):
         rule_descriptor: RuleDescriptor = self.ruler.match_schc_packet(schc_packet=schc_packet)
-        packet: Buffer = decompress(schc_packet=schc_packet, rule_descriptor=rule_descriptor)
+        packet: Buffer = decompress(schc_packet=schc_packet, rule_descriptor=rule_descriptor, unparser=self.parser)
         return packet
 
