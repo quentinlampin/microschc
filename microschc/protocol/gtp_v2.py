@@ -432,7 +432,7 @@ class GTPv2Parser(HeaderParser):
             ie_type_id, ie_parser = IEType[ie_type_value]
 
         # set the if of content
-        ie_type_id = f'{GTP_HEADER_ID}:{ie_type_id}'
+        ie_type_id = f'{GTPv2Fields.IE_CONTENT}:{ie_type_id}'
         # compute the byte length
         content_length = ie_length_value*8
         if content_length > 0 :
