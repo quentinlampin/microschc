@@ -70,14 +70,14 @@ class PacketParser:
 
 
 class ParserError(Exception):
-    def __init__(self, buffer: Buffer, message=None):
+    def __init__(self, buffer: Buffer, message:str=''):
         exception_message: str = f"error: {message} while parsing buffer: {buffer}"
-        super().__init__(message=exception_message)
+        super().__init__(exception_message)
         
 class UnparserError(Exception):
-    def __init__(self, decompressed_fields: List[Tuple[str, Buffer]], message=None):
+    def __init__(self, decompressed_fields: List[Tuple[str, Buffer]], message:str=''):
         exception_message: str = f"error: {message} while unparsing fields: {decompressed_fields}"
-        super().__init__(message=exception_message)
+        super().__init__(exception_message)
 
 
 

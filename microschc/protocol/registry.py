@@ -13,6 +13,7 @@ class ProtocolsIDs(IntEnum):
     UDP  =   17
     SCTP =  132
     COAP = 5683
+    GTP  = 1789
 
 PARSERS = {
     # dynamically filled by individual parser modules
@@ -38,10 +39,12 @@ def REGISTER_COMPUTE_FUNCTIONS(compute_functions: Dict[str, Tuple[ComputeFunctio
 class Stack(StrEnum):
     IPV6_UDP_COAP = 'IPv6-UDP-CoAP'
     IPV4_UDP_COAP = 'IPv4-UDP-CoAP'
+    IPV4_UDP_GTP = 'IPv4-UDP-GTP'
 
 STACKS = {
     Stack.IPV6_UDP_COAP: [ProtocolsIDs.IPV6, ProtocolsIDs.UDP, ProtocolsIDs.COAP],
     Stack.IPV4_UDP_COAP: [ProtocolsIDs.IPV4, ProtocolsIDs.UDP, ProtocolsIDs.COAP],
+    Stack.IPV4_UDP_GTP: [ProtocolsIDs.IPV4, ProtocolsIDs.UDP, ProtocolsIDs.GTP],
 }
 
 PROTOCOLS = {
@@ -50,6 +53,7 @@ PROTOCOLS = {
     'UDP':  ProtocolsIDs.UDP,
     'CoAP': ProtocolsIDs.COAP,
     'SCTP': ProtocolsIDs.SCTP,
+    'GTP': ProtocolsIDs.GTP,
 }
 
 def factory(stack_id: str) -> PacketParser:
