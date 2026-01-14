@@ -58,20 +58,22 @@ def compress(packet_descriptor: PacketDescriptor, rule_descriptor: RuleDescripto
 
     return schc_packet
 
-def _encode_length(length:int) -> Buffer:
+def _encode_length(length_bits:int) -> Buffer:
     '''
-    Encode the length value following instructions in section 7.4.2 of [1].
+    Encode the length value following instructions in section 7.4.2 of [1], in bytes.
     '''
     encoded_length_value: bytes
-    encoded_length_length: int
-    assert length < 2**16
-    if length < 15:
-        encoded_length_value = length.to_bytes(1, 'big')
-        encoded_length_length = 4
-    elif length < 255:
-        encoded_length_value = b'\x0f' + length.to_bytes(1, 'big')
-        encoded_length_length = 12
+    encoded_length_bit_length: int
+    assert length_bits < 2**16
+    assert length_bits % 8 == 0
+    length_bytes = length_bits // 8
+    if length_bytes < 15:
+        encoded_length_value = length_bytes.to_bytes(1, 'big')
+        encoded_length_bit_length = 4
+    elif length_bytes < 255:
+        encoded_length_value = b'\x0f' + length_bytes.to_bytes(1, 'big')
+        encoded_length_bit_length = 12
     else:
-        encoded_length_value = b'\x0f\xff' + length.to_bytes(2, 'big')
-        encoded_length_length = 28
-    return Buffer(content=encoded_length_value, length=encoded_length_length)
+        encoded_length_value = b'\x0f\xff' + length_bytes.to_bytes(2, 'big')
+        encoded_length_bit_length = 28
+    return Buffer(content=encoded_length_value, length=encoded_length_bit_length)
