@@ -13,6 +13,7 @@ from microschc.rfc8724 import DirectionIndicator, RuleFieldDescriptor
 
 from microschc.decompressor.decompressor import decompress
 from microschc.rfc8724extras import ParserDefinitions
+from microschc.rfc8724 import FieldLengthDefinitions
 
 
 
@@ -78,13 +79,13 @@ def test_decompress():
             target_value=Buffer(content=b'', length=0), matching_operator=MO.IGNORE, compression_decompression_action=CDA.VALUE_SENT),
         RuleFieldDescriptor(id=CoAPFields.MESSAGE_ID, length=16, position=0, direction=DirectionIndicator.BIDIRECTIONAL,
             target_value=Buffer(content=b'', length=0), matching_operator=MO.IGNORE, compression_decompression_action=CDA.VALUE_SENT),
-        RuleFieldDescriptor(id=CoAPFields.TOKEN, length=0, position=0, direction=DirectionIndicator.BIDIRECTIONAL,
+        RuleFieldDescriptor(id=CoAPFields.TOKEN, length=FieldLengthDefinitions.VAR_BITS, position=0, direction=DirectionIndicator.BIDIRECTIONAL,
             target_value=Buffer(content=b'', length=0), matching_operator=MO.IGNORE, compression_decompression_action=CDA.VALUE_SENT),
         RuleFieldDescriptor(id=CoAPFields.OPTION_DELTA, length=4, position=0, direction=DirectionIndicator.UP,
             target_value=Buffer(content=b'\x0c', length=4), matching_operator=MO.EQUAL, compression_decompression_action=CDA.NOT_SENT),
         RuleFieldDescriptor(id=CoAPFields.OPTION_LENGTH, length=4, position=0, direction=DirectionIndicator.UP,
             target_value=Buffer(content=b'', length=0), matching_operator=MO.IGNORE, compression_decompression_action=CDA.VALUE_SENT),
-        RuleFieldDescriptor(id=CoAPFields.OPTION_VALUE, length=0, position=0, direction=DirectionIndicator.UP,
+        RuleFieldDescriptor(id=CoAPFields.OPTION_VALUE, length=FieldLengthDefinitions.VAR_BITS, position=0, direction=DirectionIndicator.UP,
             target_value=Buffer(content=b'', length=0), matching_operator=MO.IGNORE, compression_decompression_action=CDA.VALUE_SENT),
         RuleFieldDescriptor(id=CoAPFields.PAYLOAD_MARKER, length=8, position=0, direction=DirectionIndicator.UP,
             target_value=Buffer(content=b'\xff', length=8), matching_operator=MO.EQUAL, compression_decompression_action=CDA.NOT_SENT),
@@ -194,19 +195,19 @@ def test_decompression_compute():
             target_value=Buffer(content=b'', length=0), matching_operator=MO.IGNORE, compression_decompression_action=CDA.VALUE_SENT),
         RuleFieldDescriptor(id=CoAPFields.MESSAGE_ID, length=16, position=0, direction=DirectionIndicator.BIDIRECTIONAL,
             target_value=Buffer(content=b'', length=0), matching_operator=MO.IGNORE, compression_decompression_action=CDA.VALUE_SENT),
-        RuleFieldDescriptor(id=CoAPFields.TOKEN, length=0, position=0, direction=DirectionIndicator.BIDIRECTIONAL,
+        RuleFieldDescriptor(id=CoAPFields.TOKEN, length=FieldLengthDefinitions.VAR_BITS, position=0, direction=DirectionIndicator.BIDIRECTIONAL,
             target_value=Buffer(content=b'', length=0), matching_operator=MO.IGNORE, compression_decompression_action=CDA.VALUE_SENT),
         RuleFieldDescriptor(id=CoAPFields.OPTION_DELTA, length=4, position=0, direction=DirectionIndicator.UP,
             target_value=Buffer(content=b'\x06', length=4), matching_operator=MO.EQUAL, compression_decompression_action=CDA.NOT_SENT),
         RuleFieldDescriptor(id=CoAPFields.OPTION_LENGTH, length=4, position=0, direction=DirectionIndicator.UP,
             target_value=Buffer(content=b'', length=0), matching_operator=MO.IGNORE, compression_decompression_action=CDA.VALUE_SENT),
-        RuleFieldDescriptor(id=CoAPFields.OPTION_VALUE, length=0, position=0, direction=DirectionIndicator.UP,
+        RuleFieldDescriptor(id=CoAPFields.OPTION_VALUE, length=FieldLengthDefinitions.VAR_BYTES, position=0, direction=DirectionIndicator.UP,
             target_value=Buffer(content=b'', length=0), matching_operator=MO.IGNORE, compression_decompression_action=CDA.VALUE_SENT),
         RuleFieldDescriptor(id=CoAPFields.OPTION_DELTA, length=4, position=0, direction=DirectionIndicator.UP,
             target_value=Buffer(content=b'\x06', length=4), matching_operator=MO.EQUAL, compression_decompression_action=CDA.NOT_SENT),
         RuleFieldDescriptor(id=CoAPFields.OPTION_LENGTH, length=4, position=0, direction=DirectionIndicator.UP,
             target_value=Buffer(content=b'', length=0), matching_operator=MO.IGNORE, compression_decompression_action=CDA.VALUE_SENT),
-        RuleFieldDescriptor(id=CoAPFields.OPTION_VALUE, length=0, position=0, direction=DirectionIndicator.UP,
+        RuleFieldDescriptor(id=CoAPFields.OPTION_VALUE, length=FieldLengthDefinitions.VAR_BYTES, position=0, direction=DirectionIndicator.UP,
             target_value=Buffer(content=b'', length=0), matching_operator=MO.IGNORE, compression_decompression_action=CDA.VALUE_SENT),
         RuleFieldDescriptor(id=CoAPFields.PAYLOAD_MARKER, length=8, position=0, direction=DirectionIndicator.UP,
             target_value=Buffer(content=b'\xff', length=8), matching_operator=MO.EQUAL, compression_decompression_action=CDA.NOT_SENT)

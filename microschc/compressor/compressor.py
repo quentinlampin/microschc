@@ -10,6 +10,7 @@ from microschc.binary.buffer import Buffer, Padding
 from microschc.rfc8724 import FieldDescriptor, MatchMapping, PacketDescriptor, RuleDescriptor, RuleFieldDescriptor, RuleNature
 from microschc.rfc8724 import CompressionDecompressionAction as CDA
 from microschc.rfc8724 import DirectionIndicator as DI
+from microschc.rfc8724 import FieldLengthDefinitions
 
 
 def compress(packet_descriptor: PacketDescriptor, rule_descriptor: RuleDescriptor) -> Buffer:
@@ -45,8 +46,12 @@ def compress(packet_descriptor: PacketDescriptor, rule_descriptor: RuleDescripto
             elif rf.compression_decompression_action == CDA.VALUE_SENT:
                 field_residue = value_sent(field_descriptor=pf)
 
-            if rf.compression_decompression_action in {CDA.LSB, CDA.VALUE_SENT} and rf.length == 0:
+            if rf.compression_decompression_action in {CDA.LSB, CDA.VALUE_SENT} and (rf.length == 0 or rf.length == FieldLengthDefinitions.VAR_BITS):
                 encoded_length: Buffer = _encode_length(field_residue.length)
+                schc_packet += encoded_length
+            
+            if rf.compression_decompression_action in {CDA.LSB, CDA.VALUE_SENT} and (rf.length == FieldLengthDefinitions.VAR_BYTES):
+                encoded_length: Buffer = _encode_length(field_residue.length//8)
                 schc_packet += encoded_length
 
             schc_packet += field_residue
