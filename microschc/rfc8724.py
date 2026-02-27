@@ -14,7 +14,6 @@ from microschc.binary.buffer import Buffer
 ReverseMapping = Dict[Buffer, Buffer]
 Mapping = Dict[Buffer, Buffer]
 
-
 class MatchMapping:
     def __init__(self, forward_mapping: Mapping):
         self.forward: Mapping = forward_mapping
@@ -52,6 +51,9 @@ class MatchMapping:
         match_mapping: MatchMapping = MatchMapping.__from_json_object__(json_object=json_object)
         return match_mapping
 
+class FieldLengthDefinitions(StrEnum):
+    VAR_BITS = "fl-variable-bits"
+    VAR_BYTES = "fl-variable"
 
 TargetValue = Union[Buffer, MatchMapping, None]
 
@@ -224,7 +226,7 @@ class PacketDescriptor:
 @dataclass
 class RuleFieldDescriptor:
     id: str
-    length: int
+    length: Union[int, FieldLengthDefinitions]
     position: int
     direction: DirectionIndicator
     target_value: TargetValue

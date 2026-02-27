@@ -12,6 +12,7 @@ from microschc.protocol.registry import COMPUTE_FUNCTIONS
 from microschc.protocol.compute import ComputeFunctionType
 from microschc.rfc8724 import DirectionIndicator, RuleFieldDescriptor, MatchMapping, RuleDescriptor
 from microschc.rfc8724 import CompressionDecompressionAction as CDA
+from microschc.rfc8724 import FieldLengthDefinitions
 from microschc.rfc8724extras import ParserDefinitions
 
 class ComputeEntry:
@@ -28,6 +29,26 @@ class ComputeEntry:
 
     def __repr__(self) -> str:
         return f"{self.field_id}: {self.dependencies} "
+
+
+def _decode_length(buffer: Buffer) -> Tuple[int, int]:
+    length_buffer: Buffer = buffer[0:4]
+    length_buffer.pad(padding=Padding.LEFT, inplace=True)
+    length: int = int.from_bytes(length_buffer.content, 'big')
+    if length < 15:
+        return length, 4
+    
+    length_buffer = buffer[4:12]
+    length_buffer.pad(padding=Padding.LEFT, inplace=True)
+    length: int = int.from_bytes(length_buffer.content, 'big')
+    if length < 255:
+        return length, 12
+    
+    length_buffer = buffer[12:28]
+    length_buffer.pad(padding=Padding.LEFT, inplace=True)
+    length: int = int.from_bytes(length_buffer.content, 'big')
+    return length, 28
+
 
 def compute_function_sort(entry_1: ComputeEntry, entry_2: ComputeEntry) -> int:
     if entry_1.field_id in entry_2.dependencies:
@@ -68,14 +89,31 @@ def decompress(schc_packet: Buffer, rule_descriptor: RuleDescriptor, direction: 
         residue_bitlength = 0
         decompressed_field = Buffer(content=b'', length=0, padding=Padding.RIGHT)
         if rf.compression_decompression_action == CDA.NOT_SENT:
+            assert isinstance(rf.target_value, Buffer)
             decompressed_field += rf.target_value
         elif rf.compression_decompression_action == CDA.LSB:
             assert isinstance(rf.target_value, Buffer)
-            lsb_bitlength: int = rf.length-rf.target_value.length
-            field_residue = schc_packet[:lsb_bitlength]
-            decompressed_field += rf.target_value
-            decompressed_field += field_residue
-            residue_bitlength = lsb_bitlength
+            if rf.length == 0 or rf.length == FieldLengthDefinitions.VAR_BITS:
+                # variable length bits
+                encoded_length_value, encoded_length_length = _decode_length(schc_packet)
+                field_residue = schc_packet[encoded_length_length : encoded_length_length+encoded_length_value]
+                residue_bitlength = encoded_length_length + encoded_length_value
+                decompressed_field += rf.target_value
+                decompressed_field += field_residue
+            elif rf.length == FieldLengthDefinitions.VAR_BYTES:
+                # variable length bytes
+                encoded_length_value, encoded_length_length = _decode_length(schc_packet)
+                encoded_length_value *= 8
+                field_residue = schc_packet[encoded_length_length : encoded_length_length+encoded_length_value]
+                residue_bitlength = encoded_length_length + encoded_length_value
+                decompressed_field += rf.target_value
+                decompressed_field += field_residue
+            else:
+                lsb_bitlength: int = rf.length-rf.target_value.length
+                field_residue = schc_packet[:lsb_bitlength]
+                decompressed_field += rf.target_value
+                decompressed_field += field_residue
+                residue_bitlength = lsb_bitlength
         elif rf.compression_decompression_action == CDA.MAPPING_SENT:
             assert isinstance(rf.target_value, MatchMapping)
             for key, value in rf.target_value.reverse.items():
@@ -85,31 +123,23 @@ def decompress(schc_packet: Buffer, rule_descriptor: RuleDescriptor, direction: 
                     residue_bitlength = key.length
                     break
         elif rf.compression_decompression_action == CDA.VALUE_SENT:
-            if rf.length != 0:
+            if rf.length == 0 or rf.length == FieldLengthDefinitions.VAR_BITS:
+                # variable field encoded length bits
+                encoded_length_value, encoded_length_length = _decode_length(schc_packet)
+                field_residue = schc_packet[encoded_length_length : encoded_length_length+encoded_length_value]
+                residue_bitlength = encoded_length_length + encoded_length_value
+                decompressed_field += field_residue
+            elif rf.length == FieldLengthDefinitions.VAR_BYTES:
+                # variable field encoded length bytes
+                encoded_length_value, encoded_length_length = _decode_length(schc_packet)
+                encoded_length_value *= 8
+                field_residue = schc_packet[encoded_length_length : encoded_length_length+encoded_length_value]
+                residue_bitlength = encoded_length_length + encoded_length_value
+                decompressed_field += field_residue
+            else:
                 field_residue = schc_packet[0:rf.length]
                 decompressed_field += field_residue
                 residue_bitlength = rf.length
-            else:
-                # variable field encoded length
-                length_buffer: Buffer = schc_packet[0:4]
-                length_buffer.pad(padding=Padding.LEFT, inplace=True)
-                encoded_length_value: int = int.from_bytes(length_buffer.content, 'big')
-                if encoded_length_value < 15:
-                    decompressed_field += schc_packet[4:4+encoded_length_value]
-                    residue_bitlength = 4 + encoded_length_value
-                else:
-                    length_buffer = schc_packet[4:12]
-                    length_buffer.pad(padding=Padding.LEFT, inplace=True)
-                    encoded_length_value: int = int.from_bytes(length_buffer.content, 'big')
-                    if encoded_length_value < 255:
-                        decompressed_field += schc_packet[12:12+encoded_length_value]
-                        residue_bitlength = 12 + encoded_length_value
-                    else:
-                        length_buffer = schc_packet[12:28]
-                        length_buffer.pad(padding=Padding.LEFT, inplace=True)
-                        encoded_length_value: int = int.from_bytes(length_buffer.content, 'big')
-                        decompressed_field += schc_packet[28:28+encoded_length_value]
-                        residue_bitlength = 28 + encoded_length_value
         elif rf.compression_decompression_action == CDA.COMPUTE:
             # add a placeholder for the decompressed field and add the decompression action to the LIFO queue
             field_id: str = rf.id
